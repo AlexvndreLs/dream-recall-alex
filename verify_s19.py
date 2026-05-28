@@ -4,7 +4,7 @@ from pathlib import Path
 
 # Chemins d'accès (adaptés selon vos structures dans SESSION_SUMMARY_2026-05-26.md)
 raw_path = Path("/project/rrg-kjerbi/shared/dream_recall/sleep_data/sleep_raw_data/data/s19_sleep.mat")
-hypno_path = Path("/project/rrg-kjerbi/shared/dream_recall/sleep_data/sleep_raw_data/hypnograms/hyp_per_s19.txt")
+hypno_path = Path("/project/rrg-kjerbi/shared/dream_recall/sleep_data/sleep_raw_data/hypnograms/hyp_jbe_s19.txt")
 
 # 1. Calcul de la durée EEG (en secondes)
 with h5py.File(raw_path, 'r') as f:
