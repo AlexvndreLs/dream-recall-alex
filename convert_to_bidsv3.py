@@ -4,6 +4,8 @@ import mne
 import mne_bids
 from pathlib import Path
 import sys
+from tqdm import tqdm
+
 
 DATA_PATH = Path("/project/rrg-kjerbi/shared/dream_recall/sleep_data/sleep_raw_data")
 BIDS_PATH = Path("/home/alouis/scratch/dream_bids")
@@ -46,12 +48,12 @@ def load_mat(path):
         n_channels = data.shape[1]
         result = np.empty((n_channels, n_samples), dtype=np.float32)
         chunk_size = 1_000_000
-        for i in range(0, n_samples, chunk_size):
+        for i in tqdm(range(0, n_samples, chunk_size), desc=f"s{sub}", unit="chunk", ascii=True, ncols=80):
             result[:, i:i+chunk_size] = data[i:i+chunk_size, :].T.astype(np.float32)
         return result
     # Note float32 : RawArray préserve le dtype si les données sont déjà float32.
     # MNE peut upgrader en float64 en mémoire selon la version, mais write_raw_bids
-    # écrit en fmt='single' (float32) par défaut — le fichier FIF final est float32.
+    # écrit en fmt='single' (float32) par défaut le fichier FIF final est float32.
 
 
 def load_hypno_annotations(path, prefix):
