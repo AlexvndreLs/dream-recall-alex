@@ -4,8 +4,8 @@ import mne
 import mne_bids
 from pathlib import Path
 import sys
+import json
 from tqdm import tqdm
-
 
 DATA_PATH = Path("/project/rrg-kjerbi/shared/dream_recall/sleep_data/sleep_raw_data")
 BIDS_PATH = Path("/home/alouis/scratch/dream_bids")
@@ -17,10 +17,14 @@ CH_NAMES = [
     'EOG_L', 'EOG_R', 'EMG_chin',
     'misc1', 'misc2', 'misc3'
 ]
-CH_TYPES = ['eeg'] * 19 + ['eog', 'eog', 'emg'] + ['stim'] * 3
+# stim -> misc : nature des 3 derniers canaux inconnue (Arthur n'utilise que les 19 premiers)
+CH_TYPES = ['eeg'] * 19 + ['eog', 'eog', 'emg'] + ['misc'] * 3 
+#Pas d'infos sur les 3 derniers canaux M1,M2 et autre peut etre => message arthur
+
 SFREQ = 1000.0
 
 # Notation R&K (pas AASM : S3 et S4 restent séparés)
+# merge_S3_S4 dans le repo d'Arthur est un post-processing sur features, pas sur le signal brut
 STAGE_MAP = {
     0: 'Sleep stage W',
     1: 'Sleep stage S1',
@@ -28,17 +32,15 @@ STAGE_MAP = {
     3: 'Sleep stage S3',   # Arthur fusionne S3+S4 en SWS au niveau des features (merge_S3_S4)
     4: 'Sleep stage S4',   # idem
     5: 'Sleep stage R',
-   -1: 'UNKNOWN_m1',  # TODO: demander à Arthur
-   -2: 'UNKNOWN_m2',  # TODO: demander à Arthur
+   -1: 'UNKNOWN_m1',  # Todo: demander à Arthur (ignoré dans load_hypno de utils.py)
+   -2: 'UNKNOWN_m2',  # Todo: demander à Arthur (ignoré dans load_hypno de utils.py)
 }
 
-# per_s19 est une copie de per_s29 — hypnogramme invalide
+# per_s19 est une copie de per_s29 — hypnogramme invalide (découvert par Alex)
 PER_BLACKLIST = {19}
 
 # Sujets avec scoring jbe disponible
 JBE_SUBJECTS = {1, 2, 4, 6, 10, 11, 14, 16, 18, 19, 23, 25, 26, 29, 32, 33, 35, 37}
-
-
 
 
 def load_mat(path):
@@ -95,5 +97,26 @@ bids_path = mne_bids.BIDSPath(
     subject=sub_str.zfill(2), task='sleep',
     root=BIDS_PATH, datatype='eeg'
 )
-mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='Fif')
+
+mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+
+# Patch sidecar JSON avec métadonnées issues du papier (write_raw_bids ne supporte pas extra_infos)
+# Source : Dehgan et al., BrainAmp (Brain Products), électrodes Ag/AgCl, système 10-20 étendu
+# Référence : tip of the nose ; ground : forehead ; filtre HP : 0.1 Hz ; impédance < 5 kΩ
+sidecar_path = BIDS_PATH / f'sub-{sub_str.zfill(2)}' / 'eeg' / f'sub-{sub_str.zfill(2)}_task-sleep_eeg.json'
+with open(sidecar_path) as f:
+    sidecar = json.load(f)
+sidecar.update({
+    'Manufacturer': 'Brain Products',
+    'ManufacturersModelName': 'BrainAmp',
+    'EEGReference': 'tip of the nose',
+    'EEGGround': 'forehead',
+    'EEGPlacementScheme': 'extended 10-20',
+    'HardwareFilters': {'Highpass RC filter': {'Half amplitude cutoff (Hz)': 0.1}},
+    'SoftwareFilters': 'n/a',
+    'RecordingType': 'continuous',
+})
+with open(sidecar_path, 'w') as f:
+    json.dump(sidecar, f, indent=4)
+
 print("Done:", bids_path)
