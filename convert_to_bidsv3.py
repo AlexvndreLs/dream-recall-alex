@@ -26,9 +26,10 @@ CH_NAMES = [
     'EOG_L', 'EOG_R', 'EMG_chin',
     'misc1', 'misc2', 'misc3'
 ]
-# stim -> misc : nature des 3 derniers canaux inconnue (Arthur n'utilise que les 19 premiers)
+
 CH_TYPES = ['eeg'] * 19 + ['eog', 'eog', 'emg'] + ['misc'] * 3 
 #Pas d'infos sur les 3 derniers canaux M1,M2 et autre peut etre => message arthur
+#arthur n'utilise que les 19 premiers
 
 SFREQ = 1000.0
 
@@ -45,7 +46,7 @@ STAGE_MAP = {
    -2: 'UNKNOWN_m2',  # Todo: demander à Arthur (ignoré dans load_hypno de utils.py)
 }
 
-# per_s19 est une copie de per_s29 — hypnogramme invalide (découvert par Alex)
+# per_s19 est une copie de per_s29 !!!
 PER_BLACKLIST = {19}
 
 # Sujets avec scoring jbe disponible
