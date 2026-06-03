@@ -1,0 +1,702 @@
+==========================================
+Traitement du Sujet 13 / 38
+==========================================
+s13:   0%|                                            | 0/28 [00:00<?, ?chunk/s]s13:   4%|#2                                  | 1/28 [00:00<00:11,  2.26chunk/s]s13:   7%|##5                                 | 2/28 [00:00<00:11,  2.26chunk/s]s13:  11%|###8                                | 3/28 [00:01<00:11,  2.15chunk/s]s13:  14%|#####1                              | 4/28 [00:01<00:11,  2.08chunk/s]s13:  18%|######4                             | 5/28 [00:02<00:11,  2.09chunk/s]s13:  21%|#######7                            | 6/28 [00:02<00:10,  2.15chunk/s]s13:  25%|#########                           | 7/28 [00:03<00:09,  2.13chunk/s]s13:  29%|##########2                         | 8/28 [00:03<00:09,  2.18chunk/s]s13:  32%|###########5                        | 9/28 [00:04<00:08,  2.20chunk/s]s13:  36%|############5                      | 10/28 [00:04<00:08,  2.23chunk/s]s13:  39%|#############7                     | 11/28 [00:05<00:07,  2.23chunk/s]s13:  43%|###############                    | 12/28 [00:05<00:07,  2.18chunk/s]s13:  46%|################2                  | 13/28 [00:06<00:07,  2.14chunk/s]s13:  50%|#################5                 | 14/28 [00:06<00:06,  2.18chunk/s]s13:  54%|##################7                | 15/28 [00:06<00:05,  2.21chunk/s]s13:  57%|####################               | 16/28 [00:07<00:05,  2.21chunk/s]s13:  61%|#####################2             | 17/28 [00:07<00:05,  2.20chunk/s]s13:  64%|######################5            | 18/28 [00:08<00:04,  2.22chunk/s]s13:  68%|#######################7           | 19/28 [00:08<00:04,  2.24chunk/s]s13:  71%|#########################          | 20/28 [00:09<00:03,  2.25chunk/s]s13:  75%|##########################2        | 21/28 [00:09<00:03,  2.22chunk/s]s13:  79%|###########################5       | 22/28 [00:10<00:02,  2.24chunk/s]s13:  82%|############################7      | 23/28 [00:10<00:02,  2.26chunk/s]s13:  86%|##############################     | 24/28 [00:10<00:01,  2.24chunk/s]s13:  89%|###############################2   | 25/28 [00:11<00:01,  2.21chunk/s]s13:  93%|################################5  | 26/28 [00:11<00:00,  2.16chunk/s]s13:  96%|#################################7 | 27/28 [00:12<00:00,  2.16chunk/s]s13: 100%|###################################| 28/28 [00:12<00:00,  2.42chunk/s]s13: 100%|###################################| 28/28 [00:12<00:00,  2.22chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-13/eeg/sub-13_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-13/eeg/sub-13_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-13/eeg/sub-13_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-13/eeg/sub-13_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-13/eeg/sub-13_task-sleep_eeg.json'...
+Copying data files to sub-13_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-13/eeg/sub-13_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-13/sub-13_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-13/sub-13_scans.tsv entry with eeg/sub-13_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-13/eeg/sub-13_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 14 / 38
+==========================================
+s14:   0%|                                            | 0/25 [00:00<?, ?chunk/s]s14:   4%|#4                                  | 1/25 [00:00<00:17,  1.34chunk/s]s14:   8%|##8                                 | 2/25 [00:01<00:15,  1.46chunk/s]s14:  12%|####3                               | 3/25 [00:02<00:14,  1.48chunk/s]s14:  16%|#####7                              | 4/25 [00:02<00:14,  1.44chunk/s]s14:  20%|#######2                            | 5/25 [00:03<00:13,  1.47chunk/s]s14:  24%|########6                           | 6/25 [00:04<00:12,  1.48chunk/s]s14:  28%|##########                          | 7/25 [00:04<00:12,  1.48chunk/s]s14:  32%|###########5                        | 8/25 [00:05<00:11,  1.51chunk/s]s14:  36%|############9                       | 9/25 [00:06<00:10,  1.51chunk/s]s14:  40%|##############                     | 10/25 [00:06<00:09,  1.51chunk/s]s14:  44%|###############4                   | 11/25 [00:07<00:09,  1.47chunk/s]s14:  48%|################8                  | 12/25 [00:08<00:08,  1.45chunk/s]s14:  52%|##################2                | 13/25 [00:08<00:08,  1.46chunk/s]s14:  56%|###################6               | 14/25 [00:09<00:07,  1.49chunk/s]s14:  60%|#####################              | 15/25 [00:10<00:06,  1.49chunk/s]s14:  64%|######################4            | 16/25 [00:10<00:06,  1.48chunk/s]s14:  68%|#######################8           | 17/25 [00:11<00:05,  1.48chunk/s]s14:  72%|#########################2         | 18/25 [00:12<00:04,  1.47chunk/s]s14:  76%|##########################6        | 19/25 [00:12<00:04,  1.49chunk/s]s14:  80%|############################       | 20/25 [00:13<00:03,  1.49chunk/s]s14:  84%|#############################4     | 21/25 [00:14<00:02,  1.51chunk/s]s14:  88%|##############################8    | 22/25 [00:14<00:01,  1.55chunk/s]s14:  92%|################################2  | 23/25 [00:15<00:01,  1.61chunk/s]s14:  96%|#################################6 | 24/25 [00:15<00:00,  1.70chunk/s]s14: 100%|###################################| 25/25 [00:15<00:00,  2.19chunk/s]s14: 100%|###################################| 25/25 [00:15<00:00,  1.56chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-14/eeg/sub-14_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-14/eeg/sub-14_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('jbe/Sleep stage R'), np.str_('jbe/Sleep stage S1'), np.str_('jbe/Sleep stage S2'), np.str_('jbe/Sleep stage S3'), np.str_('jbe/Sleep stage S4'), np.str_('jbe/Sleep stage W'), np.str_('jbe/UNKNOWN_m1'), np.str_('jbe/UNKNOWN_m2'), np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-14/eeg/sub-14_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-14/eeg/sub-14_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-14/eeg/sub-14_task-sleep_eeg.json'...
+Copying data files to sub-14_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-14/eeg/sub-14_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-14/sub-14_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-14/sub-14_scans.tsv entry with eeg/sub-14_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-14/eeg/sub-14_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 15 / 38
+==========================================
+s15:   0%|                                            | 0/27 [00:00<?, ?chunk/s]s15:   4%|#3                                  | 1/27 [00:00<00:17,  1.47chunk/s]s15:   7%|##6                                 | 2/27 [00:01<00:16,  1.54chunk/s]s15:  11%|####                                | 3/27 [00:01<00:15,  1.57chunk/s]s15:  15%|#####3                              | 4/27 [00:02<00:14,  1.55chunk/s]s15:  19%|######6                             | 5/27 [00:03<00:14,  1.55chunk/s]s15:  22%|########                            | 6/27 [00:03<00:13,  1.55chunk/s]s15:  26%|#########3                          | 7/27 [00:04<00:12,  1.54chunk/s]s15:  30%|##########6                         | 8/27 [00:05<00:12,  1.53chunk/s]s15:  33%|############                        | 9/27 [00:05<00:12,  1.49chunk/s]s15:  37%|############9                      | 10/27 [00:06<00:11,  1.43chunk/s]s15:  41%|##############2                    | 11/27 [00:07<00:11,  1.42chunk/s]s15:  44%|###############5                   | 12/27 [00:08<00:10,  1.43chunk/s]s15:  48%|################8                  | 13/27 [00:08<00:09,  1.45chunk/s]s15:  52%|##################1                | 14/27 [00:09<00:08,  1.47chunk/s]s15:  56%|###################4               | 15/27 [00:10<00:08,  1.46chunk/s]s15:  59%|####################7              | 16/27 [00:10<00:07,  1.46chunk/s]s15:  63%|######################             | 17/27 [00:11<00:06,  1.46chunk/s]s15:  67%|#######################3           | 18/27 [00:12<00:06,  1.46chunk/s]s15:  70%|########################6          | 19/27 [00:12<00:05,  1.46chunk/s]s15:  74%|#########################9         | 20/27 [00:13<00:04,  1.47chunk/s]s15:  78%|###########################2       | 21/27 [00:14<00:04,  1.47chunk/s]s15:  81%|############################5      | 22/27 [00:14<00:03,  1.48chunk/s]s15:  85%|#############################8     | 23/27 [00:15<00:02,  1.50chunk/s]s15:  89%|###############################1   | 24/27 [00:16<00:01,  1.55chunk/s]s15:  93%|################################4  | 25/27 [00:16<00:01,  1.64chunk/s]s15:  96%|#################################7 | 26/27 [00:17<00:00,  1.74chunk/s]s15: 100%|###################################| 27/27 [00:17<00:00,  2.18chunk/s]s15: 100%|###################################| 27/27 [00:17<00:00,  1.56chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-15/eeg/sub-15_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-15/eeg/sub-15_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-15/eeg/sub-15_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-15/eeg/sub-15_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-15/eeg/sub-15_task-sleep_eeg.json'...
+Copying data files to sub-15_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-15/eeg/sub-15_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-15/sub-15_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-15/sub-15_scans.tsv entry with eeg/sub-15_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-15/eeg/sub-15_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 16 / 38
+==========================================
+s16:   0%|                                            | 0/27 [00:00<?, ?chunk/s]s16:   4%|#3                                  | 1/27 [00:00<00:18,  1.40chunk/s]s16:   7%|##6                                 | 2/27 [00:01<00:17,  1.43chunk/s]s16:  11%|####                                | 3/27 [00:02<00:16,  1.44chunk/s]s16:  15%|#####3                              | 4/27 [00:02<00:15,  1.46chunk/s]s16:  19%|######6                             | 5/27 [00:03<00:14,  1.48chunk/s]s16:  22%|########                            | 6/27 [00:04<00:14,  1.49chunk/s]s16:  26%|#########3                          | 7/27 [00:04<00:13,  1.50chunk/s]s16:  30%|##########6                         | 8/27 [00:05<00:12,  1.51chunk/s]s16:  33%|############                        | 9/27 [00:06<00:11,  1.52chunk/s]s16:  37%|############9                      | 10/27 [00:06<00:11,  1.52chunk/s]s16:  41%|##############2                    | 11/27 [00:07<00:10,  1.52chunk/s]s16:  44%|###############5                   | 12/27 [00:08<00:09,  1.52chunk/s]s16:  48%|################8                  | 13/27 [00:08<00:09,  1.52chunk/s]s16:  52%|##################1                | 14/27 [00:09<00:08,  1.51chunk/s]s16:  56%|###################4               | 15/27 [00:10<00:08,  1.48chunk/s]s16:  59%|####################7              | 16/27 [00:10<00:07,  1.47chunk/s]s16:  63%|######################             | 17/27 [00:11<00:06,  1.45chunk/s]s16:  67%|#######################3           | 18/27 [00:12<00:06,  1.45chunk/s]s16:  70%|########################6          | 19/27 [00:12<00:05,  1.46chunk/s]s16:  74%|#########################9         | 20/27 [00:13<00:04,  1.46chunk/s]s16:  78%|###########################2       | 21/27 [00:14<00:04,  1.47chunk/s]s16:  81%|############################5      | 22/27 [00:14<00:03,  1.48chunk/s]s16:  85%|#############################8     | 23/27 [00:15<00:02,  1.50chunk/s]s16:  89%|###############################1   | 24/27 [00:16<00:01,  1.53chunk/s]s16:  93%|################################4  | 25/27 [00:16<00:01,  1.59chunk/s]s16:  96%|#################################7 | 26/27 [00:17<00:00,  1.65chunk/s]s16: 100%|###################################| 27/27 [00:17<00:00,  1.99chunk/s]s16: 100%|###################################| 27/27 [00:17<00:00,  1.54chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-16/eeg/sub-16_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-16/eeg/sub-16_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('jbe/Sleep stage R'), np.str_('jbe/Sleep stage S1'), np.str_('jbe/Sleep stage S2'), np.str_('jbe/Sleep stage S3'), np.str_('jbe/Sleep stage S4'), np.str_('jbe/Sleep stage W'), np.str_('jbe/UNKNOWN_m1'), np.str_('jbe/UNKNOWN_m2'), np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-16/eeg/sub-16_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-16/eeg/sub-16_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-16/eeg/sub-16_task-sleep_eeg.json'...
+Copying data files to sub-16_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-16/eeg/sub-16_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-16/sub-16_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-16/sub-16_scans.tsv entry with eeg/sub-16_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-16/eeg/sub-16_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 17 / 38
+==========================================
+s17:   0%|                                            | 0/28 [00:00<?, ?chunk/s]s17:   4%|#2                                  | 1/28 [00:00<00:20,  1.29chunk/s]s17:   7%|##5                                 | 2/28 [00:01<00:20,  1.29chunk/s]s17:  11%|###8                                | 3/28 [00:02<00:18,  1.32chunk/s]s17:  14%|#####1                              | 4/28 [00:02<00:17,  1.38chunk/s]s17:  18%|######4                             | 5/28 [00:03<00:16,  1.39chunk/s]s17:  21%|#######7                            | 6/28 [00:04<00:16,  1.37chunk/s]s17:  25%|#########                           | 7/28 [00:05<00:14,  1.40chunk/s]s17:  29%|##########2                         | 8/28 [00:05<00:14,  1.41chunk/s]s17:  32%|###########5                        | 9/28 [00:06<00:13,  1.44chunk/s]s17:  36%|############5                      | 10/28 [00:07<00:12,  1.44chunk/s]s17:  39%|#############7                     | 11/28 [00:07<00:12,  1.40chunk/s]s17:  43%|###############                    | 12/28 [00:08<00:11,  1.41chunk/s]s17:  46%|################2                  | 13/28 [00:09<00:10,  1.45chunk/s]s17:  50%|#################5                 | 14/28 [00:09<00:09,  1.47chunk/s]s17:  54%|##################7                | 15/28 [00:10<00:08,  1.46chunk/s]s17:  57%|####################               | 16/28 [00:11<00:08,  1.46chunk/s]s17:  61%|#####################2             | 17/28 [00:11<00:07,  1.46chunk/s]s17:  64%|######################5            | 18/28 [00:12<00:06,  1.47chunk/s]s17:  68%|#######################7           | 19/28 [00:13<00:06,  1.47chunk/s]s17:  71%|#########################          | 20/28 [00:14<00:05,  1.46chunk/s]s17:  75%|##########################2        | 21/28 [00:14<00:04,  1.45chunk/s]s17:  79%|###########################5       | 22/28 [00:15<00:04,  1.45chunk/s]s17:  82%|############################7      | 23/28 [00:16<00:03,  1.48chunk/s]s17:  86%|##############################     | 24/28 [00:16<00:02,  1.48chunk/s]s17:  89%|###############################2   | 25/28 [00:17<00:01,  1.51chunk/s]s17:  93%|################################5  | 26/28 [00:17<00:01,  1.56chunk/s]s17:  96%|#################################7 | 27/28 [00:18<00:00,  1.63chunk/s]s17: 100%|###################################| 28/28 [00:18<00:00,  1.84chunk/s]s17: 100%|###################################| 28/28 [00:18<00:00,  1.48chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-17/eeg/sub-17_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-17/eeg/sub-17_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-17/eeg/sub-17_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-17/eeg/sub-17_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-17/eeg/sub-17_task-sleep_eeg.json'...
+Copying data files to sub-17_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-17/eeg/sub-17_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-17/sub-17_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-17/sub-17_scans.tsv entry with eeg/sub-17_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-17/eeg/sub-17_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 18 / 38
+==========================================
+s18:   0%|                                            | 0/26 [00:00<?, ?chunk/s]s18:   4%|#3                                  | 1/26 [00:00<00:17,  1.43chunk/s]s18:   8%|##7                                 | 2/26 [00:01<00:16,  1.48chunk/s]s18:  12%|####1                               | 3/26 [00:02<00:15,  1.49chunk/s]s18:  15%|#####5                              | 4/26 [00:02<00:14,  1.50chunk/s]s18:  19%|######9                             | 5/26 [00:03<00:13,  1.53chunk/s]s18:  23%|########3                           | 6/26 [00:03<00:12,  1.54chunk/s]s18:  27%|#########6                          | 7/26 [00:04<00:12,  1.53chunk/s]s18:  31%|###########                         | 8/26 [00:05<00:11,  1.52chunk/s]s18:  35%|############4                       | 9/26 [00:05<00:11,  1.50chunk/s]s18:  38%|#############4                     | 10/26 [00:06<00:10,  1.49chunk/s]s18:  42%|##############8                    | 11/26 [00:07<00:09,  1.51chunk/s]s18:  46%|################1                  | 12/26 [00:07<00:09,  1.50chunk/s]s18:  50%|#################5                 | 13/26 [00:08<00:08,  1.52chunk/s]s18:  54%|##################8                | 14/26 [00:09<00:07,  1.52chunk/s]s18:  58%|####################1              | 15/26 [00:09<00:07,  1.52chunk/s]s18:  62%|#####################5             | 16/26 [00:10<00:06,  1.51chunk/s]s18:  65%|######################8            | 17/26 [00:11<00:05,  1.52chunk/s]s18:  69%|########################2          | 18/26 [00:11<00:05,  1.53chunk/s]s18:  73%|#########################5         | 19/26 [00:12<00:04,  1.52chunk/s]s18:  77%|##########################9        | 20/26 [00:13<00:03,  1.51chunk/s]s18:  81%|############################2      | 21/26 [00:13<00:03,  1.53chunk/s]s18:  85%|#############################6     | 22/26 [00:14<00:02,  1.54chunk/s]s18:  88%|##############################9    | 23/26 [00:15<00:01,  1.59chunk/s]s18:  92%|################################3  | 24/26 [00:15<00:01,  1.67chunk/s]s18:  96%|#################################6 | 25/26 [00:16<00:00,  1.77chunk/s]s18: 100%|###################################| 26/26 [00:16<00:00,  2.00chunk/s]s18: 100%|###################################| 26/26 [00:16<00:00,  1.58chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-18/eeg/sub-18_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-18/eeg/sub-18_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('jbe/Sleep stage R'), np.str_('jbe/Sleep stage S1'), np.str_('jbe/Sleep stage S2'), np.str_('jbe/Sleep stage S3'), np.str_('jbe/Sleep stage S4'), np.str_('jbe/Sleep stage W'), np.str_('jbe/UNKNOWN_m1'), np.str_('jbe/UNKNOWN_m2'), np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-18/eeg/sub-18_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-18/eeg/sub-18_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-18/eeg/sub-18_task-sleep_eeg.json'...
+Copying data files to sub-18_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-18/eeg/sub-18_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-18/sub-18_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-18/sub-18_scans.tsv entry with eeg/sub-18_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-18/eeg/sub-18_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 19 / 38
+==========================================
+s19:   0%|                                            | 0/25 [00:00<?, ?chunk/s]s19:   4%|#4                                  | 1/25 [00:00<00:18,  1.32chunk/s]s19:   8%|##8                                 | 2/25 [00:01<00:15,  1.46chunk/s]s19:  12%|####3                               | 3/25 [00:02<00:14,  1.50chunk/s]s19:  16%|#####7                              | 4/25 [00:02<00:13,  1.52chunk/s]s19:  20%|#######2                            | 5/25 [00:03<00:12,  1.55chunk/s]s19:  24%|########6                           | 6/25 [00:03<00:12,  1.58chunk/s]s19:  28%|##########                          | 7/25 [00:04<00:11,  1.58chunk/s]s19:  32%|###########5                        | 8/25 [00:05<00:10,  1.59chunk/s]s19:  36%|############9                       | 9/25 [00:05<00:09,  1.61chunk/s]s19:  40%|##############                     | 10/25 [00:06<00:09,  1.60chunk/s]s19:  44%|###############4                   | 11/25 [00:07<00:08,  1.59chunk/s]s19:  48%|################8                  | 12/25 [00:07<00:08,  1.59chunk/s]s19:  52%|##################2                | 13/25 [00:08<00:07,  1.59chunk/s]s19:  56%|###################6               | 14/25 [00:08<00:07,  1.57chunk/s]s19:  60%|#####################              | 15/25 [00:09<00:06,  1.55chunk/s]s19:  64%|######################4            | 16/25 [00:10<00:05,  1.53chunk/s]s19:  68%|#######################8           | 17/25 [00:10<00:05,  1.51chunk/s]s19:  72%|#########################2         | 18/25 [00:11<00:04,  1.50chunk/s]s19:  76%|##########################6        | 19/25 [00:12<00:04,  1.50chunk/s]s19:  80%|############################       | 20/25 [00:12<00:03,  1.51chunk/s]s19:  84%|#############################4     | 21/25 [00:13<00:02,  1.53chunk/s]s19:  88%|##############################8    | 22/25 [00:14<00:01,  1.59chunk/s]s19:  92%|################################2  | 23/25 [00:14<00:01,  1.66chunk/s]s19:  96%|#################################6 | 24/25 [00:15<00:00,  1.76chunk/s]s19: 100%|###################################| 25/25 [00:15<00:00,  2.32chunk/s]s19: 100%|###################################| 25/25 [00:15<00:00,  1.63chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-19/eeg/sub-19_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-19/eeg/sub-19_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('jbe/Sleep stage R'), np.str_('jbe/Sleep stage S1'), np.str_('jbe/Sleep stage S2'), np.str_('jbe/Sleep stage S3'), np.str_('jbe/Sleep stage S4'), np.str_('jbe/Sleep stage W'), np.str_('jbe/UNKNOWN_m1'), np.str_('jbe/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-19/eeg/sub-19_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-19/eeg/sub-19_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-19/eeg/sub-19_task-sleep_eeg.json'...
+Copying data files to sub-19_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-19/eeg/sub-19_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-19/sub-19_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-19/sub-19_scans.tsv entry with eeg/sub-19_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-19/eeg/sub-19_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 20 / 38
+==========================================
+s20:   0%|                                            | 0/28 [00:00<?, ?chunk/s]s20:   4%|#2                                  | 1/28 [00:00<00:18,  1.46chunk/s]s20:   7%|##5                                 | 2/28 [00:01<00:17,  1.50chunk/s]s20:  11%|###8                                | 3/28 [00:01<00:16,  1.52chunk/s]s20:  14%|#####1                              | 4/28 [00:02<00:15,  1.51chunk/s]s20:  18%|######4                             | 5/28 [00:03<00:15,  1.50chunk/s]s20:  21%|#######7                            | 6/28 [00:03<00:14,  1.52chunk/s]s20:  25%|#########                           | 7/28 [00:04<00:13,  1.54chunk/s]s20:  29%|##########2                         | 8/28 [00:05<00:13,  1.52chunk/s]s20:  32%|###########5                        | 9/28 [00:05<00:12,  1.51chunk/s]s20:  36%|############5                      | 10/28 [00:06<00:11,  1.52chunk/s]s20:  39%|#############7                     | 11/28 [00:07<00:10,  1.56chunk/s]s20:  43%|###############                    | 12/28 [00:07<00:10,  1.57chunk/s]s20:  46%|################2                  | 13/28 [00:08<00:09,  1.57chunk/s]s20:  50%|#################5                 | 14/28 [00:09<00:08,  1.56chunk/s]s20:  54%|##################7                | 15/28 [00:09<00:08,  1.54chunk/s]s20:  57%|####################               | 16/28 [00:10<00:08,  1.50chunk/s]s20:  61%|#####################2             | 17/28 [00:11<00:07,  1.48chunk/s]s20:  64%|######################5            | 18/28 [00:11<00:06,  1.48chunk/s]s20:  68%|#######################7           | 19/28 [00:12<00:06,  1.49chunk/s]s20:  71%|#########################          | 20/28 [00:13<00:05,  1.50chunk/s]s20:  75%|##########################2        | 21/28 [00:13<00:04,  1.50chunk/s]s20:  79%|###########################5       | 22/28 [00:14<00:04,  1.49chunk/s]s20:  82%|############################7      | 23/28 [00:15<00:03,  1.51chunk/s]s20:  86%|##############################     | 24/28 [00:15<00:02,  1.55chunk/s]s20:  89%|###############################2   | 25/28 [00:16<00:01,  1.62chunk/s]s20:  93%|################################5  | 26/28 [00:16<00:01,  1.70chunk/s]s20:  96%|#################################7 | 27/28 [00:17<00:00,  1.80chunk/s]s20: 100%|###################################| 28/28 [00:17<00:00,  2.34chunk/s]s20: 100%|###################################| 28/28 [00:17<00:00,  1.60chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-20/eeg/sub-20_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-20/eeg/sub-20_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-20/eeg/sub-20_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-20/eeg/sub-20_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-20/eeg/sub-20_task-sleep_eeg.json'...
+Copying data files to sub-20_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-20/eeg/sub-20_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-20/sub-20_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-20/sub-20_scans.tsv entry with eeg/sub-20_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-20/eeg/sub-20_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 21 / 38
+==========================================
+s21:   0%|                                            | 0/28 [00:00<?, ?chunk/s]s21:   4%|#2                                  | 1/28 [00:00<00:18,  1.47chunk/s]s21:   7%|##5                                 | 2/28 [00:01<00:17,  1.51chunk/s]s21:  11%|###8                                | 3/28 [00:01<00:16,  1.52chunk/s]s21:  14%|#####1                              | 4/28 [00:02<00:15,  1.50chunk/s]s21:  18%|######4                             | 5/28 [00:03<00:14,  1.54chunk/s]s21:  21%|#######7                            | 6/28 [00:03<00:14,  1.56chunk/s]s21:  25%|#########                           | 7/28 [00:04<00:13,  1.57chunk/s]s21:  29%|##########2                         | 8/28 [00:05<00:12,  1.55chunk/s]s21:  32%|###########5                        | 9/28 [00:05<00:12,  1.53chunk/s]s21:  36%|############5                      | 10/28 [00:06<00:11,  1.53chunk/s]s21:  39%|#############7                     | 11/28 [00:07<00:11,  1.54chunk/s]s21:  43%|###############                    | 12/28 [00:07<00:10,  1.54chunk/s]s21:  46%|################2                  | 13/28 [00:08<00:09,  1.57chunk/s]s21:  50%|#################5                 | 14/28 [00:09<00:08,  1.59chunk/s]s21:  54%|##################7                | 15/28 [00:09<00:08,  1.59chunk/s]s21:  57%|####################               | 16/28 [00:10<00:07,  1.57chunk/s]s21:  61%|#####################2             | 17/28 [00:10<00:06,  1.58chunk/s]s21:  64%|######################5            | 18/28 [00:11<00:06,  1.57chunk/s]s21:  68%|#######################7           | 19/28 [00:12<00:05,  1.57chunk/s]s21:  71%|#########################          | 20/28 [00:12<00:05,  1.58chunk/s]s21:  75%|##########################2        | 21/28 [00:13<00:04,  1.59chunk/s]s21:  79%|###########################5       | 22/28 [00:14<00:03,  1.61chunk/s]s21:  82%|############################7      | 23/28 [00:14<00:03,  1.61chunk/s]s21:  86%|##############################     | 24/28 [00:15<00:02,  1.64chunk/s]s21:  89%|###############################2   | 25/28 [00:15<00:01,  1.67chunk/s]s21:  93%|################################5  | 26/28 [00:16<00:01,  1.74chunk/s]s21:  96%|#################################7 | 27/28 [00:16<00:00,  1.84chunk/s]s21: 100%|###################################| 28/28 [00:16<00:00,  1.66chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-21/eeg/sub-21_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-21/eeg/sub-21_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-21/eeg/sub-21_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-21/eeg/sub-21_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-21/eeg/sub-21_task-sleep_eeg.json'...
+Copying data files to sub-21_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-21/eeg/sub-21_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-21/sub-21_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-21/sub-21_scans.tsv entry with eeg/sub-21_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-21/eeg/sub-21_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 22 / 38
+==========================================
+s22:   0%|                                            | 0/26 [00:00<?, ?chunk/s]s22:   4%|#3                                  | 1/26 [00:00<00:16,  1.49chunk/s]s22:   8%|##7                                 | 2/26 [00:01<00:15,  1.53chunk/s]s22:  12%|####1                               | 3/26 [00:01<00:14,  1.54chunk/s]s22:  15%|#####5                              | 4/26 [00:02<00:14,  1.54chunk/s]s22:  19%|######9                             | 5/26 [00:03<00:13,  1.51chunk/s]s22:  23%|########3                           | 6/26 [00:03<00:13,  1.53chunk/s]s22:  27%|#########6                          | 7/26 [00:04<00:12,  1.56chunk/s]s22:  31%|###########                         | 8/26 [00:05<00:11,  1.56chunk/s]s22:  35%|############4                       | 9/26 [00:05<00:11,  1.54chunk/s]s22:  38%|#############4                     | 10/26 [00:06<00:10,  1.53chunk/s]s22:  42%|##############8                    | 11/26 [00:07<00:09,  1.53chunk/s]s22:  46%|################1                  | 12/26 [00:07<00:09,  1.52chunk/s]s22:  50%|#################5                 | 13/26 [00:08<00:08,  1.52chunk/s]s22:  54%|##################8                | 14/26 [00:09<00:07,  1.54chunk/s]s22:  58%|####################1              | 15/26 [00:09<00:07,  1.53chunk/s]s22:  62%|#####################5             | 16/26 [00:10<00:06,  1.55chunk/s]s22:  65%|######################8            | 17/26 [00:11<00:05,  1.56chunk/s]s22:  69%|########################2          | 18/26 [00:11<00:05,  1.54chunk/s]s22:  73%|#########################5         | 19/26 [00:12<00:04,  1.55chunk/s]s22:  77%|##########################9        | 20/26 [00:12<00:03,  1.56chunk/s]s22:  81%|############################2      | 21/26 [00:13<00:03,  1.57chunk/s]s22:  85%|#############################6     | 22/26 [00:14<00:02,  1.59chunk/s]s22:  88%|##############################9    | 23/26 [00:14<00:01,  1.62chunk/s]s22:  92%|################################3  | 24/26 [00:15<00:01,  1.69chunk/s]s22:  96%|#################################6 | 25/26 [00:15<00:00,  1.77chunk/s]s22: 100%|###################################| 26/26 [00:16<00:00,  2.09chunk/s]s22: 100%|###################################| 26/26 [00:16<00:00,  1.61chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-22/eeg/sub-22_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-22/eeg/sub-22_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-22/eeg/sub-22_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-22/eeg/sub-22_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-22/eeg/sub-22_task-sleep_eeg.json'...
+Copying data files to sub-22_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-22/eeg/sub-22_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-22/sub-22_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-22/sub-22_scans.tsv entry with eeg/sub-22_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-22/eeg/sub-22_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 23 / 38
+==========================================
+s23:   0%|                                            | 0/29 [00:00<?, ?chunk/s]s23:   3%|#2                                  | 1/29 [00:00<00:20,  1.34chunk/s]s23:   7%|##4                                 | 2/29 [00:01<00:19,  1.37chunk/s]s23:  10%|###7                                | 3/29 [00:02<00:18,  1.39chunk/s]s23:  14%|####9                               | 4/29 [00:02<00:17,  1.40chunk/s]s23:  17%|######2                             | 5/29 [00:03<00:16,  1.43chunk/s]s23:  21%|#######4                            | 6/29 [00:04<00:15,  1.45chunk/s]s23:  24%|########6                           | 7/29 [00:04<00:15,  1.47chunk/s]s23:  28%|#########9                          | 8/29 [00:05<00:14,  1.46chunk/s]s23:  31%|###########1                        | 9/29 [00:06<00:13,  1.46chunk/s]s23:  34%|############                       | 10/29 [00:06<00:12,  1.51chunk/s]s23:  38%|#############2                     | 11/29 [00:07<00:11,  1.54chunk/s]s23:  41%|##############4                    | 12/29 [00:08<00:10,  1.56chunk/s]s23:  45%|###############6                   | 13/29 [00:08<00:10,  1.58chunk/s]s23:  48%|################8                  | 14/29 [00:09<00:09,  1.57chunk/s]s23:  52%|##################1                | 15/29 [00:10<00:09,  1.55chunk/s]s23:  55%|###################3               | 16/29 [00:10<00:08,  1.56chunk/s]s23:  59%|####################5              | 17/29 [00:11<00:07,  1.57chunk/s]s23:  62%|#####################7             | 18/29 [00:11<00:06,  1.57chunk/s]s23:  66%|######################9            | 19/29 [00:12<00:06,  1.55chunk/s]s23:  69%|########################1          | 20/29 [00:13<00:05,  1.54chunk/s]s23:  72%|#########################3         | 21/29 [00:13<00:05,  1.52chunk/s]s23:  76%|##########################5        | 22/29 [00:14<00:04,  1.53chunk/s]s23:  79%|###########################7       | 23/29 [00:15<00:03,  1.54chunk/s]s23:  83%|############################9      | 24/29 [00:15<00:03,  1.55chunk/s]s23:  86%|##############################1    | 25/29 [00:16<00:02,  1.57chunk/s]s23:  90%|###############################3   | 26/29 [00:17<00:01,  1.62chunk/s]s23:  93%|################################5  | 27/29 [00:17<00:01,  1.68chunk/s]s23:  97%|#################################7 | 28/29 [00:18<00:00,  1.72chunk/s]s23: 100%|###################################| 29/29 [00:18<00:00,  2.14chunk/s]s23: 100%|###################################| 29/29 [00:18<00:00,  1.58chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-23/eeg/sub-23_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-23/eeg/sub-23_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('jbe/Sleep stage R'), np.str_('jbe/Sleep stage S1'), np.str_('jbe/Sleep stage S2'), np.str_('jbe/Sleep stage S3'), np.str_('jbe/Sleep stage S4'), np.str_('jbe/Sleep stage W'), np.str_('jbe/UNKNOWN_m1'), np.str_('jbe/UNKNOWN_m2'), np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-23/eeg/sub-23_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-23/eeg/sub-23_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-23/eeg/sub-23_task-sleep_eeg.json'...
+Copying data files to sub-23_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-23/eeg/sub-23_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-23/sub-23_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-23/sub-23_scans.tsv entry with eeg/sub-23_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-23/eeg/sub-23_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 24 / 38
+==========================================
+s24:   0%|                                            | 0/41 [00:00<?, ?chunk/s]s24:   2%|8                                   | 1/41 [00:00<00:27,  1.45chunk/s]s24:   5%|#7                                  | 2/41 [00:01<00:25,  1.53chunk/s]s24:   7%|##6                                 | 3/41 [00:01<00:24,  1.57chunk/s]s24:  10%|###5                                | 4/41 [00:02<00:23,  1.56chunk/s]s24:  12%|####3                               | 5/41 [00:03<00:23,  1.56chunk/s]s24:  15%|#####2                              | 6/41 [00:03<00:22,  1.58chunk/s]s24:  17%|######1                             | 7/41 [00:04<00:21,  1.57chunk/s]s24:  20%|#######                             | 8/41 [00:05<00:21,  1.57chunk/s]s24:  22%|#######9                            | 9/41 [00:05<00:20,  1.55chunk/s]s24:  24%|########5                          | 10/41 [00:06<00:20,  1.55chunk/s]s24:  27%|#########3                         | 11/41 [00:07<00:19,  1.56chunk/s]s24:  29%|##########2                        | 12/41 [00:07<00:18,  1.55chunk/s]s24:  32%|###########                        | 13/41 [00:08<00:18,  1.54chunk/s]s24:  34%|###########9                       | 14/41 [00:09<00:17,  1.54chunk/s]s24:  37%|############8                      | 15/41 [00:09<00:16,  1.53chunk/s]s24:  39%|#############6                     | 16/41 [00:10<00:16,  1.53chunk/s]s24:  41%|##############5                    | 17/41 [00:11<00:15,  1.52chunk/s]s24:  44%|###############3                   | 18/41 [00:11<00:15,  1.52chunk/s]s24:  46%|################2                  | 19/41 [00:12<00:14,  1.50chunk/s]s24:  49%|#################                  | 20/41 [00:13<00:14,  1.48chunk/s]s24:  51%|#################9                 | 21/41 [00:13<00:13,  1.50chunk/s]s24:  54%|##################7                | 22/41 [00:14<00:12,  1.52chunk/s]s24:  56%|###################6               | 23/41 [00:14<00:11,  1.54chunk/s]s24:  59%|####################4              | 24/41 [00:15<00:10,  1.55chunk/s]s24:  61%|#####################3             | 25/41 [00:16<00:10,  1.53chunk/s]s24:  63%|######################1            | 26/41 [00:16<00:09,  1.53chunk/s]s24:  66%|#######################            | 27/41 [00:17<00:09,  1.54chunk/s]s24:  68%|#######################9           | 28/41 [00:18<00:08,  1.54chunk/s]s24:  71%|########################7          | 29/41 [00:18<00:07,  1.53chunk/s]s24:  73%|#########################6         | 30/41 [00:19<00:07,  1.53chunk/s]s24:  76%|##########################4        | 31/41 [00:20<00:06,  1.55chunk/s]s24:  78%|###########################3       | 32/41 [00:20<00:05,  1.55chunk/s]s24:  80%|############################1      | 33/41 [00:21<00:05,  1.55chunk/s]s24:  83%|#############################      | 34/41 [00:22<00:04,  1.53chunk/s]s24:  85%|#############################8     | 35/41 [00:22<00:03,  1.51chunk/s]s24:  88%|##############################7    | 36/41 [00:23<00:03,  1.51chunk/s]s24:  90%|###############################5   | 37/41 [00:24<00:02,  1.53chunk/s]s24:  93%|################################4  | 38/41 [00:24<00:01,  1.59chunk/s]s24:  95%|#################################2 | 39/41 [00:25<00:01,  1.65chunk/s]s24:  98%|##################################1| 40/41 [00:25<00:00,  1.74chunk/s]s24: 100%|###################################| 41/41 [00:25<00:00,  1.59chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-24/eeg/sub-24_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-24/eeg/sub-24_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-24/eeg/sub-24_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-24/eeg/sub-24_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-24/eeg/sub-24_task-sleep_eeg.json'...
+Copying data files to sub-24_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-24/eeg/sub-24_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-24/sub-24_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-24/sub-24_scans.tsv entry with eeg/sub-24_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-24/eeg/sub-24_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 25 / 38
+==========================================
+s25:   0%|                                            | 0/33 [00:00<?, ?chunk/s]s25:   3%|#                                   | 1/33 [00:00<00:23,  1.39chunk/s]s25:   6%|##1                                 | 2/33 [00:01<00:21,  1.43chunk/s]s25:   9%|###2                                | 3/33 [00:02<00:20,  1.45chunk/s]s25:  12%|####3                               | 4/33 [00:02<00:19,  1.46chunk/s]s25:  15%|#####4                              | 5/33 [00:03<00:18,  1.51chunk/s]s25:  18%|######5                             | 6/33 [00:04<00:17,  1.54chunk/s]s25:  21%|#######6                            | 7/33 [00:04<00:16,  1.54chunk/s]s25:  24%|########7                           | 8/33 [00:05<00:15,  1.57chunk/s]s25:  27%|#########8                          | 9/33 [00:05<00:15,  1.57chunk/s]s25:  30%|##########6                        | 10/33 [00:06<00:14,  1.56chunk/s]s25:  33%|###########6                       | 11/33 [00:07<00:14,  1.57chunk/s]s25:  36%|############7                      | 12/33 [00:07<00:13,  1.58chunk/s]s25:  39%|#############7                     | 13/33 [00:08<00:12,  1.60chunk/s]s25:  42%|##############8                    | 14/33 [00:09<00:11,  1.60chunk/s]s25:  45%|###############9                   | 15/33 [00:09<00:11,  1.59chunk/s]s25:  48%|################9                  | 16/33 [00:10<00:10,  1.59chunk/s]s25:  52%|##################                 | 17/33 [00:10<00:10,  1.59chunk/s]s25:  55%|###################                | 18/33 [00:11<00:09,  1.59chunk/s]s25:  58%|####################1              | 19/33 [00:12<00:08,  1.59chunk/s]s25:  61%|#####################2             | 20/33 [00:12<00:08,  1.58chunk/s]s25:  64%|######################2            | 21/33 [00:13<00:07,  1.56chunk/s]s25:  67%|#######################3           | 22/33 [00:14<00:07,  1.54chunk/s]s25:  70%|########################3          | 23/33 [00:14<00:06,  1.53chunk/s]s25:  73%|#########################4         | 24/33 [00:15<00:05,  1.53chunk/s]s25:  76%|##########################5        | 25/33 [00:16<00:05,  1.54chunk/s]s25:  79%|###########################5       | 26/33 [00:16<00:04,  1.55chunk/s]s25:  82%|############################6      | 27/33 [00:17<00:03,  1.55chunk/s]s25:  85%|#############################6     | 28/33 [00:18<00:03,  1.55chunk/s]s25:  88%|##############################7    | 29/33 [00:18<00:02,  1.58chunk/s]s25:  91%|###############################8   | 30/33 [00:19<00:01,  1.63chunk/s]s25:  94%|################################8  | 31/33 [00:19<00:01,  1.70chunk/s]s25:  97%|#################################9 | 32/33 [00:20<00:00,  1.81chunk/s]s25: 100%|###################################| 33/33 [00:20<00:00,  1.63chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-25/eeg/sub-25_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-25/eeg/sub-25_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('jbe/Sleep stage R'), np.str_('jbe/Sleep stage S1'), np.str_('jbe/Sleep stage S2'), np.str_('jbe/Sleep stage S3'), np.str_('jbe/Sleep stage S4'), np.str_('jbe/Sleep stage W'), np.str_('jbe/UNKNOWN_m1'), np.str_('jbe/UNKNOWN_m2'), np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-25/eeg/sub-25_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-25/eeg/sub-25_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-25/eeg/sub-25_task-sleep_eeg.json'...
+Copying data files to sub-25_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-25/eeg/sub-25_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-25/sub-25_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-25/sub-25_scans.tsv entry with eeg/sub-25_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-25/eeg/sub-25_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 26 / 38
+==========================================
+s26:   0%|                                            | 0/29 [00:00<?, ?chunk/s]s26:   3%|#2                                  | 1/29 [00:00<00:21,  1.33chunk/s]s26:   7%|##4                                 | 2/29 [00:01<00:18,  1.43chunk/s]s26:  10%|###7                                | 3/29 [00:02<00:18,  1.43chunk/s]s26:  14%|####9                               | 4/29 [00:02<00:17,  1.41chunk/s]s26:  17%|######2                             | 5/29 [00:03<00:16,  1.46chunk/s]s26:  21%|#######4                            | 6/29 [00:04<00:15,  1.49chunk/s]s26:  24%|########6                           | 7/29 [00:04<00:14,  1.49chunk/s]s26:  28%|#########9                          | 8/29 [00:05<00:13,  1.52chunk/s]s26:  31%|###########1                        | 9/29 [00:06<00:13,  1.53chunk/s]s26:  34%|############                       | 10/29 [00:06<00:12,  1.56chunk/s]s26:  38%|#############2                     | 11/29 [00:07<00:11,  1.57chunk/s]s26:  41%|##############4                    | 12/29 [00:07<00:10,  1.57chunk/s]s26:  45%|###############6                   | 13/29 [00:08<00:10,  1.54chunk/s]s26:  48%|################8                  | 14/29 [00:09<00:09,  1.51chunk/s]s26:  52%|##################1                | 15/29 [00:09<00:09,  1.52chunk/s]s26:  55%|###################3               | 16/29 [00:10<00:08,  1.52chunk/s]s26:  59%|####################5              | 17/29 [00:11<00:07,  1.52chunk/s]s26:  62%|#####################7             | 18/29 [00:11<00:07,  1.53chunk/s]s26:  66%|######################9            | 19/29 [00:12<00:06,  1.54chunk/s]s26:  69%|########################1          | 20/29 [00:13<00:05,  1.54chunk/s]s26:  72%|#########################3         | 21/29 [00:13<00:05,  1.55chunk/s]s26:  76%|##########################5        | 22/29 [00:14<00:04,  1.54chunk/s]s26:  79%|###########################7       | 23/29 [00:15<00:03,  1.54chunk/s]s26:  83%|############################9      | 24/29 [00:15<00:03,  1.55chunk/s]s26:  86%|##############################1    | 25/29 [00:16<00:02,  1.56chunk/s]s26:  90%|###############################3   | 26/29 [00:16<00:01,  1.62chunk/s]s26:  93%|################################5  | 27/29 [00:17<00:01,  1.69chunk/s]s26:  97%|#################################7 | 28/29 [00:18<00:00,  1.77chunk/s]s26: 100%|###################################| 29/29 [00:18<00:00,  2.27chunk/s]s26: 100%|###################################| 29/29 [00:18<00:00,  1.60chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-26/eeg/sub-26_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-26/eeg/sub-26_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('jbe/Sleep stage R'), np.str_('jbe/Sleep stage S1'), np.str_('jbe/Sleep stage S2'), np.str_('jbe/Sleep stage S3'), np.str_('jbe/Sleep stage S4'), np.str_('jbe/Sleep stage W'), np.str_('jbe/UNKNOWN_m1'), np.str_('jbe/UNKNOWN_m2'), np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-26/eeg/sub-26_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-26/eeg/sub-26_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-26/eeg/sub-26_task-sleep_eeg.json'...
+Copying data files to sub-26_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-26/eeg/sub-26_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-26/sub-26_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-26/sub-26_scans.tsv entry with eeg/sub-26_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-26/eeg/sub-26_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 27 / 38
+==========================================
+s27:   0%|                                            | 0/33 [00:00<?, ?chunk/s]s27:   3%|#                                   | 1/33 [00:00<00:22,  1.42chunk/s]s27:   6%|##1                                 | 2/33 [00:01<00:21,  1.48chunk/s]s27:   9%|###2                                | 3/33 [00:02<00:19,  1.51chunk/s]s27:  12%|####3                               | 4/33 [00:02<00:19,  1.52chunk/s]s27:  15%|#####4                              | 5/33 [00:03<00:18,  1.53chunk/s]s27:  18%|######5                             | 6/33 [00:03<00:17,  1.54chunk/s]s27:  21%|#######6                            | 7/33 [00:04<00:16,  1.55chunk/s]s27:  24%|########7                           | 8/33 [00:05<00:16,  1.56chunk/s]s27:  27%|#########8                          | 9/33 [00:05<00:15,  1.53chunk/s]s27:  30%|##########6                        | 10/33 [00:06<00:15,  1.52chunk/s]s27:  33%|###########6                       | 11/33 [00:07<00:14,  1.52chunk/s]s27:  36%|############7                      | 12/33 [00:07<00:13,  1.54chunk/s]s27:  39%|#############7                     | 13/33 [00:08<00:12,  1.55chunk/s]s27:  42%|##############8                    | 14/33 [00:09<00:12,  1.51chunk/s]s27:  45%|###############9                   | 15/33 [00:09<00:12,  1.48chunk/s]s27:  48%|################9                  | 16/33 [00:10<00:11,  1.46chunk/s]s27:  52%|##################                 | 17/33 [00:11<00:10,  1.48chunk/s]s27:  55%|###################                | 18/33 [00:11<00:09,  1.50chunk/s]s27:  58%|####################1              | 19/33 [00:12<00:09,  1.52chunk/s]s27:  61%|#####################2             | 20/33 [00:13<00:08,  1.54chunk/s]s27:  64%|######################2            | 21/33 [00:13<00:07,  1.62chunk/s]s27:  67%|#######################3           | 22/33 [00:14<00:06,  1.72chunk/s]s27:  70%|########################3          | 23/33 [00:14<00:04,  2.13chunk/s]s27:  73%|#########################4         | 24/33 [00:14<00:03,  2.70chunk/s]s27:  76%|##########################5        | 25/33 [00:14<00:02,  3.32chunk/s]s27:  79%|###########################5       | 26/33 [00:14<00:01,  3.95chunk/s]s27:  82%|############################6      | 27/33 [00:14<00:01,  4.57chunk/s]s27:  85%|#############################6     | 28/33 [00:15<00:00,  5.12chunk/s]s27:  88%|##############################7    | 29/33 [00:15<00:00,  5.59chunk/s]s27:  91%|###############################8   | 30/33 [00:15<00:00,  5.99chunk/s]s27:  94%|################################8  | 31/33 [00:15<00:00,  6.30chunk/s]s27:  97%|#################################9 | 32/33 [00:15<00:00,  6.54chunk/s]s27: 100%|###################################| 33/33 [00:15<00:00,  6.97chunk/s]s27: 100%|###################################| 33/33 [00:15<00:00,  2.09chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-27/eeg/sub-27_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-27/eeg/sub-27_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-27/eeg/sub-27_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-27/eeg/sub-27_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-27/eeg/sub-27_task-sleep_eeg.json'...
+Copying data files to sub-27_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-27/eeg/sub-27_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-27/sub-27_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-27/sub-27_scans.tsv entry with eeg/sub-27_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-27/eeg/sub-27_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 28 / 38
+==========================================
+s28:   0%|                                            | 0/27 [00:00<?, ?chunk/s]s28:   4%|#3                                  | 1/27 [00:00<00:18,  1.39chunk/s]s28:   7%|##6                                 | 2/27 [00:01<00:17,  1.45chunk/s]s28:  11%|####                                | 3/27 [00:02<00:16,  1.42chunk/s]s28:  15%|#####3                              | 4/27 [00:02<00:16,  1.42chunk/s]s28:  19%|######6                             | 5/27 [00:03<00:15,  1.45chunk/s]s28:  22%|########                            | 6/27 [00:04<00:14,  1.44chunk/s]s28:  26%|#########3                          | 7/27 [00:04<00:14,  1.41chunk/s]s28:  30%|##########6                         | 8/27 [00:05<00:13,  1.45chunk/s]s28:  33%|############                        | 9/27 [00:06<00:12,  1.45chunk/s]s28:  37%|############9                      | 10/27 [00:06<00:11,  1.46chunk/s]s28:  41%|##############2                    | 11/27 [00:07<00:10,  1.48chunk/s]s28:  44%|###############5                   | 12/27 [00:08<00:10,  1.46chunk/s]s28:  48%|################8                  | 13/27 [00:09<00:09,  1.44chunk/s]s28:  52%|##################1                | 14/27 [00:09<00:09,  1.42chunk/s]s28:  56%|###################4               | 15/27 [00:10<00:08,  1.45chunk/s]s28:  59%|####################7              | 16/27 [00:11<00:07,  1.48chunk/s]s28:  63%|######################             | 17/27 [00:11<00:06,  1.49chunk/s]s28:  67%|#######################3           | 18/27 [00:12<00:06,  1.49chunk/s]s28:  70%|########################6          | 19/27 [00:13<00:05,  1.49chunk/s]s28:  74%|#########################9         | 20/27 [00:13<00:04,  1.48chunk/s]s28:  78%|###########################2       | 21/27 [00:14<00:04,  1.48chunk/s]s28:  81%|############################5      | 22/27 [00:15<00:03,  1.49chunk/s]s28:  85%|#############################8     | 23/27 [00:15<00:02,  1.50chunk/s]s28:  89%|###############################1   | 24/27 [00:16<00:01,  1.53chunk/s]s28:  93%|################################4  | 25/27 [00:16<00:01,  1.57chunk/s]s28:  96%|#################################7 | 26/27 [00:17<00:00,  1.66chunk/s]s28: 100%|###################################| 27/27 [00:17<00:00,  1.86chunk/s]s28: 100%|###################################| 27/27 [00:17<00:00,  1.51chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-28/eeg/sub-28_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-28/eeg/sub-28_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-28/eeg/sub-28_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-28/eeg/sub-28_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-28/eeg/sub-28_task-sleep_eeg.json'...
+Copying data files to sub-28_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-28/eeg/sub-28_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-28/sub-28_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-28/sub-28_scans.tsv entry with eeg/sub-28_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-28/eeg/sub-28_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 29 / 38
+==========================================
+s29:   0%|                                            | 0/30 [00:00<?, ?chunk/s]s29:   3%|#2                                  | 1/30 [00:00<00:20,  1.43chunk/s]s29:   7%|##4                                 | 2/30 [00:01<00:19,  1.43chunk/s]s29:  10%|###6                                | 3/30 [00:02<00:18,  1.43chunk/s]s29:  13%|####8                               | 4/30 [00:02<00:17,  1.45chunk/s]s29:  17%|######                              | 5/30 [00:03<00:16,  1.49chunk/s]s29:  20%|#######2                            | 6/30 [00:04<00:16,  1.49chunk/s]s29:  23%|########4                           | 7/30 [00:04<00:15,  1.47chunk/s]s29:  27%|#########6                          | 8/30 [00:05<00:15,  1.45chunk/s]s29:  30%|##########7                         | 9/30 [00:06<00:14,  1.46chunk/s]s29:  33%|###########6                       | 10/30 [00:06<00:13,  1.51chunk/s]s29:  37%|############8                      | 11/30 [00:07<00:12,  1.53chunk/s]s29:  40%|##############                     | 12/30 [00:08<00:11,  1.54chunk/s]s29:  43%|###############1                   | 13/30 [00:08<00:11,  1.53chunk/s]s29:  47%|################3                  | 14/30 [00:09<00:10,  1.53chunk/s]s29:  50%|#################5                 | 15/30 [00:10<00:09,  1.52chunk/s]s29:  53%|##################6                | 16/30 [00:10<00:09,  1.52chunk/s]s29:  57%|###################8               | 17/30 [00:11<00:08,  1.52chunk/s]s29:  60%|#####################              | 18/30 [00:12<00:08,  1.49chunk/s]s29:  63%|######################1            | 19/30 [00:12<00:07,  1.48chunk/s]s29:  67%|#######################3           | 20/30 [00:13<00:06,  1.46chunk/s]s29:  70%|########################5          | 21/30 [00:14<00:06,  1.47chunk/s]s29:  73%|#########################6         | 22/30 [00:14<00:05,  1.47chunk/s]s29:  77%|##########################8        | 23/30 [00:15<00:04,  1.47chunk/s]s29:  80%|############################       | 24/30 [00:16<00:04,  1.48chunk/s]s29:  83%|#############################1     | 25/30 [00:16<00:03,  1.48chunk/s]s29:  87%|##############################3    | 26/30 [00:17<00:02,  1.49chunk/s]s29:  90%|###############################5   | 27/30 [00:18<00:01,  1.51chunk/s]s29:  93%|################################6  | 28/30 [00:18<00:01,  1.56chunk/s]s29:  97%|#################################8 | 29/30 [00:19<00:00,  1.62chunk/s]s29: 100%|###################################| 30/30 [00:19<00:00,  1.73chunk/s]s29: 100%|###################################| 30/30 [00:19<00:00,  1.52chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-29/eeg/sub-29_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-29/eeg/sub-29_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('jbe/Sleep stage R'), np.str_('jbe/Sleep stage S1'), np.str_('jbe/Sleep stage S2'), np.str_('jbe/Sleep stage S3'), np.str_('jbe/Sleep stage S4'), np.str_('jbe/Sleep stage W'), np.str_('jbe/UNKNOWN_m1'), np.str_('jbe/UNKNOWN_m2'), np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-29/eeg/sub-29_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-29/eeg/sub-29_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-29/eeg/sub-29_task-sleep_eeg.json'...
+Copying data files to sub-29_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-29/eeg/sub-29_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-29/sub-29_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-29/sub-29_scans.tsv entry with eeg/sub-29_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-29/eeg/sub-29_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 30 / 38
+==========================================
+s30:   0%|                                            | 0/29 [00:00<?, ?chunk/s]s30:   3%|#2                                  | 1/29 [00:00<00:20,  1.34chunk/s]s30:   7%|##4                                 | 2/29 [00:01<00:18,  1.48chunk/s]s30:  10%|###7                                | 3/29 [00:02<00:17,  1.53chunk/s]s30:  14%|####9                               | 4/29 [00:02<00:16,  1.55chunk/s]s30:  17%|######2                             | 5/29 [00:03<00:15,  1.56chunk/s]s30:  21%|#######4                            | 6/29 [00:03<00:14,  1.58chunk/s]s30:  24%|########6                           | 7/29 [00:04<00:13,  1.59chunk/s]s30:  28%|#########9                          | 8/29 [00:05<00:13,  1.58chunk/s]s30:  31%|###########1                        | 9/29 [00:05<00:12,  1.55chunk/s]s30:  34%|############                       | 10/29 [00:06<00:12,  1.51chunk/s]s30:  38%|#############2                     | 11/29 [00:07<00:12,  1.48chunk/s]s30:  41%|##############4                    | 12/29 [00:07<00:11,  1.49chunk/s]s30:  45%|###############6                   | 13/29 [00:08<00:10,  1.51chunk/s]s30:  48%|################8                  | 14/29 [00:09<00:09,  1.54chunk/s]s30:  52%|##################1                | 15/29 [00:09<00:08,  1.56chunk/s]s30:  55%|###################3               | 16/29 [00:10<00:08,  1.56chunk/s]s30:  59%|####################5              | 17/29 [00:11<00:07,  1.57chunk/s]s30:  62%|#####################7             | 18/29 [00:11<00:07,  1.57chunk/s]s30:  66%|######################9            | 19/29 [00:12<00:06,  1.58chunk/s]s30:  69%|########################1          | 20/29 [00:12<00:05,  1.57chunk/s]s30:  72%|#########################3         | 21/29 [00:13<00:05,  1.58chunk/s]s30:  76%|##########################5        | 22/29 [00:14<00:04,  1.57chunk/s]s30:  79%|###########################7       | 23/29 [00:14<00:03,  1.58chunk/s]s30:  83%|############################9      | 24/29 [00:15<00:03,  1.59chunk/s]s30:  86%|##############################1    | 25/29 [00:16<00:02,  1.62chunk/s]s30:  90%|###############################3   | 26/29 [00:16<00:01,  1.68chunk/s]s30:  93%|################################5  | 27/29 [00:17<00:01,  1.75chunk/s]s30:  97%|#################################7 | 28/29 [00:17<00:00,  1.84chunk/s]s30: 100%|###################################| 29/29 [00:17<00:00,  1.64chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-30/eeg/sub-30_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-30/eeg/sub-30_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-30/eeg/sub-30_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-30/eeg/sub-30_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-30/eeg/sub-30_task-sleep_eeg.json'...
+Copying data files to sub-30_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-30/eeg/sub-30_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-30/sub-30_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-30/sub-30_scans.tsv entry with eeg/sub-30_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-30/eeg/sub-30_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 31 / 38
+==========================================
+s31:   0%|                                            | 0/34 [00:00<?, ?chunk/s]s31:   3%|#                                   | 1/34 [00:00<00:21,  1.57chunk/s]s31:   6%|##1                                 | 2/34 [00:01<00:20,  1.56chunk/s]s31:   9%|###1                                | 3/34 [00:01<00:19,  1.57chunk/s]s31:  12%|####2                               | 4/34 [00:02<00:19,  1.55chunk/s]s31:  15%|#####2                              | 5/34 [00:03<00:19,  1.50chunk/s]s31:  18%|######3                             | 6/34 [00:03<00:18,  1.49chunk/s]s31:  21%|#######4                            | 7/34 [00:04<00:17,  1.50chunk/s]s31:  24%|########4                           | 8/34 [00:05<00:17,  1.50chunk/s]s31:  26%|#########5                          | 9/34 [00:05<00:16,  1.52chunk/s]s31:  29%|##########2                        | 10/34 [00:06<00:15,  1.52chunk/s]s31:  32%|###########3                       | 11/34 [00:07<00:15,  1.52chunk/s]s31:  35%|############3                      | 12/34 [00:07<00:14,  1.56chunk/s]s31:  38%|#############3                     | 13/34 [00:08<00:13,  1.57chunk/s]s31:  41%|##############4                    | 14/34 [00:09<00:12,  1.57chunk/s]s31:  44%|###############4                   | 15/34 [00:09<00:12,  1.56chunk/s]s31:  47%|################4                  | 16/34 [00:10<00:11,  1.55chunk/s]s31:  50%|#################5                 | 17/34 [00:11<00:10,  1.57chunk/s]s31:  53%|##################5                | 18/34 [00:11<00:10,  1.57chunk/s]s31:  56%|###################5               | 19/34 [00:12<00:09,  1.55chunk/s]s31:  59%|####################5              | 20/34 [00:12<00:09,  1.55chunk/s]s31:  62%|#####################6             | 21/34 [00:13<00:08,  1.54chunk/s]s31:  65%|######################6            | 22/34 [00:14<00:07,  1.55chunk/s]s31:  68%|#######################6           | 23/34 [00:14<00:07,  1.56chunk/s]s31:  71%|########################7          | 24/34 [00:15<00:06,  1.57chunk/s]s31:  74%|#########################7         | 25/34 [00:16<00:05,  1.56chunk/s]s31:  76%|##########################7        | 26/34 [00:16<00:05,  1.57chunk/s]s31:  79%|###########################7       | 27/34 [00:17<00:04,  1.58chunk/s]s31:  82%|############################8      | 28/34 [00:18<00:03,  1.60chunk/s]s31:  85%|#############################8     | 29/34 [00:18<00:03,  1.61chunk/s]s31:  88%|##############################8    | 30/34 [00:19<00:02,  1.62chunk/s]s31:  91%|###############################9   | 31/34 [00:19<00:01,  1.64chunk/s]s31:  94%|################################9  | 32/34 [00:20<00:01,  1.69chunk/s]s31:  97%|#################################9 | 33/34 [00:20<00:00,  1.76chunk/s]s31: 100%|###################################| 34/34 [00:21<00:00,  1.92chunk/s]s31: 100%|###################################| 34/34 [00:21<00:00,  1.60chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-31/eeg/sub-31_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-31/eeg/sub-31_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-31/eeg/sub-31_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-31/eeg/sub-31_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-31/eeg/sub-31_task-sleep_eeg.json'...
+Copying data files to sub-31_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-31/eeg/sub-31_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-31/sub-31_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-31/sub-31_scans.tsv entry with eeg/sub-31_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-31/eeg/sub-31_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 32 / 38
+==========================================
+s32:   0%|                                            | 0/30 [00:00<?, ?chunk/s]s32:   3%|#2                                  | 1/30 [00:00<00:24,  1.19chunk/s]s32:   7%|##4                                 | 2/30 [00:01<00:21,  1.32chunk/s]s32:  10%|###6                                | 3/30 [00:02<00:19,  1.35chunk/s]s32:  13%|####8                               | 4/30 [00:02<00:18,  1.38chunk/s]s32:  17%|######                              | 5/30 [00:03<00:17,  1.40chunk/s]s32:  20%|#######2                            | 6/30 [00:04<00:17,  1.41chunk/s]s32:  23%|########4                           | 7/30 [00:05<00:16,  1.40chunk/s]s32:  27%|#########6                          | 8/30 [00:05<00:15,  1.41chunk/s]s32:  30%|##########7                         | 9/30 [00:06<00:14,  1.43chunk/s]s32:  33%|###########6                       | 10/30 [00:07<00:13,  1.44chunk/s]s32:  37%|############8                      | 11/30 [00:07<00:13,  1.45chunk/s]s32:  40%|##############                     | 12/30 [00:08<00:12,  1.43chunk/s]s32:  43%|###############1                   | 13/30 [00:09<00:11,  1.44chunk/s]s32:  47%|################3                  | 14/30 [00:09<00:11,  1.45chunk/s]s32:  50%|#################5                 | 15/30 [00:10<00:10,  1.46chunk/s]s32:  53%|##################6                | 16/30 [00:11<00:09,  1.48chunk/s]s32:  57%|###################8               | 17/30 [00:11<00:08,  1.48chunk/s]s32:  60%|#####################              | 18/30 [00:12<00:08,  1.46chunk/s]s32:  63%|######################1            | 19/30 [00:13<00:07,  1.45chunk/s]s32:  67%|#######################3           | 20/30 [00:13<00:06,  1.45chunk/s]s32:  70%|########################5          | 21/30 [00:14<00:06,  1.45chunk/s]s32:  73%|#########################6         | 22/30 [00:15<00:05,  1.47chunk/s]s32:  77%|##########################8        | 23/30 [00:16<00:04,  1.47chunk/s]s32:  80%|############################       | 24/30 [00:16<00:04,  1.49chunk/s]s32:  83%|#############################1     | 25/30 [00:17<00:03,  1.49chunk/s]s32:  87%|##############################3    | 26/30 [00:18<00:02,  1.49chunk/s]s32:  90%|###############################5   | 27/30 [00:18<00:01,  1.54chunk/s]s32:  93%|################################6  | 28/30 [00:19<00:01,  1.62chunk/s]s32:  97%|#################################8 | 29/30 [00:19<00:00,  1.72chunk/s]s32: 100%|###################################| 30/30 [00:19<00:00,  2.06chunk/s]s32: 100%|###################################| 30/30 [00:19<00:00,  1.51chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-32/eeg/sub-32_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-32/eeg/sub-32_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('jbe/Sleep stage R'), np.str_('jbe/Sleep stage S1'), np.str_('jbe/Sleep stage S2'), np.str_('jbe/Sleep stage S3'), np.str_('jbe/Sleep stage S4'), np.str_('jbe/Sleep stage W'), np.str_('jbe/UNKNOWN_m1'), np.str_('jbe/UNKNOWN_m2'), np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-32/eeg/sub-32_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-32/eeg/sub-32_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-32/eeg/sub-32_task-sleep_eeg.json'...
+Copying data files to sub-32_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-32/eeg/sub-32_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-32/sub-32_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-32/sub-32_scans.tsv entry with eeg/sub-32_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-32/eeg/sub-32_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 33 / 38
+==========================================
+s33:   0%|                                            | 0/29 [00:00<?, ?chunk/s]s33:   3%|#2                                  | 1/29 [00:00<00:20,  1.37chunk/s]s33:   7%|##4                                 | 2/29 [00:01<00:17,  1.50chunk/s]s33:  10%|###7                                | 3/29 [00:02<00:17,  1.52chunk/s]s33:  14%|####9                               | 4/29 [00:02<00:16,  1.56chunk/s]s33:  17%|######2                             | 5/29 [00:03<00:15,  1.57chunk/s]s33:  21%|#######4                            | 6/29 [00:03<00:14,  1.55chunk/s]s33:  24%|########6                           | 7/29 [00:04<00:14,  1.57chunk/s]s33:  28%|#########9                          | 8/29 [00:05<00:13,  1.60chunk/s]s33:  31%|###########1                        | 9/29 [00:05<00:12,  1.61chunk/s]s33:  34%|############                       | 10/29 [00:06<00:11,  1.59chunk/s]s33:  38%|#############2                     | 11/29 [00:07<00:11,  1.58chunk/s]s33:  41%|##############4                    | 12/29 [00:07<00:10,  1.59chunk/s]s33:  45%|###############6                   | 13/29 [00:08<00:10,  1.60chunk/s]s33:  48%|################8                  | 14/29 [00:08<00:09,  1.60chunk/s]s33:  52%|##################1                | 15/29 [00:09<00:08,  1.60chunk/s]s33:  55%|###################3               | 16/29 [00:10<00:08,  1.58chunk/s]s33:  59%|####################5              | 17/29 [00:10<00:07,  1.56chunk/s]s33:  62%|#####################7             | 18/29 [00:11<00:07,  1.55chunk/s]s33:  66%|######################9            | 19/29 [00:12<00:06,  1.55chunk/s]s33:  69%|########################1          | 20/29 [00:12<00:05,  1.55chunk/s]s33:  72%|#########################3         | 21/29 [00:13<00:05,  1.54chunk/s]s33:  76%|##########################5        | 22/29 [00:14<00:04,  1.53chunk/s]s33:  79%|###########################7       | 23/29 [00:14<00:03,  1.54chunk/s]s33:  83%|############################9      | 24/29 [00:15<00:03,  1.54chunk/s]s33:  86%|##############################1    | 25/29 [00:15<00:02,  1.59chunk/s]s33:  90%|###############################3   | 26/29 [00:16<00:01,  1.66chunk/s]s33:  93%|################################5  | 27/29 [00:16<00:01,  1.75chunk/s]s33:  97%|#################################7 | 28/29 [00:17<00:00,  1.84chunk/s]s33: 100%|###################################| 29/29 [00:17<00:00,  1.66chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-33/eeg/sub-33_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-33/eeg/sub-33_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('jbe/Sleep stage R'), np.str_('jbe/Sleep stage S1'), np.str_('jbe/Sleep stage S2'), np.str_('jbe/Sleep stage S3'), np.str_('jbe/Sleep stage S4'), np.str_('jbe/Sleep stage W'), np.str_('jbe/UNKNOWN_m1'), np.str_('jbe/UNKNOWN_m2'), np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-33/eeg/sub-33_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-33/eeg/sub-33_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-33/eeg/sub-33_task-sleep_eeg.json'...
+Copying data files to sub-33_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-33/eeg/sub-33_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-33/sub-33_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-33/sub-33_scans.tsv entry with eeg/sub-33_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-33/eeg/sub-33_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 34 / 38
+==========================================
+s34:   0%|                                            | 0/31 [00:00<?, ?chunk/s]s34:   3%|#1                                  | 1/31 [00:00<00:21,  1.42chunk/s]s34:   6%|##3                                 | 2/31 [00:01<00:19,  1.52chunk/s]s34:  10%|###4                                | 3/31 [00:01<00:18,  1.52chunk/s]s34:  13%|####6                               | 4/31 [00:02<00:17,  1.52chunk/s]s34:  16%|#####8                              | 5/31 [00:03<00:16,  1.54chunk/s]s34:  19%|######9                             | 6/31 [00:03<00:15,  1.57chunk/s]s34:  23%|########1                           | 7/31 [00:04<00:15,  1.56chunk/s]s34:  26%|#########2                          | 8/31 [00:05<00:14,  1.54chunk/s]s34:  29%|##########4                         | 9/31 [00:05<00:14,  1.56chunk/s]s34:  32%|###########2                       | 10/31 [00:06<00:13,  1.55chunk/s]s34:  35%|############4                      | 11/31 [00:07<00:12,  1.54chunk/s]s34:  39%|#############5                     | 12/31 [00:07<00:12,  1.56chunk/s]s34:  42%|##############6                    | 13/31 [00:08<00:11,  1.56chunk/s]s34:  45%|###############8                   | 14/31 [00:09<00:11,  1.54chunk/s]s34:  48%|################9                  | 15/31 [00:09<00:10,  1.52chunk/s]s34:  52%|##################                 | 16/31 [00:10<00:09,  1.53chunk/s]s34:  55%|###################1               | 17/31 [00:11<00:09,  1.54chunk/s]s34:  58%|####################3              | 18/31 [00:11<00:08,  1.54chunk/s]s34:  61%|#####################4             | 19/31 [00:12<00:07,  1.52chunk/s]s34:  65%|######################5            | 20/31 [00:13<00:07,  1.52chunk/s]s34:  68%|#######################7           | 21/31 [00:13<00:06,  1.51chunk/s]s34:  71%|########################8          | 22/31 [00:14<00:05,  1.52chunk/s]s34:  74%|#########################9         | 23/31 [00:14<00:05,  1.53chunk/s]s34:  77%|###########################        | 24/31 [00:15<00:04,  1.55chunk/s]s34:  81%|############################2      | 25/31 [00:16<00:03,  1.54chunk/s]s34:  84%|#############################3     | 26/31 [00:16<00:03,  1.53chunk/s]s34:  87%|##############################4    | 27/31 [00:17<00:02,  1.52chunk/s]s34:  90%|###############################6   | 28/31 [00:18<00:01,  1.54chunk/s]s34:  94%|################################7  | 29/31 [00:18<00:01,  1.59chunk/s]s34:  97%|#################################8 | 30/31 [00:19<00:00,  1.69chunk/s]s34: 100%|###################################| 31/31 [00:19<00:00,  1.60chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-34/eeg/sub-34_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-34/eeg/sub-34_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-34/eeg/sub-34_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-34/eeg/sub-34_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-34/eeg/sub-34_task-sleep_eeg.json'...
+Copying data files to sub-34_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-34/eeg/sub-34_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-34/sub-34_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-34/sub-34_scans.tsv entry with eeg/sub-34_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-34/eeg/sub-34_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 35 / 38
+==========================================
+s35:   0%|                                            | 0/30 [00:00<?, ?chunk/s]s35:   3%|#2                                  | 1/30 [00:00<00:21,  1.38chunk/s]s35:   7%|##4                                 | 2/30 [00:01<00:19,  1.46chunk/s]s35:  10%|###6                                | 3/30 [00:02<00:17,  1.51chunk/s]s35:  13%|####8                               | 4/30 [00:02<00:17,  1.51chunk/s]s35:  17%|######                              | 5/30 [00:03<00:16,  1.51chunk/s]s35:  20%|#######2                            | 6/30 [00:03<00:15,  1.52chunk/s]s35:  23%|########4                           | 7/30 [00:04<00:15,  1.52chunk/s]s35:  27%|#########6                          | 8/30 [00:05<00:14,  1.52chunk/s]s35:  30%|##########7                         | 9/30 [00:05<00:13,  1.55chunk/s]s35:  33%|###########6                       | 10/30 [00:06<00:12,  1.56chunk/s]s35:  37%|############8                      | 11/30 [00:07<00:12,  1.58chunk/s]s35:  40%|##############                     | 12/30 [00:07<00:11,  1.58chunk/s]s35:  43%|###############1                   | 13/30 [00:08<00:10,  1.55chunk/s]s35:  47%|################3                  | 14/30 [00:09<00:10,  1.56chunk/s]s35:  50%|#################5                 | 15/30 [00:09<00:09,  1.57chunk/s]s35:  53%|##################6                | 16/30 [00:10<00:08,  1.56chunk/s]s35:  57%|###################8               | 17/30 [00:11<00:08,  1.56chunk/s]s35:  60%|#####################              | 18/30 [00:11<00:07,  1.55chunk/s]s35:  63%|######################1            | 19/30 [00:12<00:07,  1.54chunk/s]s35:  67%|#######################3           | 20/30 [00:12<00:06,  1.55chunk/s]s35:  70%|########################5          | 21/30 [00:13<00:05,  1.56chunk/s]s35:  73%|#########################6         | 22/30 [00:14<00:05,  1.56chunk/s]s35:  77%|##########################8        | 23/30 [00:14<00:04,  1.55chunk/s]s35:  80%|############################       | 24/30 [00:15<00:03,  1.56chunk/s]s35:  83%|#############################1     | 25/30 [00:16<00:03,  1.57chunk/s]s35:  87%|##############################3    | 26/30 [00:16<00:02,  1.58chunk/s]s35:  90%|###############################5   | 27/30 [00:17<00:01,  1.61chunk/s]s35:  93%|################################6  | 28/30 [00:17<00:01,  1.66chunk/s]s35:  97%|#################################8 | 29/30 [00:18<00:00,  1.73chunk/s]s35: 100%|###################################| 30/30 [00:18<00:00,  1.87chunk/s]s35: 100%|###################################| 30/30 [00:18<00:00,  1.59chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-35/eeg/sub-35_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-35/eeg/sub-35_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('jbe/Sleep stage R'), np.str_('jbe/Sleep stage S1'), np.str_('jbe/Sleep stage S2'), np.str_('jbe/Sleep stage S3'), np.str_('jbe/Sleep stage S4'), np.str_('jbe/Sleep stage W'), np.str_('jbe/UNKNOWN_m1'), np.str_('jbe/UNKNOWN_m2'), np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-35/eeg/sub-35_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-35/eeg/sub-35_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-35/eeg/sub-35_task-sleep_eeg.json'...
+Copying data files to sub-35_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-35/eeg/sub-35_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-35/sub-35_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-35/sub-35_scans.tsv entry with eeg/sub-35_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-35/eeg/sub-35_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 36 / 38
+==========================================
+s36:   0%|                                            | 0/29 [00:00<?, ?chunk/s]s36:   3%|#2                                  | 1/29 [00:00<00:19,  1.44chunk/s]s36:   7%|##4                                 | 2/29 [00:01<00:18,  1.47chunk/s]s36:  10%|###7                                | 3/29 [00:02<00:17,  1.50chunk/s]s36:  14%|####9                               | 4/29 [00:02<00:16,  1.55chunk/s]s36:  17%|######2                             | 5/29 [00:03<00:15,  1.55chunk/s]s36:  21%|#######4                            | 6/29 [00:03<00:15,  1.52chunk/s]s36:  24%|########6                           | 7/29 [00:04<00:14,  1.50chunk/s]s36:  28%|#########9                          | 8/29 [00:05<00:13,  1.51chunk/s]s36:  31%|###########1                        | 9/29 [00:05<00:13,  1.48chunk/s]s36:  34%|############                       | 10/29 [00:06<00:12,  1.50chunk/s]s36:  38%|#############2                     | 11/29 [00:07<00:11,  1.53chunk/s]s36:  41%|##############4                    | 12/29 [00:07<00:10,  1.55chunk/s]s36:  45%|###############6                   | 13/29 [00:08<00:10,  1.54chunk/s]s36:  48%|################8                  | 14/29 [00:09<00:09,  1.56chunk/s]s36:  52%|##################1                | 15/29 [00:09<00:09,  1.56chunk/s]s36:  55%|###################3               | 16/29 [00:10<00:08,  1.56chunk/s]s36:  59%|####################5              | 17/29 [00:11<00:07,  1.57chunk/s]s36:  62%|#####################7             | 18/29 [00:11<00:06,  1.57chunk/s]s36:  66%|######################9            | 19/29 [00:12<00:06,  1.55chunk/s]s36:  69%|########################1          | 20/29 [00:13<00:05,  1.52chunk/s]s36:  72%|#########################3         | 21/29 [00:13<00:05,  1.51chunk/s]s36:  76%|##########################5        | 22/29 [00:14<00:04,  1.52chunk/s]s36:  79%|###########################7       | 23/29 [00:15<00:03,  1.54chunk/s]s36:  83%|############################9      | 24/29 [00:15<00:03,  1.56chunk/s]s36:  86%|##############################1    | 25/29 [00:16<00:02,  1.57chunk/s]s36:  90%|###############################3   | 26/29 [00:16<00:01,  1.59chunk/s]s36:  93%|################################5  | 27/29 [00:17<00:01,  1.62chunk/s]s36:  97%|#################################7 | 28/29 [00:17<00:00,  1.69chunk/s]s36: 100%|###################################| 29/29 [00:18<00:00,  2.04chunk/s]s36: 100%|###################################| 29/29 [00:18<00:00,  1.59chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-36/eeg/sub-36_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-36/eeg/sub-36_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-36/eeg/sub-36_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-36/eeg/sub-36_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-36/eeg/sub-36_task-sleep_eeg.json'...
+Copying data files to sub-36_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-36/eeg/sub-36_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-36/sub-36_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-36/sub-36_scans.tsv entry with eeg/sub-36_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-36/eeg/sub-36_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 37 / 38
+==========================================
+s37:   0%|                                            | 0/24 [00:00<?, ?chunk/s]s37:   4%|#5                                  | 1/24 [00:00<00:16,  1.43chunk/s]s37:   8%|###                                 | 2/24 [00:01<00:14,  1.51chunk/s]s37:  12%|####5                               | 3/24 [00:01<00:13,  1.54chunk/s]s37:  17%|######                              | 4/24 [00:02<00:13,  1.52chunk/s]s37:  21%|#######5                            | 5/24 [00:03<00:12,  1.51chunk/s]s37:  25%|#########                           | 6/24 [00:03<00:11,  1.53chunk/s]s37:  29%|##########5                         | 7/24 [00:04<00:11,  1.53chunk/s]s37:  33%|############                        | 8/24 [00:05<00:10,  1.53chunk/s]s37:  38%|#############5                      | 9/24 [00:05<00:09,  1.54chunk/s]s37:  42%|##############5                    | 10/24 [00:06<00:09,  1.54chunk/s]s37:  46%|################                   | 11/24 [00:07<00:08,  1.54chunk/s]s37:  50%|#################5                 | 12/24 [00:07<00:07,  1.55chunk/s]s37:  54%|##################9                | 13/24 [00:08<00:07,  1.54chunk/s]s37:  58%|####################4              | 14/24 [00:09<00:06,  1.55chunk/s]s37:  62%|#####################8             | 15/24 [00:09<00:05,  1.55chunk/s]s37:  67%|#######################3           | 16/24 [00:10<00:05,  1.55chunk/s]s37:  71%|########################7          | 17/24 [00:11<00:04,  1.57chunk/s]s37:  75%|##########################2        | 18/24 [00:11<00:03,  1.56chunk/s]s37:  79%|###########################7       | 19/24 [00:12<00:03,  1.54chunk/s]s37:  83%|#############################1     | 20/24 [00:12<00:02,  1.56chunk/s]s37:  88%|##############################6    | 21/24 [00:13<00:01,  1.61chunk/s]s37:  92%|################################   | 22/24 [00:14<00:01,  1.69chunk/s]s37:  96%|#################################5 | 23/24 [00:14<00:00,  1.77chunk/s]s37: 100%|###################################| 24/24 [00:14<00:00,  2.33chunk/s]s37: 100%|###################################| 24/24 [00:14<00:00,  1.63chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-37/eeg/sub-37_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-37/eeg/sub-37_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('jbe/Sleep stage R'), np.str_('jbe/Sleep stage S1'), np.str_('jbe/Sleep stage S2'), np.str_('jbe/Sleep stage S3'), np.str_('jbe/Sleep stage S4'), np.str_('jbe/Sleep stage W'), np.str_('jbe/UNKNOWN_m1'), np.str_('jbe/UNKNOWN_m2'), np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-37/eeg/sub-37_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-37/eeg/sub-37_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-37/eeg/sub-37_task-sleep_eeg.json'...
+Copying data files to sub-37_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-37/eeg/sub-37_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-37/sub-37_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-37/sub-37_scans.tsv entry with eeg/sub-37_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-37/eeg/sub-37_task-sleep_eeg.vhdr
+==========================================
+Traitement du Sujet 38 / 38
+==========================================
+s38:   0%|                                            | 0/32 [00:00<?, ?chunk/s]s38:   3%|#1                                  | 1/32 [00:00<00:21,  1.47chunk/s]s38:   6%|##2                                 | 2/32 [00:01<00:19,  1.55chunk/s]s38:   9%|###3                                | 3/32 [00:01<00:18,  1.57chunk/s]s38:  12%|####5                               | 4/32 [00:02<00:18,  1.55chunk/s]s38:  16%|#####6                              | 5/32 [00:03<00:17,  1.57chunk/s]s38:  19%|######7                             | 6/32 [00:03<00:16,  1.57chunk/s]s38:  22%|#######8                            | 7/32 [00:04<00:15,  1.58chunk/s]s38:  25%|#########                           | 8/32 [00:05<00:15,  1.60chunk/s]s38:  28%|##########1                         | 9/32 [00:05<00:14,  1.60chunk/s]s38:  31%|##########9                        | 10/32 [00:06<00:14,  1.56chunk/s]s38:  34%|############                       | 11/32 [00:07<00:13,  1.53chunk/s]s38:  38%|#############1                     | 12/32 [00:07<00:13,  1.54chunk/s]s38:  41%|##############2                    | 13/32 [00:08<00:12,  1.54chunk/s]s38:  44%|###############3                   | 14/32 [00:08<00:11,  1.55chunk/s]s38:  47%|################4                  | 15/32 [00:09<00:10,  1.55chunk/s]s38:  50%|#################5                 | 16/32 [00:10<00:10,  1.55chunk/s]s38:  53%|##################5                | 17/32 [00:10<00:09,  1.56chunk/s]s38:  56%|###################6               | 18/32 [00:11<00:08,  1.56chunk/s]s38:  59%|####################7              | 19/32 [00:12<00:08,  1.55chunk/s]s38:  62%|#####################8             | 20/32 [00:12<00:07,  1.57chunk/s]s38:  66%|######################9            | 21/32 [00:13<00:06,  1.57chunk/s]s38:  69%|########################           | 22/32 [00:14<00:06,  1.56chunk/s]s38:  72%|#########################1         | 23/32 [00:14<00:05,  1.53chunk/s]s38:  75%|##########################2        | 24/32 [00:15<00:05,  1.53chunk/s]s38:  78%|###########################3       | 25/32 [00:16<00:04,  1.53chunk/s]s38:  81%|############################4      | 26/32 [00:16<00:03,  1.54chunk/s]s38:  84%|#############################5     | 27/32 [00:17<00:03,  1.56chunk/s]s38:  88%|##############################6    | 28/32 [00:17<00:02,  1.57chunk/s]s38:  91%|###############################7   | 29/32 [00:18<00:01,  1.61chunk/s]s38:  94%|################################8  | 30/32 [00:19<00:01,  1.65chunk/s]s38:  97%|#################################9 | 31/32 [00:19<00:00,  1.74chunk/s]s38: 100%|###################################| 32/32 [00:20<00:00,  1.91chunk/s]s38: 100%|###################################| 32/32 [00:20<00:00,  1.60chunk/s]
+Writing '/home/alouis/scratch/dream_bids/participants.tsv'...
+Writing '/home/alouis/scratch/dream_bids/participants.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-38/eeg/sub-38_space-CapTrak_electrodes.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-38/eeg/sub-38_space-CapTrak_coordsystem.json'...
+The provided raw data contains annotations, but you did not pass an "event_id" mapping from annotation descriptions to event codes. We will generate arbitrary event codes. To specify custom event codes, please pass "event_id".
+Used Annotations descriptions: [np.str_('per/Sleep stage R'), np.str_('per/Sleep stage S1'), np.str_('per/Sleep stage S2'), np.str_('per/Sleep stage S3'), np.str_('per/Sleep stage S4'), np.str_('per/Sleep stage W'), np.str_('per/UNKNOWN_m1'), np.str_('per/UNKNOWN_m2')]
+Writing '/home/alouis/scratch/dream_bids/sub-38/eeg/sub-38_task-sleep_events.tsv'...
+Writing '/home/alouis/scratch/dream_bids/sub-38/eeg/sub-38_task-sleep_events.json'...
+Writing '/home/alouis/scratch/dream_bids/dataset_description.json'...
+Writing '/home/alouis/scratch/dream_bids/sub-38/eeg/sub-38_task-sleep_eeg.json'...
+Copying data files to sub-38_task-sleep_eeg.vhdr
+Found no extension for raw file, assuming "BTi" format and appending extension .pdf
+Writing '/home/alouis/scratch/dream_bids/sub-38/eeg/sub-38_task-sleep_channels.tsv'...
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/dream-recall-alex/convert_to_bidsv3.py:121: RuntimeWarning: Encountered data in "double" format. Converting to float32.
+  mne_bids.write_raw_bids(raw, bids_path, overwrite=True, allow_preload=True, format='BrainVision')
+/home/alouis/mne_env/lib/python3.11/site-packages/pybv/io.py:682: UserWarning: Encountered unsupported non-voltage units: n/a
+Note that the BrainVision format specification supports only µV.
+  warn(msg)
+Writing '/home/alouis/scratch/dream_bids/sub-38/sub-38_scans.tsv'...
+Wrote /home/alouis/scratch/dream_bids/sub-38/sub-38_scans.tsv entry with eeg/sub-38_task-sleep_eeg.vhdr.
+Done: /home/alouis/scratch/dream_bids/sub-38/eeg/sub-38_task-sleep_eeg.vhdr
