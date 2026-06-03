@@ -89,6 +89,7 @@ sub = int(sys.argv[1])
 sub_str = str(sub)
 
 data = load_mat(DATA_PATH / 'data' / f's{sub_str}_sleep.mat')
+data *= 1e-6  # µV → V pour mne qui attend des V 
 info = mne.create_info(CH_NAMES, SFREQ, CH_TYPES)
 info['line_freq'] = 50                              #50 Hz standard européen
 raw = mne.io.RawArray(data, info, verbose=False)
