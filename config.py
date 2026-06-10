@@ -30,3 +30,51 @@ PER_BLACKLIST = {19}
 
 # Sujets avec scoring jbe disponible
 JBE_SUBJECTS = {1, 2, 4, 6, 10, 11, 14, 16, 18, 19, 23, 25, 26, 29, 32, 33, 35, 37}
+
+ 
+# ─── feature extraction params (extract_features.py) ──────────────────────────
+ 
+EPOCH_DURATION = 30.0  # seconds
+N_SAMPLES = int(SFREQ * EPOCH_DURATION)  # 30 000
+ 
+WINDOW = 1000   # Welch: 1s Hanning, no overlap — thesis §1.2.5
+OVERLAP = 0
+ 
+N_EEG = 19  # first 19 channels are EEG
+ 
+FREQ_DICT = {
+    "delta": (1, 4),
+    "theta": (4, 8),
+    "alpha": (8, 13),
+    "sigma": (11, 16),
+    "beta":  (17, 35),
+}
+ 
+# Classification states (SWS/NREM aggregate epochs from multiple raw stages)
+STAGE_TO_STATES = {
+    "Sleep stage S1": ["NREM"],
+    "Sleep stage S2": ["S2", "NREM"],
+    "Sleep stage S3": ["SWS", "NREM"],
+    "Sleep stage S4": ["SWS", "NREM"],
+    "Sleep stage R":  ["REM"],
+}
+STATE_LIST = ["S2", "SWS", "REM", "NREM"]
+ 
+# Atomic states for UMAP (no overlap)
+STAGE_TO_UMAP = {
+    "Sleep stage S1": "S1",
+    "Sleep stage S2": "S2",
+    "Sleep stage S3": "SWS",
+    "Sleep stage S4": "SWS",
+    "Sleep stage R":  "REM",
+}
+UMAP_STATES = ["S1", "S2", "SWS", "REM"]
+UMAP_COLORS = {
+    "S1":  "#E69F00",  # orange
+    "S2":  "#56B4E9",  # sky blue
+    "SWS": "#009E73",  # bluish green
+    "REM": "#CC79A7",  # reddish purple
+}
+
+SUBJECT_IDS = [f"{i:02d}" for i in range(1, 39)]
+ 
