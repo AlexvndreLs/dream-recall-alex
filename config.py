@@ -50,31 +50,50 @@ FREQ_DICT = {
     "beta":  (17, 35),
 }
  
-# Classification states (SWS/NREM aggregate epochs from multiple raw stages)
-STAGE_TO_STATES = {
-    "Sleep stage S1": ["NREM"],
-    "Sleep stage S2": ["S2", "NREM"],
-    "Sleep stage S3": ["SWS", "NREM"],
-    "Sleep stage S4": ["SWS", "NREM"],
-    "Sleep stage R":  ["REM"],
-}
-STATE_LIST = ["S2", "SWS", "REM", "NREM"]
+# ─── sleep stages: single atomic segmentation, derived groupings ──────────────
  
-# Atomic states for UMAP (no overlap)
-STAGE_TO_UMAP = {
+# Raw scorer labels -> atomic codes. Each 30s epoch belongs to exactly ONE
+# atomic stage. Features are computed once per atomic stage; classification
+# states and UMAP states are both obtained by concatenating atomic arrays
+# (no recomputation, no double I/O).
+STAGE_LABEL_TO_ATOMIC = {
     "Sleep stage S1": "S1",
     "Sleep stage S2": "S2",
-    "Sleep stage S3": "SWS",
-    "Sleep stage S4": "SWS",
+    "Sleep stage S3": "S3",
+    "Sleep stage S4": "S4",
     "Sleep stage R":  "REM",
 }
-UMAP_STATES = ["S1", "S2", "SWS", "REM"]
-UMAP_COLORS = {
-    "S1":  "#E69F00",  # orange
-    "S2":  "#56B4E9",  # sky blue
-    "SWS": "#009E73",  # bluish green
-    "REM": "#CC79A7",  # reddish purple
-}
-
-SUBJECT_IDS = [f"{i:02d}" for i in range(1, 39)]
+ATOMIC_STAGES = ["S1", "S2", "S3", "S4", "REM"]
  
+# Classification states (SWS = S3+S4, NREM = S1+S2+S3+S4 — overlaps S2/SWS)
+CLASSIFICATION_GROUPS = {
+    "S2":   ["S2"],
+    "SWS":  ["S3", "S4"],
+    "REM":  ["REM"],
+    "NREM": ["S1", "S2", "S3", "S4"],
+}
+STATE_LIST = list(CLASSIFICATION_GROUPS)
+ 
+# UMAP states (atomic, no overlap)
+UMAP_GROUPS = {
+    "S1":  ["S1"],
+    "S2":  ["S2"],
+    "SWS": ["S3", "S4"],
+    "REM": ["REM"],
+}
+UMAP_STATES = list(UMAP_GROUPS)
+UMAP_COLORS = {"S1": "#E69F00", "S2": "#56B4E9", "SWS": "#009E73", "REM": "#CC79A7"}
+ 
+# ─── feature set ────────────────────────────────────────────────────────────
+ 
+FOOOF_FREQ_RANGE = (1, 45)  # full-spectrum range for aperiodic fitting
+ 
+FEATURE_KEYS = (
+    [f"psd_{b}" for b in FREQ_DICT]      # raw band power
+    + [f"psd_osc_{b}" for b in FREQ_DICT]  # 1/f-corrected (oscillatory) band power
+    + ["aperiodic"]                       # FOOOF exponent (slope), per channel
+    + ["cov"]                             # time covariance
+    + [f"cosp_{b}" for b in FREQ_DICT]    # cospectrum, per band
+)
+ 
+SUBJECT_IDS = [f"{i:02d}" for i in range(1, 39)]
