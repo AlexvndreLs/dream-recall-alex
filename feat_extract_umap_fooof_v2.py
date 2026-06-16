@@ -1,6 +1,6 @@
 """Extract spectral, connectivity, and complexity features from preprocessed EEG.
 
-Lit depuis derivatives/preprocessed-ica/ (sortie de preprocess_subject.py).
+Lit depuis derivatives/preprocessed-ica/ (sortie de preprocess_subject_v2.py).
 Remplace compute_psd.py, compute_cov.py, compute_cosp.py du repo Arthur.
 
 Architecture
@@ -52,9 +52,9 @@ import numpy as np
 import pandas as pd
 import mne
 import umap
-from fooof import FOOOFGroup
+from specparam import SpectralGroupModel
 from joblib import Parallel, delayed
-from pyriemann.estimation import Covariances, CospCovariances
+from pyriemann.estimation import Covariances, CoSpectra
 from sklearn.preprocessing import StandardScaler
 
 from config import (
@@ -198,7 +198,7 @@ def fit_fooof(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Fit FOOOF (mode aperiodic fixe) sur chaque spectre (epoch, canal).
 
-    FOOOF / specparam — Donoghue et al. 2020, Nature Neuroscience.
+    specparam (ex-FOOOF) — Donoghue et al. 2020, Nature Neuroscience.
     aperiodic_mode="fixed" : pas de knee, adapté à la plage 1-45Hz
     (à réévaluer si les résultats delta SWS semblent aberrants).
 
@@ -212,7 +212,7 @@ def fit_fooof(
     n_epochs, n_ch, n_freqs = psds.shape
     flat_psds = psds.reshape(-1, n_freqs)
 
-    fg = FOOOFGroup(aperiodic_mode="fixed", verbose=False)
+    fg = SpectralGroupModel(aperiodic_mode="fixed", verbose=False)
     fg.fit(freqs, flat_psds, freq_range=FOOOF_FREQ_RANGE, n_jobs=1)
 
     aperiodic = fg.get_params("aperiodic_params")  # (n, 2) [offset, exponent]
@@ -240,11 +240,13 @@ def compute_cosp(
 ) -> np.ndarray:
     """(n_epochs, 19, 7500) -> (n_epochs, 19, 19) cospectrum moyen sur la bande.
 
-    Mêmes paramètres Welch que compute_psd_spectrum (WINDOW, OVERLAP)
-    pour cohérence avec la thèse §1.2.6.
+    Mêmes paramètres Welch que compute_psd_spectrum (WINDOW) pour cohérence
+    avec la thèse §1.2.6. overlap=0.01 (quasi no-overlap) : pyriemann 0.11
+    refuse overlap=0.0 strictement (ValueError). 0.01 sur 250 samples = 2-3
+    samples de chevauchement, négligeable, cohérent avec l'esprit Arthur.
     """
-    mat = CospCovariances(
-        window=WINDOW, overlap=0.0, fmin=fmin, fmax=fmax, fs=SF
+    mat = CoSpectra(
+        window=WINDOW, overlap=0.01, fmin=fmin, fmax=fmax, fs=SF
     ).fit_transform(data)
     return mat.mean(axis=-1) if mat.ndim == 4 else mat
 
