@@ -14,7 +14,7 @@ groupe atomique et cachées sur disque.
 Les états de classification (S2, SWS, REM, NREM) et les états UMAP (S1, S2,
 SWS, REM) sont obtenus par concaténation des tableaux atomiques cachés —
 sans relecture des données brutes ni recalcul (cf CLASSIFICATION_GROUPS /
-UMAP_GROUPS dans config.py).=
+UMAP_GROUPS dans config.py).
 
 Notes
 -----
@@ -32,10 +32,11 @@ Notes
   https://github.com/raphaelvallat/antropy) — non encore implémentées.
 
 Usage :
-    python feat_extract_umap_fooof_v2.py \\
+    python feat_extract_umap_fooof_v3.py \\
         --deriv-path /path/to/derivatives/preprocessed-ica \\
         --save-path  /path/to/dream_features \\
-        --n-jobs     $SLURM_CPUS_PER_TASK
+        --n-jobs     $SLURM_CPUS_PER_TASK \\
+        --overwrite  # optionnel : écrase les .npz existants
 
 """
 
@@ -81,11 +82,13 @@ def parse_args() -> argparse.Namespace:
                         "(ex: /home/alouis/scratch/dream_features)")
     p.add_argument("--n-jobs", type=int, default=1, 
                    help="Parallel jobs joblib (défaut: 1 CPU)")
+    p.add_argument("--overwrite", action="store_true", default=False,
+                   help="Écrase les .npz existants (utile après changement de params)")
     return p.parse_args()
 
 
 # ─── path helpers ─────────────────────────────────────────────────────────────
-#Chemins vers les fichiers preprocessés (proc-clean) 
+#chemins vers les fichiers preprocessed (proc-clean) 
 #produits par preprocess_subject_v2.py
 
 def _vhdr(deriv_path: Path, sub_id: str) -> Path:
@@ -284,7 +287,7 @@ def compute_all_features(data: np.ndarray) -> dict[str, np.ndarray]:
 # ─── per-subject pipeline ─────────────────────────────────────────────────────
 
 def process_subject(
-    deriv_path: Path, save_path: Path, sub_id: str
+    deriv_path: Path, save_path: Path, sub_id: str, overwrite: bool = False
 ) -> None:
     if not _vhdr(deriv_path, sub_id).exists():
         print(f"sub-{sub_id}: derivative not found, skipping")
@@ -302,7 +305,7 @@ def process_subject(
         print(f"  sub-{sub_id} {stage}: {data.shape[0]} epochs")
 
         # skip si tous les .npz de ce sujet/stade existent -> reprise apres crash cluster
-        if all(
+        if not overwrite and all(
             (save_path / k / f"{k}_s{sub_id}_{stage}.npz").exists()
             for k in FEATURE_KEYS
         ):
@@ -319,7 +322,7 @@ def process_subject(
         for key, arr in feats.items():
             out = save_path / key / f"{key}_s{sub_id}_{stage}.npz"
             # double check par feature : protege contre un crash entre deux saves
-            if not out.exists():
+            if not out.exists() or overwrite:
                 out.parent.mkdir(parents=True, exist_ok=True)
                 np.savez_compressed(out, data=arr)
                 #sauvegarde l'array compressé
@@ -337,7 +340,7 @@ def _load_atomic(
 
 
 def combine_classification_state(
-    save_path: Path, key: str, state: str
+    save_path: Path, key: str, state: str, overwrite: bool = False
 ) -> None:
     """Concatène les tableaux atomiques par CLASSIFICATION_GROUPS[state], empile les sujets.
 
@@ -345,7 +348,7 @@ def combine_classification_state(
     Charger avec np.load(path, allow_pickle=True).
     """
     out = save_path / key / f"{key}_{state}.npz"
-    if out.exists():
+    if out.exists() and not overwrite:
         return
 
     stages = CLASSIFICATION_GROUPS[state]
@@ -421,11 +424,11 @@ def build_umap_vectors(
 
 
 def build_umap_vectors_cached(
-    save_path: Path,
+    save_path: Path, overwrite: bool = False
 ) -> tuple[dict[str, np.ndarray], np.ndarray]:
     """Cache les vecteurs UMAP pour éviter de tout recalculer si le plot crashe."""
     cache = save_path / "umap_vectors.npz"
-    if cache.exists():
+    if cache.exists() and not overwrite:
         d = np.load(cache, allow_pickle=True)
         vectors = {k: d[k] for k in d.files if k != "labels"}
         return vectors, d["labels"]
@@ -485,23 +488,24 @@ if __name__ == "__main__":
     deriv_path = args.deriv_path
     save_path  = args.save_path
     n_jobs     = args.n_jobs
+    overwrite  = args.overwrite
 
     t0 = time()
 
     print("=== extraction features par sujet (stades atomiques) ===")
     Parallel(n_jobs=n_jobs)(
-        delayed(process_subject)(deriv_path, save_path, sub_id)
+        delayed(process_subject)(deriv_path, save_path, sub_id, overwrite)
         for sub_id in SUBJECT_IDS
     )
 
     print("=== combinaison en états de classification ===")
     Parallel(n_jobs=n_jobs)(
-        delayed(combine_classification_state)(save_path, key, state)
+        delayed(combine_classification_state)(save_path, key, state, overwrite)
         for key, state in product(FEATURE_KEYS, STATE_LIST)
     )
 
     print("=== UMAP ===")
-    vectors, labels = build_umap_vectors_cached(save_path)
+    vectors, labels = build_umap_vectors_cached(save_path, overwrite)
     plot_umaps(vectors, labels, save_path)
 
     m, s = divmod(int(time() - t0), 60)
