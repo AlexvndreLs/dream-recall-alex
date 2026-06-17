@@ -14,7 +14,7 @@ groupe atomique et cachées sur disque.
 Les états de classification (S2, SWS, REM, NREM) et les états UMAP (S1, S2,
 SWS, REM) sont obtenus par concaténation des tableaux atomiques cachés —
 sans relecture des données brutes ni recalcul (cf CLASSIFICATION_GROUPS /
-UMAP_GROUPS dans config.py).
+UMAP_GROUPS dans config.py).=
 
 Notes
 -----
@@ -32,12 +32,11 @@ Notes
   https://github.com/raphaelvallat/antropy) — non encore implémentées.
 
 Usage :
-    python feat_extract_umap_fooof.py \\
+    python feat_extract_umap_fooof_v2.py \\
         --deriv-path /path/to/derivatives/preprocessed-ica \\
         --save-path  /path/to/dream_features \\
-        --n-jobs     -1
+        --n-jobs     $SLURM_CPUS_PER_TASK
 
-Author: based on Dehgan et al. sleep repo, modernised.
 """
 
 import argparse
@@ -67,13 +66,10 @@ from config import (
     FEATURE_KEYS, SUBJECT_IDS,
 )
 
-SF = int(SFREQ_PREPROC)  # 250 Hz après décimation dans preprocess_subject.py
+SF = int(SFREQ_PREPROC)  # 250 Hz après décimation dans le prepro
 
 
 # ─── CLI ──────────────────────────────────────────────────────────────────────
-# Défini juste après les imports/constantes : argparse ne dépend que de la
-# stdlib + config, pas des fonctions ci-dessous. Contrat d'entrée visible
-# d'un coup d'oeil avant l'implémentation.
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
@@ -83,14 +79,16 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--save-path", type=Path, required=True,
                    help="Dossier de sortie des features "
                         "(ex: /home/alouis/scratch/dream_features)")
-    p.add_argument("--n-jobs", type=int, default=-1,
-                   help="Parallel jobs joblib (défaut: tous les CPUs)")
+    p.add_argument("--n-jobs", type=int, default=1, 
+                   help="Parallel jobs joblib (défaut: 1 CPU)")
+    p.add_argument("--overwrite", action="store_true", default=False,
+                   help="Écrase les .npz existants (utile après changement de params)")
     return p.parse_args()
 
 
 # ─── path helpers ─────────────────────────────────────────────────────────────
-# Format BIDS derivatives avec entité processing='clean' (proc-clean)
-# produite par mne_bids.write_raw_bids(..., processing='clean').
+#Chemins vers les fichiers preprocessés (proc-clean) 
+#produits par preprocess_subject_v2.py
 
 def _vhdr(deriv_path: Path, sub_id: str) -> Path:
     return (deriv_path / f"sub-{sub_id}" / "eeg"
@@ -124,7 +122,7 @@ def load_epochs_by_atomic_stage(
     raw = mne.io.read_raw_brainvision(
         _vhdr(deriv_path, sub_id), preload=True, verbose=False
     )
-    raw.pick(CH_NAMES[:N_EEG])  # sélection par nom (robuste à l'ordre des canaux)
+    raw.pick(CH_NAMES[:N_EEG])  # selection par nom
     n_total = raw.n_times
 
     scorer = _choose_scorer(sub_id)
@@ -145,20 +143,25 @@ def load_epochs_by_atomic_stage(
         samples = block["sample"].values
         stages  = block["stage"].values
 
-        # 30 secondes consécutives du même stade (1 annotation/seconde à SF Hz)
-        if not (np.all(samples == samples[0] + np.arange(30) * SF) and
+        if not (np.all(samples == samples[0] + np.arange(30) * SF) and 
                 np.all(stages == stages[0])):
+            #on verifie si  les 30 annotations sont espacées 
+            #exactement de 250 samples (1s à 250Hz), sans trou ni saut
+            #et que toutes les 30 secondes appartiennent au même stade
             i += 1
             continue
-
+        
         end = int(samples[0]) + N_SAMPLES
-        if end > n_total:
-            i += 1
-            continue
 
+        # verifie que l'epoch ne depasse pas la fin du fichier on sait jamais
+        if end > n_total:
+            raise ValueError(
+                f"sub-{sub_id}: epoch dépasse la fin du fichier "
+                f"(end={end}, n_total={n_total})"
+            )
         epoch = raw.get_data(start=int(samples[0]), stop=end)  # (19, 7500)
         epochs[STAGE_LABEL_TO_ATOMIC[stages[0]]].append(epoch)
-        i += 30  # non-chevauchant
+        i += 30  # un pas de 30s 
 
     return {s: np.stack(e) for s, e in epochs.items() if e}
 
@@ -189,9 +192,10 @@ def band_power(
     spectrum: np.ndarray, freqs: np.ndarray, fmin: float, fmax: float
 ) -> np.ndarray:
     """(n_epochs, 19, n_freqs) -> (n_epochs, 19) moyenne sur [fmin, fmax]."""
-    mask = (freqs >= fmin) & (freqs <= fmax)
+    mask = (freqs >= fmin) & (freqs <= fmax) 
+    #masque booleen sur frequences ex : 1 2 3 4 true et le reste false pr prem bande
     return spectrum[..., mask].mean(axis=-1)
-
+    #extrait la puissance moyenne sur une bande de frequences
 
 def fit_fooof(
     psds: np.ndarray, freqs: np.ndarray
@@ -204,27 +208,30 @@ def fit_fooof(
 
     n_jobs=1 : le parallélisme est géré au niveau sujet par joblib en amont.
 
-    Returns
-    -------
+    Returns:
     exponent  : (n_epochs, 19)         pente aperiodic (exposant 1/f)
     flattened : (n_epochs, 19, n_freqs) log10(psd) - fit_aperiodic (oscillatoire)
     """
     n_epochs, n_ch, n_freqs = psds.shape
-    flat_psds = psds.reshape(-1, n_freqs)
+    flat_psds = psds.reshape(-1, n_freqs) #specparam attend un array 2D
+    #la résolution freq est SF/WINDOW = 1Hz. Donc sur 1-45Hz => nfreq = 45
 
     fg = SpectralGroupModel(aperiodic_mode="fixed", verbose=False)
     fg.fit(freqs, flat_psds, freq_range=FOOOF_FREQ_RANGE, n_jobs=1)
+    #parallelisme est géré en amont => n_jobs =1
 
-    aperiodic = fg.get_params("aperiodic_params")  # (n, 2) [offset, exponent]
+    aperiodic = fg.get_params("aperiodic_params")
+    # (n_epochs*19, 2) : col0=offset , col1=exposant
+    #offset = coordonées a l'origine et exponent = pente (>0)
     exponent  = aperiodic[:, 1].reshape(n_epochs, n_ch)
 
     offsets   = aperiodic[:, 0:1]
     exponents = aperiodic[:, 1:2]
     ap_fit_log = offsets - exponents * np.log10(freqs)[None, :]
     flattened_log = np.log10(flat_psds) - ap_fit_log
+    #flatten log = residu oscillatoire
 
     return exponent, flattened_log.reshape(n_epochs, n_ch, n_freqs)
-
 
 def compute_cov(data: np.ndarray) -> np.ndarray:
     """(n_epochs, 19, 7500) -> (n_epochs, 19, 19).
@@ -249,10 +256,19 @@ def compute_cosp(
         window=WINDOW, overlap=0.01, fmin=fmin, fmax=fmax, fs=SF
     ).fit_transform(data)
     return mat.mean(axis=-1) if mat.ndim == 4 else mat
+    # pyriemann retourne (n_epochs, 19, 19, n_freqs) ou (n_epochs, 19, 19)
+    # selon la version -> moyenne sur l'axe fréquences si 4D
+    #a tester quand cluster plus down
 
 
 def compute_all_features(data: np.ndarray) -> dict[str, np.ndarray]:
-    """Un groupe d'epochs -> toutes les features en un seul passage Welch/cov/cosp."""
+    """Un groupe d'epochs -> toutes les features en un seul passage.
+
+    Un seul appel Welch + FOOOF, toutes les features spectrales en sont dérivées.
+    CoSpectra appelé une fois par bande.
+
+    Returns dict avec clés : aperiodic, cov, psd_{band}, psd_osc_{band}, cosp_{band}.
+    """
     psds, freqs    = compute_psd_spectrum(data)
     exponent, flat = fit_fooof(psds, freqs)
 
@@ -270,40 +286,46 @@ def compute_all_features(data: np.ndarray) -> dict[str, np.ndarray]:
 # ─── per-subject pipeline ─────────────────────────────────────────────────────
 
 def process_subject(
-    deriv_path: Path, save_path: Path, sub_id: str
+    deriv_path: Path, save_path: Path, sub_id: str, overwrite: bool = False
 ) -> None:
     if not _vhdr(deriv_path, sub_id).exists():
         print(f"sub-{sub_id}: derivative not found, skipping")
         return
+    #Verifie que le fichier preprocessé existe sur disque
 
     try:
         atomic_epochs = load_epochs_by_atomic_stage(deriv_path, sub_id)
     except Exception:
         print(f"sub-{sub_id}: ERROR loading\n{traceback.format_exc()}")
         return
+    #charge le raw et decoupe en epochs
 
     for stage, data in atomic_epochs.items():
         print(f"  sub-{sub_id} {stage}: {data.shape[0]} epochs")
 
-        if all(
+        # skip si tous les .npz de ce sujet/stade existent -> reprise apres crash cluster
+        if not overwrite and all(
             (save_path / k / f"{k}_s{sub_id}_{stage}.npz").exists()
             for k in FEATURE_KEYS
         ):
             print(f"  sub-{sub_id} {stage}: already cached, skipping")
             continue
-
+        
         try:
             feats = compute_all_features(data)
         except Exception:
             print(f"sub-{sub_id} {stage}: ERROR features\n{traceback.format_exc()}")
             continue
+        #calcul des features
 
         for key, arr in feats.items():
             out = save_path / key / f"{key}_s{sub_id}_{stage}.npz"
-            if not out.exists():
+            # double check par feature : protege contre un crash entre deux saves
+            if not out.exists() or overwrite:
                 out.parent.mkdir(parents=True, exist_ok=True)
                 np.savez_compressed(out, data=arr)
-
+                #sauvegarde l'array compressé
+                
     print(f"sub-{sub_id}: done")
 
 
@@ -317,7 +339,7 @@ def _load_atomic(
 
 
 def combine_classification_state(
-    save_path: Path, key: str, state: str
+    save_path: Path, key: str, state: str, overwrite: bool = False
 ) -> None:
     """Concatène les tableaux atomiques par CLASSIFICATION_GROUPS[state], empile les sujets.
 
@@ -325,7 +347,7 @@ def combine_classification_state(
     Charger avec np.load(path, allow_pickle=True).
     """
     out = save_path / key / f"{key}_{state}.npz"
-    if out.exists():
+    if out.exists() and not overwrite:
         return
 
     stages = CLASSIFICATION_GROUPS[state]
@@ -401,11 +423,11 @@ def build_umap_vectors(
 
 
 def build_umap_vectors_cached(
-    save_path: Path,
+    save_path: Path, overwrite: bool = False
 ) -> tuple[dict[str, np.ndarray], np.ndarray]:
     """Cache les vecteurs UMAP pour éviter de tout recalculer si le plot crashe."""
     cache = save_path / "umap_vectors.npz"
-    if cache.exists():
+    if cache.exists() and not overwrite:
         d = np.load(cache, allow_pickle=True)
         vectors = {k: d[k] for k in d.files if k != "labels"}
         return vectors, d["labels"]
@@ -465,23 +487,24 @@ if __name__ == "__main__":
     deriv_path = args.deriv_path
     save_path  = args.save_path
     n_jobs     = args.n_jobs
+    overwrite  = args.overwrite
 
     t0 = time()
 
     print("=== extraction features par sujet (stades atomiques) ===")
     Parallel(n_jobs=n_jobs)(
-        delayed(process_subject)(deriv_path, save_path, sub_id)
+        delayed(process_subject)(deriv_path, save_path, sub_id, overwrite)
         for sub_id in SUBJECT_IDS
     )
 
     print("=== combinaison en états de classification ===")
     Parallel(n_jobs=n_jobs)(
-        delayed(combine_classification_state)(save_path, key, state)
+        delayed(combine_classification_state)(save_path, key, state, overwrite)
         for key, state in product(FEATURE_KEYS, STATE_LIST)
     )
 
     print("=== UMAP ===")
-    vectors, labels = build_umap_vectors_cached(save_path)
+    vectors, labels = build_umap_vectors_cached(save_path, overwrite)
     plot_umaps(vectors, labels, save_path)
 
     m, s = divmod(int(time() - t0), 60)
