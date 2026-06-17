@@ -11,10 +11,12 @@ _events.tsv. Les features (PSD brute, PSD oscillatoire FOOOF, exposant
 aperiodic, covariance temporelle, cospectrum) sont calculées une fois par
 groupe atomique et cachées sur disque.
 
-Les états de classification (S2, SWS, REM, NREM) et les états UMAP (S1, S2,
-SWS, REM) sont obtenus par concaténation des tableaux atomiques cachés —
-sans relecture des données brutes ni recalcul (cf CLASSIFICATION_GROUPS /
-UMAP_GROUPS dans config.py).
+Les états de classification (S2, SWS, REM, NREM) sont obtenus par
+concaténation des tableaux atomiques cachés — sans relecture des données
+brutes ni recalcul (cf CLASSIFICATION_GROUPS dans config.py).
+
+La visualisation UMAP est séparée dans visualize_umap.py, qui lit les mêmes
+.npz atomiques.
 
 Notes
 -----
@@ -32,7 +34,7 @@ Notes
   https://github.com/raphaelvallat/antropy) — non encore implémentées.
 
 Usage :
-    python feat_extract_umap_fooof_v3.py \\
+    python feat_extract.py \\
         --deriv-path /path/to/derivatives/preprocessed-ica \\
         --save-path  /path/to/dream_features \\
         --n-jobs     $SLURM_CPUS_PER_TASK \\
@@ -46,16 +48,12 @@ from itertools import product
 from pathlib import Path
 from time import time
 
-import matplotlib.patches as mpatches
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import mne
-import umap
 from specparam import SpectralGroupModel
 from joblib import Parallel, delayed
 from pyriemann.estimation import Covariances, CoSpectra
-from sklearn.preprocessing import StandardScaler
 
 from config import (
     SFREQ_PREPROC, PER_BLACKLIST_STR, JBE_SUBJECTS_STR,
@@ -63,9 +61,9 @@ from config import (
     WINDOW, OVERLAP, FREQ_DICT, FOOOF_FREQ_RANGE,
     ATOMIC_STAGES, STAGE_LABEL_TO_ATOMIC,
     CLASSIFICATION_GROUPS, STATE_LIST,
-    UMAP_GROUPS, UMAP_STATES, UMAP_COLORS,
     FEATURE_KEYS, SUBJECT_IDS,
 )
+from utils import load_atomic
 
 SF = int(SFREQ_PREPROC)  # 250 Hz après décimation dans le prepro
 
@@ -332,13 +330,6 @@ def process_subject(
 
 # ─── combine: atomique par sujet -> états de classification (tous sujets) ─────
 
-def _load_atomic(
-    save_path: Path, key: str, sub_id: str, stage: str
-) -> np.ndarray | None:
-    f = save_path / key / f"{key}_s{sub_id}_{stage}.npz"
-    return np.load(f)["data"] if f.exists() else None
-
-
 def combine_classification_state(
     save_path: Path, key: str, state: str, overwrite: bool = False
 ) -> None:
@@ -356,129 +347,13 @@ def combine_classification_state(
     for sub_id in SUBJECT_IDS:
         parts = [
             a for s in stages
-            if (a := _load_atomic(save_path, key, sub_id, s)) is not None
+            if (a := load_atomic(save_path, key, sub_id, s)) is not None
         ]
         if parts:
             arrays.append(np.concatenate(parts, axis=0))
 
     if arrays:
         np.savez_compressed(out, data=np.array(arrays, dtype=object))
-
-
-# ─── UMAP ─────────────────────────────────────────────────────────────────────
-
-def _upper_tri(arr: np.ndarray) -> np.ndarray:
-    """(n, p, p) -> (n, p*(p+1)/2) triangle supérieur."""
-    idx = np.triu_indices(arr.shape[-1])
-    return arr[..., idx[0], idx[1]].reshape(len(arr), -1)
-
-
-UMAP_FEATURE_GROUPS = {
-    "psd":       [f"psd_{b}"     for b in FREQ_DICT],
-    "psd_osc":   [f"psd_osc_{b}" for b in FREQ_DICT],
-    "cov":       ["cov"],
-    "cosp":      [f"cosp_{b}"    for b in FREQ_DICT],
-    "aperiodic": ["aperiodic"],
-}
-
-
-def build_umap_vectors(
-    save_path: Path,
-) -> tuple[dict[str, np.ndarray], np.ndarray]:
-    """Construit les vecteurs UMAP (6 groupes incl. 'all') depuis les .npz atomiques cachés."""
-    vectors: dict[str, list[np.ndarray]] = {g: [] for g in UMAP_FEATURE_GROUPS}
-    labels: list[str] = []
-
-    for sub_id in SUBJECT_IDS:
-        for state, stages in UMAP_GROUPS.items():
-            per_key: dict[str, np.ndarray] = {}
-            n_epochs = None
-            ok = True
-
-            for key in FEATURE_KEYS:
-                parts = [
-                    a for s in stages
-                    if (a := _load_atomic(save_path, key, sub_id, s)) is not None
-                ]
-                if not parts:
-                    ok = False
-                    break
-                arr = np.concatenate(parts, axis=0)
-                if key == "cov" or key.startswith("cosp"):
-                    arr = _upper_tri(arr)
-                per_key[key] = arr
-                n_epochs = arr.shape[0]
-
-            if not ok:
-                continue
-
-            for group, keys in UMAP_FEATURE_GROUPS.items():
-                vectors[group].append(
-                    np.concatenate([per_key[k] for k in keys], axis=1)
-                )
-            labels.extend([state] * n_epochs)
-
-    out = {g: np.concatenate(v, axis=0) for g, v in vectors.items()}
-    out["all"] = np.concatenate([out[g] for g in UMAP_FEATURE_GROUPS], axis=1)
-    return out, np.array(labels)
-
-
-def build_umap_vectors_cached(
-    save_path: Path, overwrite: bool = False
-) -> tuple[dict[str, np.ndarray], np.ndarray]:
-    """Cache les vecteurs UMAP pour éviter de tout recalculer si le plot crashe."""
-    cache = save_path / "umap_vectors.npz"
-    if cache.exists() and not overwrite:
-        d = np.load(cache, allow_pickle=True)
-        vectors = {k: d[k] for k in d.files if k != "labels"}
-        return vectors, d["labels"]
-
-    vectors, labels = build_umap_vectors(save_path)
-    np.savez_compressed(cache, labels=labels, **vectors)
-    return vectors, labels
-
-
-def plot_umaps(
-    vectors: dict[str, np.ndarray],
-    labels: np.ndarray,
-    save_path: Path,
-) -> None:
-    fig, axes = plt.subplots(2, 3, figsize=(20, 12))
-    titles = {
-        "psd":       "PSD (bandes brutes)",
-        "psd_osc":   "PSD oscillatoire (corrigée 1/f)",
-        "cov":       "Covariance",
-        "cosp":      "Cospectrum (toutes bandes)",
-        "aperiodic": "Exposant apériodique",
-        "all":       "Toutes features combinées",
-    }
-
-    for ax, (fname, title) in zip(axes.flatten(), titles.items()):
-        print(f"  UMAP: {fname}")
-        X   = StandardScaler().fit_transform(vectors[fname])
-        emb = umap.UMAP(n_neighbors=30, min_dist=0.1, random_state=42).fit_transform(X)
-
-        for state in UMAP_STATES:
-            mask = labels == state
-            if mask.any():
-                ax.scatter(
-                    emb[mask, 0], emb[mask, 1],
-                    c=UMAP_COLORS[state], s=3, alpha=0.4, rasterized=True,
-                )
-        ax.set_title(title, fontsize=13)
-        ax.set_xlabel("UMAP 1")
-        ax.set_ylabel("UMAP 2")
-        ax.legend(
-            handles=[mpatches.Patch(color=UMAP_COLORS[s], label=s) for s in UMAP_STATES],
-            markerscale=3,
-        )
-
-    fig.suptitle("UMAP — séparabilité des stades de sommeil par type de feature", fontsize=15)
-    plt.tight_layout()
-    out = save_path / "umap_sleep_stages.png"
-    fig.savefig(out, dpi=150)
-    print(f"Saved: {out}")
-    plt.close()
 
 
 # ─── main ─────────────────────────────────────────────────────────────────────
@@ -504,9 +379,7 @@ if __name__ == "__main__":
         for key, state in product(FEATURE_KEYS, STATE_LIST)
     )
 
-    print("=== UMAP ===")
-    vectors, labels = build_umap_vectors_cached(save_path, overwrite)
-    plot_umaps(vectors, labels, save_path)
-
     m, s = divmod(int(time() - t0), 60)
     print(f"total: {m}m{s:02d}s")
+    print("Lancer visualize_umap.py --save-path <save_path> pour le UMAP.")
+
