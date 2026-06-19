@@ -159,7 +159,7 @@ UMAP_COLORS = {"S1": "#E69F00", "S2": "#56B4E9", "SWS": "#009E73", "REM": "#CC79
 
 FEATURE_KEYS = (
     [f"psd_{b}"       for b in FREQ_DICT]   # puissance spectrale brute par bande
-    + [f"psd_osc_{b}" for b in FREQ_DICT]   # ratio puissance/aperiodic par bande (excès au-dessus du 1/f, FOOOF)
+    + [f"psd_osc_{b}" for b in FREQ_DICT]   # puissance oscillatoire corrigée 1/f (FOOOF)
     + ["aperiodic"]                          # exposant aperiodic FOOOF (pente), par canal
     + ["cov"]                                # matrice de covariance temporelle (SCM)
     + [f"cosp_{b}"    for b in FREQ_DICT]   # cospectrum, par bande

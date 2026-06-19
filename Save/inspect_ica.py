@@ -31,7 +31,7 @@ from pathlib import Path
 import mne
 import mne_bids
 
-from config_v3 import CH_NAMES, HP_FREQ_ICA, N_EEG
+from config_v2 import CH_NAMES, HP_FREQ_ICA, N_EEG
 
 
 # ─── CLI ──────────────────────────────────────────────────────────────────────

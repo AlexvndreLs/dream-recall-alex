@@ -44,7 +44,7 @@ CE QU'IL RESTE À FAIRE APRÈS CE SCRIPT :
 
 Pour feat_extract_umap_fooof_v2.py (classifieur classique PSD/cov/cosp/FOOOF) :
   - Lire depuis derivatives/preprocessed-ica/
-  - config_v3.py déjà mis à jour : SFREQ_PREPROC=250, N_SAMPLES=7500, WINDOW=250
+  - config_v2.py déjà mis à jour : SFREQ_PREPROC=250, N_SAMPLES=7500, WINDOW=250
   - HP final = 0.1Hz -> psd_delta comparable au pipeline Arthur sur ce point
   - L'average reference change cov/cosp vs Arthur (référence nez) -> documenter
   - AutoReject strict sur les epochs 30s avant calcul des features
@@ -72,7 +72,7 @@ A documenter lors de la comparaison avec ses résultats.
 
 Note sujets 21/22 : ces sujets sont preprocessés normalement ici.
 Leur exclusion de l'analyse HR/LR se fait en aval dans classify.py
-(EXCLUDED_SUBJECTS dans config_v3.py). Les données preprocessées sont
+(EXCLUDED_SUBJECTS dans config_v2.py). Les données preprocessées sont
 produites car elles pourront servir pour d'autres analyses (ex: réseau DL
 en mode non-supervisé) ou si la raison de l'exclusion est clarifiée.
 """
@@ -83,9 +83,9 @@ from pathlib import Path
 import mne
 import mne_bids
 import numpy as np
-from meegkit.dss import dss_line
+from meegkit.zapline import zapline_plus
 
-from config_v3 import (
+from config_v2 import (
     CH_NAMES, SFREQ,
     LINE_FREQ, HP_FREQ_FINAL, HP_FREQ_ICA, SFREQ_TARGET, N_EEG,
 )
@@ -122,22 +122,19 @@ def load_raw(bids_path: Path, sub_str: str) -> mne.io.BaseRaw:
 
 
 def apply_zapline(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
-    """1. Retire le bruit de ligne 50Hz avec ZapLine (meegkit.dss.dss_line).
+    """1. Retire le bruit de ligne 50Hz avec ZapLine-plus (meegkit).
 
-    meegkit.dss.dss_line opère sur un tableau numpy (n_times, n_channels).
+    meegkit.zapline.zapline_plus opère sur un tableau numpy (n_times, n_channels).
     On extrait, on applique, on remet en place dans le raw.
     Commun aux deux branches -> fait une seule fois, avant le fork.
-
-    fline est en Hz (LINE_FREQ), pas normalisé : on fournit sfreq explicitement,
-    donc dss_line attend la fréquence de ligne en Hz (la normalisation ne
-    s'applique que si sfreq=1). nremove=1 : une seule composante de ligne retirée.
     """
     data = raw.get_data().T                         # (n_times, n_channels)
-    data_clean, _ = dss_line(
+    data_clean, _ = zapline_plus(
         data,
-        fline=LINE_FREQ,                            # fréquence de ligne en Hz (50)
-        sfreq=raw.info['sfreq'],
-        nremove=1,
+        fline=LINE_FREQ / raw.info['sfreq'],        # fréquence normalisée [0, 1]
+        srate=raw.info['sfreq'],
+        nfixedremove=1,
+        prefix='',
     )
     raw._data = data_clean.T                        # (n_channels, n_times)
     return raw
@@ -324,7 +321,7 @@ if __name__ == '__main__':
 
     # sujets 21 et 22 : preprocessés normalement (pas de sys.exit ici).
     # L'exclusion de l'analyse HR/LR se fait en aval dans classify.py
-    # via EXCLUDED_SUBJECTS dans config_v3.py.
+    # via EXCLUDED_SUBJECTS dans config_v2.py.
 
     # ── tronc commun (étapes 1-2) ────────────────────────────────────────────
     raw = load_raw(args.bids_path, sub_str)

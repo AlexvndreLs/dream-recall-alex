@@ -1,0 +1,58 @@
+Voici la to-do list complète, triée par priorité et regroupée par fichier touché.
+
+## Bloquant — à faire avant tout run cluster
+
+**1. Unifier la config en un seul `config.py`**
+`preprocess_subject_v2.py` et `inspect_ica.py` importent `config_v2` ; les autres importent `config` ; le fichier joint s'appelle `config_v3.py`. Renommer en `config.py` partout, supprimer les variantes. Risque de crash ou de double config silencieuse.
+
+**2. Corriger le bug ZapLine `fline`**
+Passer `fline=LINE_FREQ` (50.0 Hz), pas `LINE_FREQ / sfreq`. Vérifier le nom du paramètre (`sfreq` vs `srate`) avec `help(zapline_plus)` de ta version. Sans ça, le 50 Hz n'est pas retiré.
+
+**3. Tester ZapLine sur 1 sujet (notebook)**
+Spectre avant/après sur un canal, vérifier que les pics à 50 et 100 Hz s'aplatissent. Test de 2 min avant de lancer les 38 sujets. Tant que ce n'est pas validé, ne pas preprocesser tout le dataset.
+
+**4. Confirmer l'ordre exact des 19 canaux contre le `.mat` original**
+Un mauvais ordre casse cov/cosp **silencieusement** (pas d'erreur, juste des matrices fausses). Vérifier que les 19 premiers de `CH_NAMES` correspondent bien aux colonnes du `.mat`. Confirmer aussi l'identité de misc1/2/3 (message Arthur en attente).
+
+## Important — corrections de fond
+
+**5. FOOOF : corriger l'espace de `psd_osc_*`** *(feat_extract)*
+Option 2 retenue : repasser en linéaire avant de moyenner (`flat_linear = flat_psds / 10**ap_fit_log`), pour que `psd_osc_*` et `psd_*` soient dans le même espace (puissance linéaire, comparables dans le LDA). Renommer/documenter clairement ce que représente la feature.
+
+**6. Ajouter la correction max-statistics** *(classify_vector)*
+Ajouter `pvals_maxstat` à partir de `perm_accs.max(axis=1)` comme distribution nulle partagée. Garder `pvals` non corrigé en parallèle pour diagnostic.
+
+**7. Calibrer `find_bads_muscle(threshold=0.5)`**
+Lancer `inspect_ica.py` sur quelques sujets (dont les 9 flaggés pour saturation : s5,s6,s17,s19,s20,s26,s27,s28,s37), vérifier visuellement que les composantes rejetées sont bien des artefacts, ajuster le seuil si trop agressif/laxiste sur du sommeil.
+
+**8. Vérifier la forme et la SPD-itude de `CoSpectra`** *(feat_extract)*
+`print(CoSpectra(...).fit_transform(data[:2]).shape)` pour confirmer l'axe de moyenne fréquentielle, et vérifier que les matrices sont bien SPD (sinon `TSclassifier` Riemannien plante). Vérification ponctuelle, pas de refonte.
+
+## Cohérence / nettoyage
+
+**9. Trancher `combine_classification_state`** *(feat_extract)*
+Code mort actuellement : `classify.py` recharge les atomiques, ne lit jamais les `.npz` combinés. Soit le supprimer (gagne de l'I/O), soit faire lire le combiné par classify. Décider.
+
+**10. Vérifier le nombre de splits de `StratifiedLeave2GroupsOut`**
+Confirmer que `get_n_splits` = n_HR × n_LR (1 HR + 1 LR en test à chaque fois), conforme à la thèse §1.2.7.
+
+## Validation méthodologique (après que le pipeline tourne)
+
+**11. Comparer chaque feature de complexité à l'exposant aperiodic seul**
+perm_entropy, higuchi_fd, spec_entropy : vérifier qu'elles ajoutent de l'info au-delà de la pente 1/f (corrélation + accuracy marginale). C'est ton principe déjà établi. spec_entropy en particulier (dérivée du même spectre Welch) est suspecte de redondance.
+
+**12. Vérifier `n_trials_min`**
+Confirmer que `compute_global_n_trials` retombe dans l'ordre de grandeur d'Arthur (≈61). Un écart fort signale un problème d'épochage ou d'exclusion de sujets.
+
+**13. Vérifier l'alignement hypnogramme du sujet 4 dans le BIDS**
+Confirmer si stocké en `events.tsv` (rien à faire) ou en série continue par seconde (prepend + shift StartTime −1s), puis appliquer le fix.
+
+## En attente / non prioritaire (gardé en tête)
+
+- overlap cosp à 0.01 — laissé tel quel pour l'instant
+- branche noavgref pour cov/cosp — seulement si tu reviens sur l'objectif comparabilité (tu as dit qu'on s'en fiche, donc parked)
+- Hann vs Hamming — **tranché : on garde Hann** (meilleur roll-off pour bandes larges)
+
+---
+
+Le bloc 1-4 est la barrière avant tout calcul lourd. Le bloc 5-6 c'est les deux patchs de fond dont je te parlais. Tu veux que je commence par lesquels — je peux te faire le patch config unifié (1) plus les deux patchs FOOOF (5) et max-stat (6) ensemble, c'est cohérent comme lot ?

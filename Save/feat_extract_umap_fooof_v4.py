@@ -13,7 +13,7 @@ calculées une fois par groupe atomique et cachées sur disque.
 
 Les états de classification (S2, SWS, REM, NREM) sont obtenus par
 concaténation des tableaux atomiques cachés — sans relecture des données
-brutes ni recalcul (cf CLASSIFICATION_GROUPS dans config_v3.py).
+brutes ni recalcul (cf CLASSIFICATION_GROUPS dans config.py).
 
 La visualisation UMAP est séparée dans visualize_umap.py, qui lit les mêmes
 .npz atomiques.
@@ -60,7 +60,7 @@ from specparam import SpectralGroupModel
 from joblib import Parallel, delayed
 from pyriemann.estimation import Covariances, CoSpectra
 
-from config_v3 import (
+from config import (
     SFREQ_PREPROC, PER_BLACKLIST_STR, JBE_SUBJECTS_STR,
     N_SAMPLES, N_EEG, CH_NAMES,
     WINDOW, OVERLAP, FREQ_DICT, FOOOF_FREQ_RANGE,
@@ -214,8 +214,7 @@ def fit_fooof(
 
     Returns:
     exponent  : (n_epochs, 19)         pente aperiodic (exposant 1/f)
-    flattened : (n_epochs, 19, n_freqs) psd / fit_aperiodic (ratio linéaire,
-                facteur d'excès au-dessus de la pente 1/f : ~1 hors pic, >1 sur pic)
+    flattened : (n_epochs, 19, n_freqs) log10(psd) - fit_aperiodic (oscillatoire)
     """
     n_epochs, n_ch, n_freqs = psds.shape
     flat_psds = psds.reshape(-1, n_freqs) #specparam attend un array 2D
@@ -225,7 +224,7 @@ def fit_fooof(
     fg.fit(freqs, flat_psds, freq_range=FOOOF_FREQ_RANGE, n_jobs=1)
     #parallelisme est géré en amont => n_jobs =1
 
-    aperiodic = fg.get_params("aperiodic")  # specparam 2.0 : "aperiodic" (ex-"aperiodic_params" en 1.x)
+    aperiodic = fg.get_params("aperiodic_params")
     # (n_epochs*19, 2) : col0=offset , col1=exposant
     #offset = coordonées a l'origine et exponent = pente (>0)
     exponent  = aperiodic[:, 1].reshape(n_epochs, n_ch)
@@ -233,13 +232,10 @@ def fit_fooof(
     offsets   = aperiodic[:, 0:1]
     exponents = aperiodic[:, 1:2]
     ap_fit_log = offsets - exponents * np.log10(freqs)[None, :]
-    # résidu en RATIO LINÉAIRE (psd observée / aperiodic), pas en log :
-    # band_power fait une moyenne arithmétique, valide en puissance linéaire
-    # seulement -> psd_osc_* reste dans le même espace que psd_* (comparable LDA).
-    # interprétation : facteur d'excès au-dessus du 1/f (~1 hors pic, >1 sur pic).
-    flat_ratio = flat_psds / (10 ** ap_fit_log)
+    flattened_log = np.log10(flat_psds) - ap_fit_log
+    #flatten log = residu oscillatoire
 
-    return exponent, flat_ratio.reshape(n_epochs, n_ch, n_freqs)
+    return exponent, flattened_log.reshape(n_epochs, n_ch, n_freqs)
 
 def compute_cov(data: np.ndarray) -> np.ndarray:
     """(n_epochs, 19, 7500) -> (n_epochs, 19, 19).
@@ -290,7 +286,7 @@ def compute_complexity(
 
     spec_ent : =>  est-ce que cette énergie est concentrée sur quelques fréquences,
     ou répartie uniformément sur tout le spectre ?
-    welch avec 0% chevauchement ici => cf config_v3.py mais pt mieux de quitter arthur et go 50%
+    welch avec 0% chevauchement ici => cf config.py mais pt mieux de quitter arthur et go 50%
     => Welch opère à l'intérieur d'une seule epoch, pas entre epochs
     => pas de leakage
     À comparer à l'exposant aperiodic (cf docstring d'en-tête).

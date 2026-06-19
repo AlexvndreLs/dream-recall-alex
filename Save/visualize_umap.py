@@ -21,7 +21,7 @@ import numpy as np
 import umap
 from sklearn.preprocessing import StandardScaler
 
-from config_v3 import (
+from config import (
     FREQ_DICT,
     FEATURE_KEYS,
     SUBJECT_IDS,

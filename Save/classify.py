@@ -44,7 +44,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from pyriemann.classification import TSclassifier
 
-from config_v3 import (
+from config import (
     CH_NAMES,
     CLASSIFICATION_GROUPS,
     FEATURE_KEYS,
