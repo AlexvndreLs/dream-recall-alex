@@ -20,7 +20,7 @@ Ce script produit DEUX sorties BIDS derivatives par sujet :
 
 Pipeline (ordre important, cf justifications inline) :
 
-  1. ZapLine 50Hz              [commun]  retirer bruit de ligne secteur
+  1. Notch 50/100Hz           [commun]  retirer bruit de ligne secteur
   2. HP filter 0.1Hz           [commun]  retirer dérive DC, préserver delta
      |
      |-- branche ICA :
@@ -83,7 +83,6 @@ from pathlib import Path
 import mne
 import mne_bids
 import numpy as np
-from meegkit.dss import dss_line
 
 from config_v3 import (
     CH_NAMES, SFREQ,
@@ -121,25 +120,28 @@ def load_raw(bids_path: Path, sub_str: str) -> mne.io.BaseRaw:
     return raw
 
 
-def apply_zapline(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
-    """1. Retire le bruit de ligne 50Hz avec ZapLine (meegkit.dss.dss_line).
+def apply_notch(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
+    """1. Retire le bruit de ligne 50Hz (+ harmonique 100Hz) par notch filter.
 
-    meegkit.dss.dss_line opère sur un tableau numpy (n_times, n_channels).
-    On extrait, on applique, on remet en place dans le raw.
+    ZapLine (meegkit.dss.dss_line) testé d'abord mais retirait 0% de la raie
+    50Hz pourtant énorme (ratio 50Hz/voisins ~18 sur s5) -> remplacé par un
+    notch MNE simple et robuste. Acceptable ici car les features s'arrêtent à
+    45Hz (FOOOF) / 35Hz (bandes) : le signal cérébral à 50Hz n'est pas analysé,
+    donc la préservation spatiale de ZapLine n'apporte rien.
+
+    LINE_FREQ=50 et son harmonique 100Hz. Le notch s'applique avant la
+    décimation (raw encore à 1000Hz, Nyquist 500Hz) : 50 et 100Hz passent
+    largement. Pas de picks : EOG/EMG portent aussi la raie secteur et sont
+    filtrés ici, puis droppés à l'étape 4 -> évite de polluer la détection ICA
+    des composantes oculaires qui suit. phase='zero' : pas de déphasage.
     Commun aux deux branches -> fait une seule fois, avant le fork.
-
-    fline est en Hz (LINE_FREQ), pas normalisé : on fournit sfreq explicitement,
-    donc dss_line attend la fréquence de ligne en Hz (la normalisation ne
-    s'applique que si sfreq=1). nremove=1 : une seule composante de ligne retirée.
     """
-    data = raw.get_data().T                         # (n_times, n_channels)
-    data_clean, _ = dss_line(
-        data,
-        fline=LINE_FREQ,                            # fréquence de ligne en Hz (50)
-        sfreq=raw.info['sfreq'],
-        nremove=1,
+    raw.notch_filter(
+        [LINE_FREQ, 2 * LINE_FREQ],                 # 50 et 100 Hz
+        filter_length='auto',
+        phase='zero',
+        verbose=False,
     )
-    raw._data = data_clean.T                        # (n_channels, n_times)
     return raw
 
 
@@ -328,7 +330,7 @@ if __name__ == '__main__':
 
     # ── tronc commun (étapes 1-2) ────────────────────────────────────────────
     raw = load_raw(args.bids_path, sub_str)
-    raw = apply_zapline(raw)           # 1. ZapLine 50Hz
+    raw = apply_notch(raw)             # 1. notch 50Hz (+100Hz)
     raw = apply_highpass_final(raw)    # 2. HP 0.1Hz
 
     # ── fork : copie indépendante par branche ────────────────────────────────
