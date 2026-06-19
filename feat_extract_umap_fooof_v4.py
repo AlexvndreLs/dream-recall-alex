@@ -276,8 +276,19 @@ def compute_complexity(
     puissance, normalisée) -> coût quasi nul, cohérent avec la PSD.
 
     perm_entropy : order=3 par défaut antropy, normalize=True pour borner [0,1].
-    higuchi_fd   : kmax=10 par défaut antropy.
+    =>quantifie l'irrégularité/imprévisibilité de l'ordre temporel des valeurs 
+    en regardans si parmi les 6 permuations certaine apparaissent plus ou si toutes apparaissent pareil
 
+    higuchi_fd   : kmax=10 par défaut antropy.
+    => voir avec ariana
+    => mesure à quel point le signal "remplit" le plan temps-amplitude quand on le regarde à differentes resolutions
+    en gros si le signal est fractal ou irregulier a petite et grande echelle
+
+    spec_ent : =>  est-ce que cette énergie est concentrée sur quelques fréquences,
+    ou répartie uniformément sur tout le spectre ?
+    welch avec 0% chevauchement ici => cf config.py mais pt mieux de quitter arthur et go 50%
+    => Welch opère à l'intérieur d'une seule epoch, pas entre epochs
+    => pas de leakage
     À comparer à l'exposant aperiodic (cf docstring d'en-tête).
     """
     n_epochs, n_ch, _ = data.shape
@@ -287,8 +298,8 @@ def compute_complexity(
     for ep in range(n_epochs):
         for ch in range(n_ch):
             sig = data[ep, ch]
-            perm_ent[ep, ch] = ant.perm_entropy(sig, normalize=True)
-            higuchi[ep, ch]  = ant.higuchi_fd(sig)
+            perm_ent[ep, ch] = ant.perm_entropy(sig, normalize=True) #m=3 mais a voir apres si plus de detail
+            higuchi[ep, ch]  = ant.higuchi_fd(sig) # k= 10 => 750 echantillon => 3s 
 
     # spectral entropy depuis le spectre Welch : Shannon normalisé de la
     # distribution de puissance (somme sur l'axe fréquences -> proba)
