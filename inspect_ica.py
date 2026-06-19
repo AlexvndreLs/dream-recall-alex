@@ -55,6 +55,9 @@ def parse_args() -> argparse.Namespace:
                    help=f"HP pour la visualisation ICA (défaut: {HP_FREQ_ICA}Hz)")
     p.add_argument('--out-dir', type=Path, default=Path("./ica_figures"),
                    help="Dossier de sortie des PNG (défaut: ./ica_figures)")
+    p.add_argument('--full', action="store_true", default=False,
+                   help="Ajoute les figures temporelles lourdes (sources + signal "
+                        "avant/après sur 9h) : lent, illisible, hors décision. Off par défaut.")
     return p.parse_args()
 
 
@@ -128,17 +131,25 @@ if __name__ == '__main__':
     figs = ica.plot_components(title=f"sub-{sub_str} — toutes topographies", show=False)
     save_figs(figs, out_dir, "all_topo")
 
-    # 5. Signal avant/après ICA sur les 19 EEG
-    raw_eeg = raw_vis.copy().pick(CH_NAMES[:N_EEG])
-    raw_clean = ica.apply(raw_eeg.copy(), verbose=False)
+    # Figures temporelles lourdes (9h × 1000Hz) : lentes et illisibles compressées
+    # sur une largeur d'écran, hors décision de validation des artefacts.
+    # Désactivées par défaut -> évite de saturer le temps d'un job interactif.
+    if args.full:
+        print("\n--- Toutes les composantes (sources temporelles) ---")
+        figs = ica.plot_sources(raw_vis, title=f"sub-{sub_str} — toutes composantes", show=False)
+        save_figs(figs, out_dir, "all_sources")
 
-    print("\n--- Signal EEG avant ICA ---")
-    fig = raw_eeg.plot(title=f"sub-{sub_str} — avant ICA", scalings='auto', show=False)
-    save_figs(fig, out_dir, "signal_before")
+        # Signal avant/après ICA sur les 19 EEG
+        raw_eeg = raw_vis.copy().pick(CH_NAMES[:N_EEG])
+        raw_clean = ica.apply(raw_eeg.copy(), verbose=False)
 
-    print("\n--- Signal EEG après ICA ---")
-    fig = raw_clean.plot(title=f"sub-{sub_str} — après ICA", scalings='auto', show=False)
-    save_figs(fig, out_dir, "signal_after")
+        print("\n--- Signal EEG avant ICA ---")
+        fig = raw_eeg.plot(title=f"sub-{sub_str} — avant ICA", scalings='auto', show=False)
+        save_figs(fig, out_dir, "signal_before")
+
+        print("\n--- Signal EEG après ICA ---")
+        fig = raw_clean.plot(title=f"sub-{sub_str} — après ICA", scalings='auto', show=False)
+        save_figs(fig, out_dir, "signal_after")
 
     print(f"\nInspection terminée. Figures dans : {out_dir}")
     print("Pour modifier les composantes rejetées, éditer ica.exclude manuellement")
