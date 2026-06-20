@@ -221,15 +221,20 @@ def run_ica(
         raw_eog, ch_name=['EOG_L', 'EOG_R', 'EOG_horiz'],
         threshold=2.5, verbose=False,
     )
-
-    # détection composantes musculaires via find_bads_muscle
-    # (plus correct que find_bads_eog sur EMG_chin : détecte les composantes
-    # avec spectre dominé par les hautes fréquences, sans besoin de canal
-    # de référence)
-    # threshold=0.5 : valeur par défaut MNE (cf. mne.preprocessing.ICA.find_bads_muscle).
-    # Non validée empiriquement sur ce dataset (sommeil, sujet allongé immobile).
-    # À calibrer via inspect_ica.py avant de figer ce paramètre.
-    emg_indices, _ = ica.find_bads_muscle(raw_for_ica, threshold=0.5) #pourquoi 0.5 ?? a voir
+    
+    # détection composantes musculaires via find_bads_muscle.
+    # Cible la signature physique de l'EMG (Dharmaprani et al. 2016, données
+    # d'un sujet paralysé, Whitham et al. 2007), via 3 critères : pente
+    # spectrale log-log positive 7-45Hz (puissance qui monte en HF), puissance
+    # périphérique (loin du vertex), et point focal unique. Les 2 derniers
+    # critères exigent les positions d'électrodes : vérifié présentes (19 EEG
+    # avec montage standard_1020), donc les 3 critères s'appliquent.
+    # Préféré à find_bads_eog(ch_name='EMG_chin') car basé sur la forme du
+    # spectre EMG plutôt que sur une corrélation à un seul canal menton.
+    # threshold=0.5 : valeur par défaut MNE. Non calibrée empiriquement sur ce
+    # dataset (sommeil). Détecteur à pleine capacité (3 critères), donc un EMG
+    # raté relèverait du seuil, pas du détecteur -> baisser vers 0.4 si besoin.
+    emg_indices, _ = ica.find_bads_muscle(raw_for_ica, threshold=0.5)
 
     ica.exclude = sorted(set(eog_indices) | set(emg_indices))
     print(f"  composantes ICA exclues (EOG+EMG) : {ica.exclude}")
