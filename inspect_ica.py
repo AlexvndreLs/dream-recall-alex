@@ -9,7 +9,7 @@ sur un nœud de cluster sans écran (Fir login). Récupérer les PNG produits
 dans --out-dir et les inspecter localement.
 
 Prérequis :
-    - preprocess_subject_v2.py doit avoir tourné pour le sujet cible
+    - preprocess_subject_v3.py doit avoir tourné pour le sujet cible
     - L'objet ICA est dans derivatives/ica/sub-XX_task-sleep_ica.fif
     - Le BIDS brut est dans dream_bids/ (25 canaux, 1000Hz)
 
@@ -63,6 +63,11 @@ def parse_args() -> argparse.Namespace:
                         "repérer les artefacts temporels (ex: cœur). Défaut: 30s.")
     p.add_argument('--src-start', type=float, default=None,
                    help="Début (s) de la fenêtre sources. Défaut: milieu de l'enregistrement.")
+    
+    # NEW ARGUMENT INSERTED HERE:
+    p.add_argument('--iclabel', action="store_true", default=False,
+                   help="Inspecter la version ICLabel au lieu de la version standard.")
+                   
     return p.parse_args()
 
 
@@ -101,7 +106,9 @@ if __name__ == '__main__':
     raw_vis = raw.copy().filter(l_freq=args.hp_freq, h_freq=None, verbose=False)
 
     # 2. Recharge l'objet ICA
-    ica_path = args.deriv_root / "ica" / f"sub-{sub_str}_task-sleep_ica.fif"
+    # Determine the correct suffix based on the --iclabel argument
+    suffix = "-iclabel" if args.iclabel else ""
+    ica_path = args.deriv_root / "ica" / f"sub-{sub_str}_task-sleep{suffix}_ica.fif"
     if not ica_path.exists():
         raise FileNotFoundError(
             f"ICA non trouvé : {ica_path}\n"
@@ -112,7 +119,9 @@ if __name__ == '__main__':
     print(f"sub-{sub_str} — {ica.n_components_} composantes ICA")
     print(f"Composantes exclues automatiquement : {ica.exclude}")
 
-    out_dir = args.out_dir / f"sub-{sub_str}"
+    # Ajoute un suffixe au sous-dossier du sujet si c'est ICLabel
+    folder_suffix = "_iclabel" if args.iclabel else ""
+    out_dir = args.out_dir / f"sub-{sub_str}{folder_suffix}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # 3. Topographies + propriétés des composantes exclues
