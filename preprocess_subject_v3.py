@@ -83,6 +83,7 @@ from pathlib import Path
 import mne
 import mne_bids
 import numpy as np
+from mne_icalabel import label_components
 
 from config_v3 import (
     CH_NAMES, SFREQ,
@@ -194,7 +195,9 @@ def run_ica(
                                # nombre de composantes automatiquement.
                                # évite les instabilités numériques des
                                # composantes à variance quasi nulle (vs None)
-        method='fastica',
+        method='picard',       # reco doc MNE pour l'EEG réel : plus robuste que
+                               # FastICA quand les sources ne sont pas parfaitement
+                               # indépendantes (cas typique EEG), converge + vite
         random_state=42,       # reproductibilité du fit ICA
         max_iter='auto',
     )
@@ -237,24 +240,82 @@ def run_ica(
     return raw, ica
 
 
+# seuil de rejet ICLabel : proba > 0.9 pour eye/muscle. Conservateur, justifié
+# pour le sommeil : (a) atonie musculaire -> peu d'EMG attendu ; (b) ICLabel est
+# entraîné sur de l'EEG éveillé, donc risque de faux positifs sur les ondes
+# lentes (delta/fuseaux non représentés à l'entraînement) -> on ne rejette que
+# ce dont ICLabel est très sûr. Littérature : seuils 0.8-0.9 quasi équivalents.
+ICLABEL_THRESHOLD = 0.9
+ICLABEL_REJECT_LABELS = ('eye blink', 'muscle artifact')
+
+
+def run_ica_iclabel(
+    raw: mne.io.BaseRaw,
+    raw_for_ica: mne.io.BaseRaw,
+) -> tuple[mne.io.BaseRaw, mne.preprocessing.ICA]:
+    """3b'. Variante ICLabel : ICA Picard-extended + labellisation automatique.
+
+    Branche indépendante de run_ica (FastICA->Picard + find_bads). Sert de
+    méthode de rejet alternative pour comparaison empirique en aval.
+
+    ICLabel impose 3 prérequis (cf doc mne-icalabel), appliqués sur une copie
+    dédiée à la labellisation pour ne pas altérer la décomposition :
+      - décomposition extended Infomax : obtenue via Picard extended
+        (method='picard', ortho=False, extended=True) -> décomposition
+        identique à extended Infomax mais convergence + rapide (reco MNE-BIDS).
+      - référence average (CAR)
+      - filtre 1-100 Hz
+    Rejet : composantes labellisées eye/muscle avec proba > ICLABEL_THRESHOLD.
+    """
+    ica = mne.preprocessing.ICA(
+        n_components=0.99,
+        method='picard',
+        fit_params=dict(ortho=False, extended=True),  # = extended Infomax (ICLabel)
+        random_state=42,
+        max_iter='auto',
+    )
+    ica.fit(raw_for_ica, verbose=False)
+
+    # copie dédiée à la labellisation : ICLabel exige CAR + filtre 1-100Hz.
+    # raw_for_ica est déjà HP 1Hz -> on ajoute seulement le LP 100Hz et la CAR.
+    raw_label = raw_for_ica.copy().pick('eeg')
+    raw_label.filter(l_freq=None, h_freq=100.0, verbose=False)
+    raw_label.set_eeg_reference('average', verbose=False)
+
+    labels_dict = label_components(raw_label, ica, method='iclabel')
+    labels = labels_dict['labels']
+    probas = labels_dict['y_pred_proba']
+
+    ica.exclude = [
+        i for i, (lab, p) in enumerate(zip(labels, probas))
+        if lab in ICLABEL_REJECT_LABELS and p > ICLABEL_THRESHOLD
+    ]
+    print(f"  composantes ICLabel exclues (eye/muscle p>{ICLABEL_THRESHOLD}) : "
+          f"{ica.exclude}")
+
+    raw = ica.apply(raw, verbose=False)
+    return raw, ica
+
+
 def save_ica(
     ica: mne.preprocessing.ICA,
     sub_str: str,
     deriv_root: Path,
+    suffix: str = '',
 ) -> Path:
     """3c. Sauvegarde de l'objet ICA pour inspection offline.
 
-    Stocké dans derivatives/ica/ (hors des branches preprocessed-ica/noica)
-    car l'objet ICA est commun aux deux : les poids sont calculés une seule
-    fois et appliqués uniquement dans la branche ICA. Permet de relancer
-    inspect_ica.py sans refaire le preprocessing complet.
+    Stocké dans derivatives/ica/ (hors des branches preprocessed-*) pour
+    permettre de relancer inspect_ica.py sans refaire le preprocessing.
+    suffix distingue les ICA des différentes branches (ex: '-iclabel') :
+    sans suffixe = branche ICA principale (Picard + find_bads).
 
     Format .fif (natif MNE) : rechargeable avec mne.preprocessing.read_ica().
-    Nommage BIDS-inspired : sub-XX_task-sleep_ica.fif
+    Nommage BIDS-inspired : sub-XX_task-sleep{suffix}_ica.fif
     """
     ica_dir = deriv_root / "ica"
     ica_dir.mkdir(parents=True, exist_ok=True)
-    ica_path = ica_dir / f"sub-{sub_str}_task-sleep_ica.fif"
+    ica_path = ica_dir / f"sub-{sub_str}_task-sleep{suffix}_ica.fif"
     ica.save(ica_path, overwrite=True)
     return ica_path
 
@@ -347,8 +408,9 @@ if __name__ == '__main__':
     raw = apply_highpass_final(raw)    # 2. HP 0.1Hz
 
     # ── fork : copie indépendante par branche ────────────────────────────────
-    raw_ica_branch   = raw.copy()
-    raw_noica_branch = raw.copy()
+    raw_ica_branch     = raw.copy()
+    raw_noica_branch   = raw.copy()
+    raw_iclabel_branch = raw.copy()
 
     # ── branche ICA (étapes 3a-3c + 4-7) -> feat_extract + classifieur ──────
     print("  -- branche ICA --")
@@ -373,6 +435,24 @@ if __name__ == '__main__':
         raw_noica_branch, sub_str, args.deriv_root, 'preprocessed-noica'
     )
     print(f"  Done (noICA)    : {out_noica}")
+
+    # ── branche ICLabel (étapes 3a-3c' + 4-7) -> comparaison rejet alternatif ─
+    # ICA Picard-extended + labellisation ICLabel (≠ branche ica : Picard +
+    # find_bads). ICA distincte, fittée séparément, sauvée sous suffixe -iclabel.
+    print("  -- branche ICLabel --")
+    raw_for_iclabel             = make_ica_fit_copy(raw_iclabel_branch)   # 3a. copie HP 1Hz
+    raw_iclabel_branch, ica_icl = run_ica_iclabel(                        # 3b'. ICA+ICLabel
+        raw_iclabel_branch, raw_for_iclabel
+    )
+    icl_path = save_ica(ica_icl, sub_str, args.deriv_root, suffix='-iclabel')  # 3c'
+    print(f"  ICA sauvegardé  : {icl_path}")
+    raw_iclabel_branch = drop_aux_channels(raw_iclabel_branch)            # 4. drop aux
+    raw_iclabel_branch = apply_average_reference(raw_iclabel_branch)      # 5. avg ref
+    raw_iclabel_branch = apply_decimation(raw_iclabel_branch)             # 6. 250Hz
+    out_iclabel = save_bids_derivatives(                                  # 7. save
+        raw_iclabel_branch, sub_str, args.deriv_root, 'preprocessed-iclabel'
+    )
+    print(f"  Done (ICLabel)  : {out_iclabel}")
 
     # ── ce qui n'est PAS fait ici, volontairement ────────────────────────────
     # - bad channels : saturation ponctuelle sur 9 sujets traitée en aval

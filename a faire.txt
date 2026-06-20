@@ -1,3 +1,9 @@
+Que pense tu de ce commentaire  : Step 1: Pre-Cleaning with Autoreject (Optional but Recommended)
+ICA algorithms assume that the data is stationary. Massive, transient artifacts (like a violent subject movement) violate this assumption and can ruin the spatial weights. By epoching your 1 Hz high-pass continuous data into arbitrary windows (e.g., 2 seconds) and using autoreject.get_rejection_threshold to drop the worst segments before running the ICA, you ensure the algorithm converges on stable physiological components.
+
+
+
+
 Voici la to-do list complète, triée par priorité et regroupée par fichier touché.
 
 ## Bloquant — à faire avant tout run cluster
