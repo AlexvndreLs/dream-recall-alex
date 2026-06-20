@@ -135,8 +135,12 @@ if __name__ == '__main__':
     start   = args.src_start if args.src_start is not None else max(0.0, rec_dur / 2)
     stop    = min(rec_dur, start + args.src_window)
     print(f"\n--- Sources ICA (fenêtre {start:.0f}-{stop:.0f}s) ---")
+    # copie sans annotations : sinon plot_sources surcharge la figure des blocs
+    # colorés d'hypnogramme (illisible sur 30s). On ne touche pas au raw_vis réel.
+    raw_src = raw_vis.copy()
+    raw_src.set_annotations(None)
     figs = ica.plot_sources(
-        raw_vis, start=start, stop=stop,
+        raw_src, start=start, stop=stop,
         title=f"sub-{sub_str} — sources {start:.0f}-{stop:.0f}s", show=False,
     )
     save_figs(figs, out_dir, "sources_window")
@@ -153,12 +157,15 @@ if __name__ == '__main__':
     # sur une largeur d'écran, hors décision de validation des artefacts.
     # Désactivées par défaut -> évite de saturer le temps d'un job interactif.
     if args.full:
+        # pas d'annotations sur ces figures temporelles non plus (cf sources_window)
+        raw_full = raw_vis.copy()
+        raw_full.set_annotations(None)
         print("\n--- Toutes les composantes (sources temporelles) ---")
-        figs = ica.plot_sources(raw_vis, title=f"sub-{sub_str} — toutes composantes", show=False)
+        figs = ica.plot_sources(raw_full, title=f"sub-{sub_str} — toutes composantes", show=False)
         save_figs(figs, out_dir, "all_sources")
 
         # Signal avant/après ICA sur les 19 EEG
-        raw_eeg = raw_vis.copy().pick(CH_NAMES[:N_EEG])
+        raw_eeg = raw_full.copy().pick(CH_NAMES[:N_EEG])
         raw_clean = ica.apply(raw_eeg.copy(), verbose=False)
 
         print("\n--- Signal EEG avant ICA ---")
