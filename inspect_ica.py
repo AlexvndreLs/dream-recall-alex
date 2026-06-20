@@ -58,6 +58,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument('--full', action="store_true", default=False,
                    help="Ajoute les figures temporelles lourdes (sources + signal "
                         "avant/après sur 9h) : lent, illisible, hors décision. Off par défaut.")
+    p.add_argument('--src-window', type=float, default=30.0,
+                   help="Durée (s) de la fenêtre d'affichage des sources ICA pour "
+                        "repérer les artefacts temporels (ex: cœur). Défaut: 30s.")
+    p.add_argument('--src-start', type=float, default=None,
+                   help="Début (s) de la fenêtre sources. Défaut: milieu de l'enregistrement.")
     return p.parse_args()
 
 
@@ -122,14 +127,27 @@ if __name__ == '__main__':
     else:
         print("Aucune composante rejetée automatiquement.")
 
-    # 4. Toutes les composantes pour comparaison
-    print("\n--- Toutes les composantes (sources temporelles) ---")
-    figs = ica.plot_sources(raw_vis, title=f"sub-{sub_str} — toutes composantes", show=False)
-    save_figs(figs, out_dir, "all_sources")
+    # 4. Sources ICA sur une FENÊTRE COURTE pour repérer les artefacts temporels
+    #    (notamment le cœur : pics réguliers ~1/s). Sur 9h, plot_sources reconstruit
+    #    32M échantillons et sature le job -> on cible une fenêtre de --src-window
+    #    secondes au milieu de l'enregistrement (signal stable, sujet endormi).
+    rec_dur = raw_vis.times[-1]
+    start   = args.src_start if args.src_start is not None else max(0.0, rec_dur / 2)
+    stop    = min(rec_dur, start + args.src_window)
+    print(f"\n--- Sources ICA (fenêtre {start:.0f}-{stop:.0f}s) ---")
+    figs = ica.plot_sources(
+        raw_vis, start=start, stop=stop,
+        title=f"sub-{sub_str} — sources {start:.0f}-{stop:.0f}s", show=False,
+    )
+    save_figs(figs, out_dir, "sources_window")
 
     print("\n--- Toutes les topographies ---")
     figs = ica.plot_components(title=f"sub-{sub_str} — toutes topographies", show=False)
     save_figs(figs, out_dir, "all_topo")
+
+    print("\n--- Propriétés détaillées de TOUTES les composantes ---")
+    figs = ica.plot_properties(raw_vis, picks=list(range(ica.n_components_)), show=False)
+    save_figs(figs, out_dir, "all_props")
 
     # Figures temporelles lourdes (9h × 1000Hz) : lentes et illisibles compressées
     # sur une largeur d'écran, hors décision de validation des artefacts.
