@@ -1,0 +1,12 @@
+=== Job array 8 -> sujet 8  (Mon Jun 22 12:39:26 PDT 2026) ===
+=== Preprocessing sujet 8 ===
+Reading 0 ... 26461759  =      0.000 ... 26461.759 secs...
+  -- branche ICA --
+Effective window size : 2.048 (s)
+  composantes ICA exclues (EOG+EMG) : [np.int64(2), np.int64(6), 7, 8, 9, 10]
+  EOG rejetes : [np.int64(2), np.int64(6)] | EMG rejetes : [7, 8, 9, 10]
+Overwriting existing file.
+Writing ICA solution to /home/alouis/scratch/dream_bids/derivatives/ica/sub-08_task-sleep_ica.fif...
+Overwriting existing file.
+  ICA sauvegardé  : /home/alouis/scratch/dream_bids/derivatives/ica/sub-08_task-sleep_ica.fif
+=== Fini sujet 8  (Mon Jun 22 12:53:10 PDT 2026) ===

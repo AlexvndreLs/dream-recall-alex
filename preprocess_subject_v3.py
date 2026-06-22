@@ -101,6 +101,10 @@ def parse_args():
     parser.add_argument('--deriv-root', type=Path, required=True,
                         help="Racine derivatives (contiendra preprocessed-ica/, "
                              "preprocessed-noica/, ica/)")
+    parser.add_argument('--branches', nargs='+',
+                        choices=['ica', 'noica', 'iclabel'],
+                        default=['ica', 'noica', 'iclabel'],
+                        help="Branches a executer. Ex: --branches ica")
     return parser.parse_args()
 
 
@@ -217,11 +221,19 @@ def run_ica(
         ch_name='EOG_horiz', drop_refs=False, copy=True, verbose=False,
     )
     raw_eog.set_channel_types({'EOG_horiz': 'eog'}, verbose=False)
-    eog_indices, _ = ica.find_bads_eog(
+    # Méthode retenue : corrélation absolue, seuil 0.6.
+    # Analyse empirique sur 38 sujets (analyze_thresholds.py + analyze_zscore.py,
+    # juin 2026) : le z-score (seuil 2.5) produisait 0 rejet chez 79% des sujets
+    # (structurel : 14 composantes insuffisant pour z-scoring intra-sujet fiable).
+    # La corrélation 0.6 donne ~1.4 rejets/sujet (plage physiologique 1-2),
+    # CV inter-sujets stable (~0.6), et préserve le signal frontal (objectif
+    # mécanistique : interpréter la zone biologique HR vs LR).
+    # Ref : MNE threshold='auto' -> 0.9 pour correlation (conservateur par défaut).
+    eog_indices, eog_scores = ica.find_bads_eog(
         raw_eog, ch_name=['EOG_L', 'EOG_R', 'EOG_horiz'],
-        threshold=2.5, verbose=False,
+        measure='correlation', threshold=0.6, verbose=False,
     )
-    
+
     # détection composantes musculaires via find_bads_muscle.
     # Cible la signature physique de l'EMG (Dharmaprani et al. 2016, données
     # d'un sujet paralysé, Whitham et al. 2007), via 3 critères : pente
@@ -234,10 +246,14 @@ def run_ica(
     # threshold=0.5 : valeur par défaut MNE. Non calibrée empiriquement sur ce
     # dataset (sommeil). Détecteur à pleine capacité (3 critères), donc un EMG
     # raté relèverait du seuil, pas du détecteur -> baisser vers 0.4 si besoin.
-    emg_indices, _ = ica.find_bads_muscle(raw_for_ica, threshold=0.5)
+    # Log CSV des scores muscle : permet l'analyse empirique du seuil muscle
+    # après le batch (ICA fraîche -> pas de bug misc/picks, contrairement à
+    # analyze_thresholds.py qui recharge depuis .fif).
+    emg_indices, emg_scores = ica.find_bads_muscle(raw_for_ica, threshold=0.5)
 
     ica.exclude = sorted(set(eog_indices) | set(emg_indices))
     print(f"  composantes ICA exclues (EOG+EMG) : {ica.exclude}")
+    print(f"  EOG rejetes : {eog_indices} | EMG rejetes : {emg_indices}")
 
     # application des poids (calculés sur copie 1Hz) aux données réelles (0.1Hz)
     # -> composantes EOG/EMG retirées, ondes lentes préservées
@@ -418,46 +434,62 @@ if __name__ == '__main__':
     raw_iclabel_branch = raw.copy()
 
     # ── branche ICA (étapes 3a-3c + 4-7) -> feat_extract + classifieur ──────
-    print("  -- branche ICA --")
-    raw_for_ica         = make_ica_fit_copy(raw_ica_branch)        # 3a. copie HP 1Hz
-    raw_ica_branch, ica = run_ica(raw_ica_branch, raw_for_ica)     # 3b. ICA
-    ica_path            = save_ica(ica, sub_str, args.deriv_root)  # 3c. save ICA
-    print(f"  ICA sauvegardé  : {ica_path}")
-    raw_ica_branch      = drop_aux_channels(raw_ica_branch)        # 4. drop aux
-    raw_ica_branch      = apply_average_reference(raw_ica_branch)  # 5. avg ref
-    raw_ica_branch      = apply_decimation(raw_ica_branch)         # 6. 250Hz
-    out_ica = save_bids_derivatives(                               # 7. save
-        raw_ica_branch, sub_str, args.deriv_root, 'preprocessed-ica'
-    )
-    print(f"  Done (ICA)      : {out_ica}")
+    if 'ica' in args.branches:
+     print("  -- branche ICA --")
+     raw_for_ica         = make_ica_fit_copy(raw_ica_branch)        # 3a. copie HP 1Hz
+     raw_ica_branch, ica = run_ica(raw_ica_branch, raw_for_ica)     # 3b. ICA
+     ica_path            = save_ica(ica, sub_str, args.deriv_root)  # 3c. save ICA
+     print(f"  ICA sauvegardé  : {ica_path}")
+
+     # log CSV des scores muscle par composante (ICA fraîche -> pas de bug
+     # misc/picks qui affecte analyze_thresholds.py sur ICA rechargée).
+     # Permet l'analyse empirique du seuil muscle en post-processing.
+     import csv as _csv
+     muscle_log = args.deriv_root / "ica" / "muscle_scores.csv"
+     write_header = not muscle_log.exists()
+     with open(muscle_log, 'a', newline='') as _f:
+         _w = _csv.writer(_f)
+         if write_header:
+             _w.writerow(['subject', 'comp', 'muscle_score', 'rejected'])
+         for _i, _s in enumerate(emg_scores):
+             _w.writerow([sub_str, _i, round(float(_s), 6), int(_i in emg_indices)])
+     raw_ica_branch      = drop_aux_channels(raw_ica_branch)        # 4. drop aux
+     raw_ica_branch      = apply_average_reference(raw_ica_branch)  # 5. avg ref
+     raw_ica_branch      = apply_decimation(raw_ica_branch)         # 6. 250Hz
+     out_ica = save_bids_derivatives(                               # 7. save
+         raw_ica_branch, sub_str, args.deriv_root, 'preprocessed-ica'
+     )
+     print(f"  Done (ICA)      : {out_ica}")
 
     # ── branche noICA (étapes 4-7 uniquement) -> ablation DL ────────────────
-    print("  -- branche noICA --")
-    raw_noica_branch = drop_aux_channels(raw_noica_branch)         # 4. drop aux
-    raw_noica_branch = apply_average_reference(raw_noica_branch)   # 5. avg ref
-    raw_noica_branch = apply_decimation(raw_noica_branch)          # 6. 250Hz
-    out_noica = save_bids_derivatives(                             # 7. save
-        raw_noica_branch, sub_str, args.deriv_root, 'preprocessed-noica'
-    )
-    print(f"  Done (noICA)    : {out_noica}")
+    if 'noica' in args.branches:
+     print("  -- branche noICA --")
+     raw_noica_branch = drop_aux_channels(raw_noica_branch)         # 4. drop aux
+     raw_noica_branch = apply_average_reference(raw_noica_branch)   # 5. avg ref
+     raw_noica_branch = apply_decimation(raw_noica_branch)          # 6. 250Hz
+     out_noica = save_bids_derivatives(                             # 7. save
+         raw_noica_branch, sub_str, args.deriv_root, 'preprocessed-noica'
+     )
+     print(f"  Done (noICA)    : {out_noica}")
 
     # ── branche ICLabel (étapes 3a-3c' + 4-7) -> comparaison rejet alternatif ─
     # ICA Picard-extended + labellisation ICLabel (≠ branche ica : Picard +
     # find_bads). ICA distincte, fittée séparément, sauvée sous suffixe -iclabel.
-    print("  -- branche ICLabel --")
-    raw_for_iclabel             = make_ica_fit_copy(raw_iclabel_branch)   # 3a. copie HP 1Hz
-    raw_iclabel_branch, ica_icl = run_ica_iclabel(                        # 3b'. ICA+ICLabel
-        raw_iclabel_branch, raw_for_iclabel
-    )
-    icl_path = save_ica(ica_icl, sub_str, args.deriv_root, suffix='-iclabel')  # 3c'
-    print(f"  ICA sauvegardé  : {icl_path}")
-    raw_iclabel_branch = drop_aux_channels(raw_iclabel_branch)            # 4. drop aux
-    raw_iclabel_branch = apply_average_reference(raw_iclabel_branch)      # 5. avg ref
-    raw_iclabel_branch = apply_decimation(raw_iclabel_branch)             # 6. 250Hz
-    out_iclabel = save_bids_derivatives(                                  # 7. save
-        raw_iclabel_branch, sub_str, args.deriv_root, 'preprocessed-iclabel'
-    )
-    print(f"  Done (ICLabel)  : {out_iclabel}")
+    if 'iclabel' in args.branches:
+     print("  -- branche ICLabel --")
+     raw_for_iclabel             = make_ica_fit_copy(raw_iclabel_branch)   # 3a. copie HP 1Hz
+     raw_iclabel_branch, ica_icl = run_ica_iclabel(                        # 3b'. ICA+ICLabel
+         raw_iclabel_branch, raw_for_iclabel
+     )
+     icl_path = save_ica(ica_icl, sub_str, args.deriv_root, suffix='-iclabel')  # 3c'
+     print(f"  ICA sauvegardé  : {icl_path}")
+     raw_iclabel_branch = drop_aux_channels(raw_iclabel_branch)            # 4. drop aux
+     raw_iclabel_branch = apply_average_reference(raw_iclabel_branch)      # 5. avg ref
+     raw_iclabel_branch = apply_decimation(raw_iclabel_branch)             # 6. 250Hz
+     out_iclabel = save_bids_derivatives(                                  # 7. save
+         raw_iclabel_branch, sub_str, args.deriv_root, 'preprocessed-iclabel'
+     )
+     print(f"  Done (ICLabel)  : {out_iclabel}")
 
     # ── ce qui n'est PAS fait ici, volontairement ────────────────────────────
     # - bad channels : saturation ponctuelle sur 9 sujets traitée en aval
