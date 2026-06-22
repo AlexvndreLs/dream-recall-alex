@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --account=def-kjerbi
 #SBATCH --job-name=thr_ica
-#SBATCH --time=1:30:00
+#SBATCH --time=5:00:00
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
 #SBATCH --output=logs/thresholds_%j.out

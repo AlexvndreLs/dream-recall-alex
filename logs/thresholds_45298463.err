@@ -1,0 +1,16 @@
+/home/alouis/dream-recall-alex/analyze_thresholds.py:65: RuntimeWarning: There are channels without locations (n/a) that are not marked as bad: ['EOG_L', 'EOG_R', 'EMG_chin', 'misc1', 'misc2', 'misc3']
+  raw = mne_bids.read_raw_bids(mne_bids.BIDSPath(
+/home/alouis/dream-recall-alex/analyze_thresholds.py:65: RuntimeWarning: Not setting positions of 6 emg/eog/misc channels found in montage:
+['EOG_L', 'EOG_R', 'EMG_chin', 'misc1', 'misc2', 'misc3']
+Consider setting the channel types to be of EEG/sEEG/ECoG/DBS/fNIRS using inst.set_channel_types before calling inst.set_montage, or omit these channels when creating your montage.
+  raw = mne_bids.read_raw_bids(mne_bids.BIDSPath(
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+  File "/home/alouis/dream-recall-alex/analyze_thresholds.py", line 97, in scores_for_subject
+    _, sc_musc = ica.find_bads_muscle(raw_for_ica, threshold=0, verbose=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-497>", line 10, in find_bads_muscle
+  File "/home/alouis/mne_env/lib/python3.11/site-packages/mne/preprocessing/ica.py", line 2072, in find_bads_muscle
+    scores = np.prod(np.array(scores), axis=0)
+                     ^^^^^^^^^^^^^^^^
+ValueError: setting an array element with a sequence. The requested array has an inhomogeneous shape after 1 dimensions. The detected shape was (3,) + inhomogeneous part.
