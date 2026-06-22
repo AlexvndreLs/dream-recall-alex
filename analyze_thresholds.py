@@ -62,8 +62,12 @@ def scores_for_subject(sub_str, bids_path, deriv_root, with_iclabel):
     raw = mne_bids.read_raw_bids(mne_bids.BIDSPath(
         subject=sub_str, task='sleep', root=bids_path, datatype='eeg'), verbose=False)
     raw.load_data()
-    # même préparation que le pipeline : copie HP 1Hz
-    raw_for_ica = raw.copy()
+    # même préparation que le pipeline : copie HP 1Hz.
+    # misc1/2/3 sont typés 'misc' comme les sources ICA -> find_bads_muscle
+    # fait picks='misc' en interne et ramasse les 3 canaux en plus des sources,
+    # ce qui casse np.prod (shape inhomogène). On les retire ici : ils ne servent
+    # pas à l'analyse des seuils EOG/muscle.
+    raw_for_ica = raw.copy().drop_channels(['misc1', 'misc2', 'misc3'])
     raw_for_ica.filter(l_freq=HP_FREQ_ICA, h_freq=None, verbose=False)
     # voie horizontale comme dans run_ica
     raw_eog = mne.set_bipolar_reference(
@@ -85,8 +89,15 @@ def scores_for_subject(sub_str, bids_path, deriv_root, with_iclabel):
     corr = np.abs(np.atleast_2d(np.array(sc_corr))).max(axis=0)   # (n_comp,)
     zsc = np.abs(np.atleast_2d(np.array(sc_z))).max(axis=0)
 
-    # muscle : 1 score par composante
-    _, sc_musc = ica.find_bads_muscle(raw_for_ica, threshold=999, verbose=False)
+    # muscle : 1 score par composante.
+    # find_bads_muscle a besoin des positions des capteurs du fit ICA. On lui
+    # passe un raw piqué EXACTEMENT sur ica.ch_names (les 19 EEG fittés) : les
+    # voies non-EEG (EOG/EMG/misc) rechargées du BIDS n'ont pas de position et
+    # cassent _find_topomap_coords -> np.prod sur des scores de formes
+    # hétérogènes (plantage observé sub-05). threshold n'affecte pas les scores
+    # retournés (seulement labels_, qu'on ignore) ; on met 0 pour rester neutre.
+    raw_musc = raw_for_ica.copy().pick(ica.ch_names)
+    _, sc_musc = ica.find_bads_muscle(raw_musc, threshold=0, verbose=False)
     musc = np.array(sc_musc)
 
     n = ica.n_components_
