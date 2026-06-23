@@ -1,0 +1,8 @@
+/home/alouis/dream-recall-alex/preprocess_subject_v3.py:123: RuntimeWarning: There are channels without locations (n/a) that are not marked as bad: ['EOG_L', 'EOG_R', 'EMG_chin', 'misc1', 'misc2', 'misc3']
+  raw = mne_bids.read_raw_bids(bids_input, verbose=False)
+/home/alouis/dream-recall-alex/preprocess_subject_v3.py:123: RuntimeWarning: Not setting positions of 6 emg/eog/misc channels found in montage:
+['EOG_L', 'EOG_R', 'EMG_chin', 'misc1', 'misc2', 'misc3']
+Consider setting the channel types to be of EEG/sEEG/ECoG/DBS/fNIRS using inst.set_channel_types before calling inst.set_montage, or omit these channels when creating your montage.
+  raw = mne_bids.read_raw_bids(bids_input, verbose=False)
+/home/alouis/dream-recall-alex/preprocess_subject_v3.py:406: RuntimeWarning: Converting data files to BrainVision format
+  mne_bids.write_raw_bids(

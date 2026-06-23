@@ -1,0 +1,33 @@
+Traceback (most recent call last):
+  File "/home/alouis/dream-recall-alex/preprocess_subject_v3.py", line 84, in <module>
+    import mne_bids
+  File "/home/alouis/mne_env/lib/python3.11/site-packages/mne_bids/__init__.py", line 14, in <module>
+    from mne_bids.report import make_report
+  File "/home/alouis/mne_env/lib/python3.11/site-packages/mne_bids/report/__init__.py", line 6, in <module>
+    from ._report import make_report
+  File "/home/alouis/mne_env/lib/python3.11/site-packages/mne_bids/report/_report.py", line 15, in <module>
+    from mne_bids.config import ALLOWED_DATATYPES, DOI
+  File "/home/alouis/mne_env/lib/python3.11/site-packages/mne_bids/config.py", line 103, in <module>
+    ".con": io.read_raw_kit,
+            ^^^^^^^^^^^^^^^
+  File "/home/alouis/mne_env/lib/python3.11/site-packages/lazy_loader/__init__.py", line 78, in __getattr__
+    submod = importlib.import_module(submod_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/alouis/mne_env/lib/python3.11/site-packages/mne/io/kit/__init__.py", line 7, in <module>
+    from .kit import read_raw_kit, read_epochs_kit
+  File "/home/alouis/mne_env/lib/python3.11/site-packages/mne/io/kit/kit.py", line 22, in <module>
+    from ...epochs import BaseEpochs
+  File "/home/alouis/mne_env/lib/python3.11/site-packages/mne/epochs.py", line 17, in <module>
+    from scipy.interpolate import interp1d
+  File "/home/alouis/mne_env/lib/python3.11/site-packages/scipy/interpolate/__init__.py", line 192, in <module>
+    from ._interpolate import *
+  File "/home/alouis/mne_env/lib/python3.11/site-packages/scipy/interpolate/_interpolate.py", line 9, in <module>
+    import scipy.special as spec
+  File "/home/alouis/mne_env/lib/python3.11/site-packages/scipy/special/__init__.py", line 788, in <module>
+    from . import _basic
+  File "/home/alouis/mne_env/lib/python3.11/site-packages/scipy/special/_basic.py", line 19, in <module>
+    from ._input_validation import _nonneg_int_or_fail
+ModuleNotFoundError: No module named 'scipy.special._input_validation'

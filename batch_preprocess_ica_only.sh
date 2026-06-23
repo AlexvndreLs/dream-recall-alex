@@ -16,10 +16,11 @@ DERIV_ROOT=/home/alouis/scratch/dream_bids/derivatives
 SUBJECT=$SLURM_ARRAY_TASK_ID
 echo "=== Job array $SLURM_ARRAY_TASK_ID -> sujet $SUBJECT  ($(date)) ==="
 source /home/alouis/mne_env/bin/activate
+export PATH=/home/alouis/mne_env/bin:$PATH
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export OPENBLAS_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export MKL_NUM_THREADS=$SLURM_CPUS_PER_TASK
-python preprocess_subject_v3.py "$SUBJECT" \
+/home/alouis/mne_env/bin/python preprocess_subject_v3.py "$SUBJECT" \
     --bids-path  "$BIDS_PATH" \
     --deriv-root "$DERIV_ROOT" \
     --branches ica
