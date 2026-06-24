@@ -234,31 +234,23 @@ def run_ica(
         measure='correlation', threshold=0.6, verbose=False,
     )
 
-    # détection composantes musculaires via find_bads_muscle.
-    # Cible la signature physique de l'EMG (Dharmaprani et al. 2016, données
-    # d'un sujet paralysé, Whitham et al. 2007), via 3 critères : pente
-    # spectrale log-log positive 7-45Hz (puissance qui monte en HF), puissance
-    # périphérique (loin du vertex), et point focal unique. Les 2 derniers
-    # critères exigent les positions d'électrodes : vérifié présentes (19 EEG
-    # avec montage standard_1020), donc les 3 critères s'appliquent.
-    # Préféré à find_bads_eog(ch_name='EMG_chin') car basé sur la forme du
-    # spectre EMG plutôt que sur une corrélation à un seul canal menton.
-    # threshold=0.5 : valeur par défaut MNE. Non calibrée empiriquement sur ce
-    # dataset (sommeil). Détecteur à pleine capacité (3 critères), donc un EMG
-    # raté relèverait du seuil, pas du détecteur -> baisser vers 0.4 si besoin.
-    # Log CSV des scores muscle : permet l'analyse empirique du seuil muscle
-    # après le batch (ICA fraîche -> pas de bug misc/picks, contrairement à
-    # analyze_thresholds.py qui recharge depuis .fif).
-    emg_indices, emg_scores = ica.find_bads_muscle(raw_for_ica, threshold=0.5)
-
-    ica.exclude = sorted(set(eog_indices) | set(emg_indices))
-    print(f"  composantes ICA exclues (EOG+EMG) : {ica.exclude}")
-    print(f"  EOG rejetes : {eog_indices} | EMG rejetes : {emg_indices}")
+    # find_bads_muscle retiré définitivement (23 juin 2026).
+    # Raisons empiriques : balayage seuils 0.1-0.9 sur 38 sujets → CV entre
+    # 0.77 et 1.13 sans zone stable, distribution quasi-uniforme en log (pas
+    # de frontière bruit/artefact). Inspection visuelle s11 (7 rejets muscle) :
+    # composantes vides, spectres plats sans montée HF caractéristique de l'EMG.
+    # Inspection s35 (0 rejet) : aucun pattern EMG visible même pendant un
+    # artefact massif. Sur 19 canaux, les 3 critères internes de find_bads_muscle
+    # (pente spectrale, localisation périphérique, point focal) sont dégénérés :
+    # pas assez de résolution spatiale. Atonie musculaire du sommeil = peu de
+    # vrai EMG à capturer. La branche noica couvre le risque résiduel.
+    ica.exclude = list(eog_indices)
+    print(f"  composantes ICA exclues (EOG corr 0.6) : {ica.exclude}")
 
     # application des poids (calculés sur copie 1Hz) aux données réelles (0.1Hz)
     # -> composantes EOG/EMG retirées, ondes lentes préservées
     raw = ica.apply(raw, verbose=False)
-    return raw, ica, eog_indices, eog_scores, emg_indices, emg_scores
+    return raw, ica, eog_indices, eog_scores
 
 
 # seuil de rejet ICLabel : proba > 0.9 pour eye/muscle. Conservateur, justifié
@@ -437,28 +429,24 @@ if __name__ == '__main__':
     if 'ica' in args.branches:
      print("  -- branche ICA --")
      raw_for_ica         = make_ica_fit_copy(raw_ica_branch)        # 3a. copie HP 1Hz
-     raw_ica_branch, ica, _eog_idx, _eog_sc, _emg_idx, _emg_sc = run_ica(raw_ica_branch, raw_for_ica)  # 3b. ICA
+     raw_ica_branch, ica, _eog_idx, _eog_sc = run_ica(raw_ica_branch, raw_for_ica)  # 3b. ICA
      ica_path            = save_ica(ica, sub_str, args.deriv_root)  # 3c. save ICA
      print(f"  ICA sauvegardé  : {ica_path}")
 
-     # log CSV des scores muscle par composante (ICA fraîche -> pas de bug
-     # misc/picks qui affecte analyze_thresholds.py sur ICA rechargée).
-     # Permet l'analyse empirique du seuil muscle en post-processing.
+     # log CSV des scores EOG par composante (corr absolue, seuil 0.6).
+     # find_bads_muscle retiré (23 juin 2026, voir run_ica).
      import csv as _csv
      ica_scores_log = args.deriv_root / "ica" / "ica_rejection_scores.csv"
      write_header = not ica_scores_log.exists()
      with open(ica_scores_log, 'a', newline='') as _f:
          _w = _csv.writer(_f)
          if write_header:
-             _w.writerow(['subject', 'comp', 'eog_corr', 'eog_rejected',
-                          'muscle_score', 'muscle_rejected'])
+             _w.writerow(['subject', 'comp', 'eog_corr', 'eog_rejected'])
          for _i in range(ica.n_components_):
              _w.writerow([
                  sub_str, _i,
                  round(float(np.abs(np.atleast_2d(_eog_sc))[:, _i].max()) if _i < np.atleast_2d(_eog_sc).shape[1] else float('nan'), 6),
                  int(_i in _eog_idx),
-                 round(float(_emg_sc[_i]) if _i < len(_emg_sc) else float('nan'), 6),
-                 int(_i in _emg_idx),
              ])
      raw_ica_branch      = drop_aux_channels(raw_ica_branch)        # 4. drop aux
      raw_ica_branch      = apply_average_reference(raw_ica_branch)  # 5. avg ref
