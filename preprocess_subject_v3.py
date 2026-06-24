@@ -29,7 +29,7 @@ Pipeline (ordre important, cf justifications inline) :
   3c.    Sauvegarde ICA        [ICA]     pour inspection offline (inspect_ica.py)
      |
   4. Drop canaux aux           [commun]  ne garder que les 19 EEG
-  5. Average reference         [commun]  rereferencer, remplace ref nez
+  5. Référence nez conservée   [commun]  ref nez BrainAmp (identique Arthur, rang plein)
   6. Décimation 250Hz          [commun]  réduire volume, suffisant pour <=45Hz
   7. Save BrainVision          [commun]  un fichier par branche par sujet
 
@@ -66,7 +66,7 @@ est ponctuelle (quelques minutes) et non structurelle -> traitée en aval
 par AutoReject au niveau epoch (rejet ou réparation de la fenêtre 30s
 concernée), pas au niveau canal.
 
-Note référence : l'average reference (étape 5) remplace la référence nez
+Note référence : la référence nez d'origine est conservée (identique Arthur)
 d'origine. Cela rend cov/cosp non comparables à ceux d'Arthur (référence nez).
 A documenter lors de la comparaison avec ses résultats.
 
@@ -348,15 +348,17 @@ def drop_aux_channels(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
 
 
 def apply_average_reference(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
-    """5. Re-référencement average reference sur les 19 EEG.
+    """5. Référence : nez d'origine conservée (identique à Arthur).
 
-    Commun aux deux branches. Remplace la référence nez d'origine
-    (cf sidecar BIDS : EEGReference = 'tip of the nose').
-    Conséquence documentée : cov/cosp dans feat_extract seront différents
-    de ceux d'Arthur qui utilise la référence nez -> à mentionner lors de
-    la comparaison avec ses résultats publiés.   !!!
+    La CAR (average reference) avait été utilisée précédemment mais elle
+    dégrade le rang des matrices de covariance (rang 18/19 au lieu de 19/19)
+    ce qui fait planter le TSclassifier Riemannien (logm exige SPD strict).
+    La littérature déconseille explicitement la CAR pour < 64 canaux.
+    Arthur utilise la référence nez physique d'enregistrement (BrainAmp,
+    EEGReference = 'tip of the nose') -> on conserve cette référence.
+    Rang plein garanti, aucun shrinkage nécessaire, comparaison directe.
     """
-    raw.set_eeg_reference('average', verbose=False)
+    # no-op : la référence nez d'origine est conservée telle quelle.
     return raw
 
 
