@@ -319,6 +319,13 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm, overw
                 perm_accs[p, e] = run_cv(clf, splits, X[:, e:e+1], y)
         result["pvals"]      = (np.sum(perm_accs >= result["acc_mean"][None, :], axis=0) + 1) / (n_perm + 1)
         result["perm_accs"]  = perm_accs
+        # correction max-statistics (FWER) pour comparaisons multiples sur les 19 électrodes :
+        # distribution nulle partagée = max accuracy sur toutes les électrodes à chaque permutation.
+        # pvals_maxstat[e] = P(max_perm >= obs[e]) -> plus conservateur que pvals non corrigé.
+        # Garder pvals en parallèle pour diagnostic (voir si correction change les conclusions).
+        # Réf : Nichols & Holmes 2002 (non-parametric permutation tests neuroimaging).
+        null_max = perm_accs.max(axis=1)  # (n_perm,) max sur électrodes à chaque perm
+        result["pvals_maxstat"] = (np.sum(null_max[:, None] >= result["acc_mean"][None, :], axis=0) + 1) / (n_perm + 1)
 
     _save(out, **result)
     return result
@@ -361,12 +368,14 @@ def build_summary_csv(save_path: Path) -> None:
                              acc_mean=float(acc_mean), acc_std=float(acc_std),
                              n_trials=n_trials, normalized=normalized, pval=pval_scalar))
         else:
-            ch_names = d["ch_names"].tolist() if "ch_names" in d else list(range(len(acc_mean)))
-            pvals    = d["pvals"] if "pvals" in d else [np.nan] * len(acc_mean)
-            for ch, am, astd, pv in zip(ch_names, acc_mean, acc_std, pvals):
+            ch_names     = d["ch_names"].tolist() if "ch_names" in d else list(range(len(acc_mean)))
+            pvals        = d["pvals"]         if "pvals"         in d else [np.nan] * len(acc_mean)
+            pvals_maxstat = d["pvals_maxstat"] if "pvals_maxstat" in d else [np.nan] * len(acc_mean)
+            for ch, am, astd, pv, pv_ms in zip(ch_names, acc_mean, acc_std, pvals, pvals_maxstat):
                 rows.append(dict(key=key, state=state, electrode=ch,
                                  acc_mean=float(am), acc_std=float(astd),
-                                 n_trials=n_trials, normalized=normalized, pval=float(pv)))
+                                 n_trials=n_trials, normalized=normalized,
+                                 pval=float(pv), pval_maxstat=float(pv_ms)))
 
     if rows:
         out = results_dir / "classification_summary.csv"
