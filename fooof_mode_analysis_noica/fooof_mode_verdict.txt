@@ -1,0 +1,3 @@
+delta_R2 moyen     = -0.0005
+delta_npeaks moyen = +0.17
+VERDICT : spectre ~linéaire sur 1-45Hz -> garder 'fixed' (à documenter).

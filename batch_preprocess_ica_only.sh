@@ -5,6 +5,7 @@
 #SBATCH --time=2:00:00
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
+#SBATCH --exclude=fc30555
 #SBATCH --output=logs/prep_ica_sub-%a_%A.out
 #SBATCH --error=logs/prep_ica_sub-%a_%A.err
 # ── Relance de la branche ICA uniquement (seuil EOG corr 0.6) ────────────────

@@ -17,32 +17,46 @@ Lecture : si knee améliore nettement le R2 ET/OU fixed détecte plus de pics,
 le coude est réel -> passer feat_extract en aperiodic_mode='knee'. Sinon,
 garder 'fixed' (et le documenter, signal ~linéaire sur 1-45Hz).
 
-Réutilise load_epochs_by_atomic_stage et compute_psd_spectrum de feat_extract
-(pas de duplication de la logique d'épochage / Welch).
+API specparam 2.0.0rc7 (vérifiée empiriquement sur le cluster Fir) :
+  - fg.get_metrics('gof_rsquared') -> list[float], un R² par spectre  ✓
+  - fg.get_model(i)                -> SpectralModel individuel         ✓
+  - fm.results.params.periodic._fit.shape[0] -> n_peaks               ✓
+  Note : itération directe sur fg et get_params('metrics', ...) sont
+  cassés dans rc7 — ne pas utiliser.
 
-API specparam 2.0 :
-  - fg.get_params("r_squared") -> (n_spectra,)         [était get_metrics("gof")]
-  - fm.n_peaks_                -> int par spectre       [itération sur fg]
-  Les deux corrections par rapport à la version initiale du script.
+Sorties :
+  <out-dir>/fooof_mode_results.csv       — une ligne par sujet × stade × mode
+  <out-dir>/fooof_mode_summary.csv       — moyennes par stade (tableau final)
+  <out-dir>/fooof_mode_delta_R2.png      — delta_R2 par stade (barplot + strip)
+  <out-dir>/fooof_mode_delta_npeaks.png  — delta_npeaks par stade
+  <out-dir>/fooof_mode_r2_dist.png       — distributions R² fixed vs knee
+  <out-dir>/fooof_mode_example_fits.png  — exemples de fits superposés (S2, S3)
 
 Usage :
     python compare_fooof_mode.py \\
         --deriv-path /home/alouis/scratch/dream_bids/derivatives/preprocessed-ica \\
-        --subjects   01 05 10 19 23 \\
+        --out-dir    ./fooof_mode_analysis \\
         --max-epochs 40 \\
-        --max-peaks  8
+        --n-jobs     4
 
-    # Tous les sujets (plus long, ~30-40 min sur nœud interactif 4 CPUs) :
+    # Sous-ensemble pour test rapide :
     python compare_fooof_mode.py \\
-        --deriv-path /home/alouis/scratch/dream_bids/derivatives/preprocessed-ica
+        --deriv-path /home/alouis/scratch/dream_bids/derivatives/preprocessed-ica \\
+        --out-dir    ./fooof_mode_analysis \\
+        --subjects 01 05 10 19 30 \\
+        --max-epochs 40 --n-jobs 4
 """
 
 import argparse
+import warnings
 from pathlib import Path
 
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from specparam import SpectralGroupModel
+from specparam import SpectralGroupModel, SpectralModel
 
 from config_v3 import ATOMIC_STAGES, FOOOF_FREQ_RANGE, SUBJECT_IDS
 from feat_extract_umap_fooof_v4 import (
@@ -51,147 +65,318 @@ from feat_extract_umap_fooof_v4 import (
     _vhdr,
 )
 
+STAGE_ORDER = ["S1", "S2", "S3", "S4", "REM"]
+STAGE_COLORS = {"S1": "#7fc97f", "S2": "#beaed4", "S3": "#fdc086",
+                "S4": "#f0027f", "REM": "#386cb0"}
+
 
 # ─── CLI ──────────────────────────────────────────────────────────────────────
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
-    p.add_argument("--deriv-path", type=Path, required=True,
-                   help="Racine du derivative preprocessed-ica")
-    p.add_argument("--subjects", nargs="+", default=None,
-                   help="IDs BIDS à échantillonner (ex: 01 05 10). Défaut: tous.")
-    p.add_argument("--max-epochs", type=int, default=40,
-                   help="Nombre max d'epochs échantillonnés par sujet/stade (défaut: 40)")
-    p.add_argument("--max-peaks", type=int, default=8,
-                   help="max_n_peaks passé à FOOOF (défaut: 8, comme la littérature sommeil)")
-    p.add_argument("--seed", type=int, default=42,
-                   help="Graine pour l'échantillonnage des epochs (défaut: 42)")
+    p.add_argument("--deriv-path", type=Path, required=True)
+    p.add_argument("--out-dir",    type=Path, default=Path("./fooof_mode_analysis"))
+    p.add_argument("--subjects",   nargs="+", default=None,
+                   help="IDs BIDS (ex: 01 05). Défaut: tous les sujets de config_v3.")
+    p.add_argument("--max-epochs", type=int, default=40)
+    p.add_argument("--max-peaks",  type=int, default=8)
+    p.add_argument("--n-jobs",     type=int, default=4)
+    p.add_argument("--seed",       type=int, default=42)
     return p.parse_args()
 
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 
-def count_peaks_per_spectrum(fg: SpectralGroupModel, n_spectra: int) -> np.ndarray:
-    """Nombre de pics gaussiens détectés par spectre (specparam 2.0).
-
-    Itère sur le SpectralGroupModel (chaque élément est un SpectralModel
-    individuel) et lit fm.n_peaks_. Compatible specparam 2.0.x.
-    Ne pas utiliser get_params("peak") + bincount : l'index de spectre
-    d'origine n'est pas garanti en col -1 dans toutes les versions 2.0.
-    """
-    counts = np.zeros(n_spectra, dtype=int)
-    for i, fm in enumerate(fg):
-        counts[i] = fm.n_peaks_
-    return counts
-
-
 def fit_both_modes(
-    flat_psds: np.ndarray, freqs: np.ndarray, max_peaks: int
-) -> dict[str, tuple[np.ndarray, np.ndarray]]:
-    """Fitte fixed et knee sur les mêmes spectres aplatis (n_spectra, n_freqs).
+    flat_psds: np.ndarray,
+    freqs: np.ndarray,
+    max_peaks: int,
+    n_jobs: int,
+) -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    """Fitte fixed et knee sur (n_spectra, n_freqs).
 
-    Correction specparam 2.0 : get_params("r_squared") remplace get_metrics("gof").
-
-    Returns dict[mode] -> (r2 par spectre, nb pics par spectre).
+    Returns dict[mode] -> (r2, n_peaks, ap_exp) par spectre.
+    ap_exp = exposant aperiodic (indice 1 en mode fixed, indice 2 en mode knee).
     """
     n = flat_psds.shape[0]
-    out: dict[str, tuple[np.ndarray, np.ndarray]] = {}
-    for mode in ("fixed", "knee"):
-        fg = SpectralGroupModel(aperiodic_mode=mode, max_n_peaks=max_peaks, verbose=False)
-        fg.fit(freqs, flat_psds, freq_range=FOOOF_FREQ_RANGE, n_jobs=1)
-        r2  = np.array(fg.get_params("r_squared"))   # (n_spectra,) — API specparam 2.0
-        npk = count_peaks_per_spectrum(fg, n)
-        out[mode] = (r2, npk)
+    out = {}
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)   # log10(knee<0) pendant optim
+        for mode in ("fixed", "knee"):
+            fg = SpectralGroupModel(
+                aperiodic_mode=mode, max_n_peaks=max_peaks, verbose=False
+            )
+            fg.fit(freqs, flat_psds, freq_range=FOOOF_FREQ_RANGE, n_jobs=n_jobs)
+            r2   = np.array(fg.get_metrics("gof_rsquared"), dtype=float)
+            npk  = np.array(
+                [fg.get_model(i).results.params.periodic._fit.shape[0] for i in range(n)],
+                dtype=int,
+            )
+            # exposant : col 1 (fixed) ou col 2 (knee, col 0 = offset, col 1 = knee param)
+            exp_col = 1 if mode == "fixed" else 2
+            ap_exp = np.array(
+                [fg.get_model(i).results.params.aperiodic._fit[exp_col] for i in range(n)],
+                dtype=float,
+            )
+            out[mode] = (r2, npk, ap_exp)
     return out
 
 
-def sample_epochs(data: np.ndarray, max_epochs: int, rng: np.random.RandomState) -> np.ndarray:
-    """(n_epochs, 19, 7500) -> sous-échantillon (k, 19, 7500), k <= max_epochs."""
+def sample_epochs(
+    data: np.ndarray, max_epochs: int, rng: np.random.RandomState
+) -> np.ndarray:
     n = data.shape[0]
     if n <= max_epochs:
         return data
-    idx = rng.choice(n, size=max_epochs, replace=False)
-    return data[idx]
+    return data[rng.choice(n, size=max_epochs, replace=False)]
+
+
+# ─── figures ──────────────────────────────────────────────────────────────────
+
+def plot_delta_R2(df_sub: pd.DataFrame, out_dir: Path) -> None:
+    """Barplot delta_R2 par stade avec points individuels par sujet."""
+    stages = [s for s in STAGE_ORDER if s in df_sub["stage"].unique()]
+    fig, ax = plt.subplots(figsize=(7, 4))
+    for i, stage in enumerate(stages):
+        vals = df_sub[df_sub["stage"] == stage]["delta_R2"].values
+        ax.bar(i, vals.mean(), color=STAGE_COLORS[stage], alpha=0.7,
+               label=stage, width=0.6)
+        ax.scatter(
+            np.full(len(vals), i) + np.random.default_rng(0).uniform(-0.18, 0.18, len(vals)),
+            vals, color="k", s=12, alpha=0.5, zorder=3,
+        )
+    ax.axhline(0.02,  color="red",    lw=1.2, ls="--", label="seuil 0.02 (knee nécessaire)")
+    ax.axhline(0.01,  color="orange", lw=1.0, ls=":",  label="seuil 0.01")
+    ax.axhline(0,     color="gray",   lw=0.8)
+    ax.set_xticks(range(len(stages)))
+    ax.set_xticklabels(stages)
+    ax.set_ylabel("delta R²  (knee − fixed)")
+    ax.set_title("delta R² par stade\n(>0.02 → knee nécessaire)")
+    ax.legend(fontsize=7, loc="upper right")
+    fig.tight_layout()
+    fig.savefig(out_dir / "fooof_mode_delta_R2.png", dpi=150)
+    plt.close(fig)
+
+
+def plot_delta_npeaks(df_sub: pd.DataFrame, out_dir: Path) -> None:
+    """Barplot delta_npeaks par stade."""
+    stages = [s for s in STAGE_ORDER if s in df_sub["stage"].unique()]
+    fig, ax = plt.subplots(figsize=(7, 4))
+    for i, stage in enumerate(stages):
+        vals = df_sub[df_sub["stage"] == stage]["delta_npeaks"].values
+        ax.bar(i, vals.mean(), color=STAGE_COLORS[stage], alpha=0.7,
+               label=stage, width=0.6)
+        ax.scatter(
+            np.full(len(vals), i) + np.random.default_rng(1).uniform(-0.18, 0.18, len(vals)),
+            vals, color="k", s=12, alpha=0.5, zorder=3,
+        )
+    ax.axhline(0.8,  color="red",  lw=1.2, ls="--", label="seuil 0.8 (fixed surajoute)")
+    ax.axhline(0,    color="gray", lw=0.8)
+    ax.set_xticks(range(len(stages)))
+    ax.set_xticklabels(stages)
+    ax.set_ylabel("delta npeaks  (fixed − knee)")
+    ax.set_title("delta npeaks par stade\n(>0.8 → fixed surajoute des pics fantômes)")
+    ax.legend(fontsize=7)
+    fig.tight_layout()
+    fig.savefig(out_dir / "fooof_mode_delta_npeaks.png", dpi=150)
+    plt.close(fig)
+
+
+def plot_r2_distributions(df_raw: pd.DataFrame, out_dir: Path) -> None:
+    """Distributions R² fixed vs knee par stade (violin)."""
+    stages = [s for s in STAGE_ORDER if s in df_raw["stage"].unique()]
+    fig, axes = plt.subplots(1, len(stages), figsize=(3 * len(stages), 4), sharey=True)
+    for ax, stage in zip(axes, stages):
+        sub = df_raw[df_raw["stage"] == stage]
+        data_fixed = sub["r2_fixed"].values
+        data_knee  = sub["r2_knee"].values
+        vp = ax.violinplot([data_fixed, data_knee], positions=[0, 1],
+                           showmedians=True, widths=0.6)
+        vp["bodies"][0].set_facecolor(STAGE_COLORS[stage])
+        vp["bodies"][1].set_facecolor("lightblue")
+        ax.set_xticks([0, 1])
+        ax.set_xticklabels(["fixed", "knee"], fontsize=8)
+        ax.set_title(stage)
+    axes[0].set_ylabel("R²")
+    fig.suptitle("Distribution R² par stade — fixed vs knee", fontsize=10)
+    fig.tight_layout()
+    fig.savefig(out_dir / "fooof_mode_r2_dist.png", dpi=150)
+    plt.close(fig)
+
+
+def plot_example_fits(
+    flat_psds: np.ndarray,
+    freqs: np.ndarray,
+    max_peaks: int,
+    n_jobs: int,
+    stage: str,
+    sub_id: str,
+    out_dir: Path,
+    n_examples: int = 6,
+) -> None:
+    """Superpose fixed et knee sur quelques spectres individuels.
+
+    API specparam 2.0.0rc7 :
+      - fm.results.model.modeled_spectrum -> array du fit complet
+      - R² extrait via fg.get_metrics("gof_rsquared")[j] (seule API stable)
+    """
+    n = min(n_examples, flat_psds.shape[0])
+    idx = np.linspace(0, flat_psds.shape[0] - 1, n, dtype=int)
+
+    fig, axes = plt.subplots(2, 3, figsize=(12, 7))
+    axes = axes.ravel()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        for mode, color, ls in [("fixed", "tab:blue", "-"), ("knee", "tab:orange", "--")]:
+            fg = SpectralGroupModel(
+                aperiodic_mode=mode, max_n_peaks=max_peaks, verbose=False
+            )
+            fg.fit(freqs, flat_psds[idx], freq_range=FOOOF_FREQ_RANGE, n_jobs=n_jobs)
+            r2_all = fg.get_metrics("gof_rsquared")   # list[float], un par spectre
+            for j in range(n):
+                fm  = fg.get_model(j)
+                ax  = axes[j]
+                if mode == "fixed":   # spectre réel une seule fois
+                    ax.plot(freqs, flat_psds[idx[j]], "k", lw=1.2, alpha=0.7,
+                            label="spectre")
+                ax.plot(freqs, fm.results.model.modeled_spectrum,   # ← API rc7
+                        color=color, lw=1.5, ls=ls,
+                        label=f"{mode} R²={r2_all[j]:.3f}")
+                ax.set_title(f"spectre {idx[j]}", fontsize=8)
+                ax.legend(fontsize=6)
+
+    fig.suptitle(f"Exemples fits fixed vs knee — {stage} sub-{sub_id}", fontsize=10)
+    fig.tight_layout()
+    fname = out_dir / f"fooof_mode_example_fits_{stage}_sub{sub_id}.png"
+    fig.savefig(fname, dpi=120)
+    plt.close(fig)
+    print(f"    → figure exemples : {fname.name}")
 
 
 # ─── main ─────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    args     = parse_args()
+    args = parse_args()
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+
     subjects = args.subjects if args.subjects is not None else SUBJECT_IDS
     rng      = np.random.RandomState(args.seed)
 
-    # accumulation par stade : on empile r2/npeaks de tous les epochs échantillonnés
-    acc: dict[str, dict[str, list[np.ndarray]]] = {
-        s: {"r2_fixed": [], "r2_knee": [], "np_fixed": [], "np_knee": []}
-        for s in ATOMIC_STAGES
-    }
+    # rows_raw : une ligne par sujet × stade (moyennes sur les spectres du sujet)
+    rows_raw: list[dict] = []
+    # exemple_fits : on en fait un seul (premier sujet, S2 et S3)
+    example_done = {"S2": False, "S3": False}
 
     for sub_id in subjects:
         if not _vhdr(args.deriv_path, sub_id).exists():
-            print(f"sub-{sub_id}: derivative absent, skip")
+            print(f"sub-{sub_id}: absent, skip")
             continue
-        print(f"sub-{sub_id}: chargement epochs...")
+        print(f"sub-{sub_id}: chargement...")
         try:
-            epochs = load_epochs_by_atomic_stage(args.deriv_path, sub_id)
+            epochs_dict = load_epochs_by_atomic_stage(args.deriv_path, sub_id)
         except Exception as e:
-            print(f"  sub-{sub_id}: erreur chargement ({e}), skip")
+            print(f"  sub-{sub_id}: erreur ({e}), skip")
             continue
 
-        for stage, data in epochs.items():
-            sample   = sample_epochs(data, args.max_epochs, rng)
-            psds, freqs = compute_psd_spectrum(sample)        # (k, 19, n_freqs)
-            n_freqs  = psds.shape[-1]
-            flat     = psds.reshape(-1, n_freqs)              # (k*19, n_freqs)
+        for stage, data in epochs_dict.items():
+            sample      = sample_epochs(data, args.max_epochs, rng)
+            psds, freqs = compute_psd_spectrum(sample)
+            flat        = psds.reshape(-1, psds.shape[-1])
 
-            res = fit_both_modes(flat, freqs, args.max_peaks)
-            acc[stage]["r2_fixed"].append(res["fixed"][0])
-            acc[stage]["r2_knee"].append(res["knee"][0])
-            acc[stage]["np_fixed"].append(res["fixed"][1])
-            acc[stage]["np_knee"].append(res["knee"][1])
-            print(f"  {stage}: {sample.shape[0]} epochs × 19 = {flat.shape[0]} spectres")
+            res = fit_both_modes(flat, freqs, args.max_peaks, args.n_jobs)
+            r2f, npf, apf = res["fixed"]
+            r2k, npk, apk = res["knee"]
 
-    # ─── tableau de synthèse par stade ────────────────────────────────────────
-    rows = []
-    for stage in ATOMIC_STAGES:
-        a = acc[stage]
-        if not a["r2_fixed"]:
-            continue
-        r2f = np.concatenate(a["r2_fixed"])
-        r2k = np.concatenate(a["r2_knee"])
-        npf = np.concatenate(a["np_fixed"])
-        npk = np.concatenate(a["np_knee"])
-        rows.append(dict(
-            stage        = stage,
-            n_spectra    = len(r2f),
-            R2_fixed     = round(float(r2f.mean()), 4),
-            R2_knee      = round(float(r2k.mean()), 4),
-            delta_R2     = round(float(r2k.mean() - r2f.mean()), 4),
-            npeaks_fixed = round(float(npf.mean()), 2),
-            npeaks_knee  = round(float(npk.mean()), 2),
-            delta_npeaks = round(float(npf.mean() - npk.mean()), 2),
-        ))
+            rows_raw.append(dict(
+                subject      = sub_id,
+                stage        = stage,
+                n_spectra    = len(r2f),
+                r2_fixed     = float(r2f.mean()),
+                r2_knee      = float(r2k.mean()),
+                delta_R2     = float(r2k.mean() - r2f.mean()),
+                npeaks_fixed = float(npf.mean()),
+                npeaks_knee  = float(npk.mean()),
+                delta_npeaks = float(npf.mean() - npk.mean()),
+                ap_exp_fixed = float(apf.mean()),
+                ap_exp_knee  = float(apk.mean()),
+            ))
+            print(f"  {stage}: {sample.shape[0]} epochs × 19 = {len(r2f)} spectres | "
+                  f"dR²={r2k.mean()-r2f.mean():+.4f}  dnpk={npf.mean()-npk.mean():+.2f}")
 
-    if not rows:
-        print("\nAucun spectre traité — vérifier --deriv-path et --subjects.")
+            # figure exemples sur le premier sujet disponible, S2 et S3
+            if stage in example_done and not example_done[stage]:
+                plot_example_fits(
+                    flat, freqs, args.max_peaks, args.n_jobs,
+                    stage, sub_id, args.out_dir,
+                )
+                example_done[stage] = True
+
+    if not rows_raw:
+        print("Aucun spectre traité.")
         raise SystemExit(1)
 
-    df = pd.DataFrame(rows)
-    print("\n" + "=" * 70)
-    print("COMPARAISON FIXED vs KNEE (moyennes par stade)")
-    print("=" * 70)
-    print(df.to_string(index=False))
+    # ─── CSV détaillé ─────────────────────────────────────────────────────────
+    df_raw = pd.DataFrame(rows_raw)
+    csv_raw = args.out_dir / "fooof_mode_results.csv"
+    df_raw.to_csv(csv_raw, index=False, float_format="%.6f")
+    print(f"\nCSV détaillé : {csv_raw}")
 
-    # ─── verdict global ───────────────────────────────────────────────────────
-    mean_dR2 = df["delta_R2"].mean()
-    mean_dNP = df["delta_npeaks"].mean()
-    print("\n" + "-" * 70)
-    print(f"delta_R2 moyen     = {mean_dR2:+.4f}  (knee - fixed ; >0 = knee meilleur)")
-    print(f"delta_npeaks moyen = {mean_dNP:+.2f}   (fixed - knee ; >0 = fixed surajoute)")
-    print("-" * 70)
+    # ─── tableau de synthèse par stade ────────────────────────────────────────
+    rows_sum = []
+    for stage in STAGE_ORDER:
+        sub = df_raw[df_raw["stage"] == stage]
+        if sub.empty:
+            continue
+        rows_sum.append(dict(
+            stage        = stage,
+            n_subjects   = len(sub),
+            n_spectra    = int(sub["n_spectra"].sum()),
+            R2_fixed     = round(sub["r2_fixed"].mean(),     4),
+            R2_knee      = round(sub["r2_knee"].mean(),      4),
+            delta_R2     = round(sub["delta_R2"].mean(),     4),
+            delta_R2_std = round(sub["delta_R2"].std(),      4),
+            npeaks_fixed = round(sub["npeaks_fixed"].mean(), 2),
+            npeaks_knee  = round(sub["npeaks_knee"].mean(),  2),
+            delta_npeaks = round(sub["delta_npeaks"].mean(), 2),
+            ap_exp_fixed = round(sub["ap_exp_fixed"].mean(), 3),
+            ap_exp_knee  = round(sub["ap_exp_knee"].mean(),  3),
+        ))
+
+    df_sum = pd.DataFrame(rows_sum)
+    csv_sum = args.out_dir / "fooof_mode_summary.csv"
+    df_sum.to_csv(csv_sum, index=False)
+
+    print("\n" + "=" * 78)
+    print("COMPARAISON FIXED vs KNEE — synthèse par stade")
+    print("=" * 78)
+    print(df_sum.to_string(index=False))
+
+    mean_dR2 = df_sum["delta_R2"].mean()
+    mean_dNP = df_sum["delta_npeaks"].mean()
+    print("\n" + "-" * 78)
+    print(f"delta_R2 moyen     = {mean_dR2:+.4f}  (knee − fixed ; >0 = knee meilleur)")
+    print(f"delta_npeaks moyen = {mean_dNP:+.2f}   (fixed − knee ; >0 = fixed surajoute)")
+    print("-" * 78)
     if mean_dR2 > 0.02 or mean_dNP > 0.8:
-        print("VERDICT : signe d'un coude réel -> passer feat_extract en aperiodic_mode='knee'.")
+        verdict = "VERDICT : coude réel détecté -> passer aperiodic_mode='knee' dans config_v3.py."
     elif mean_dR2 < 0.01 and abs(mean_dNP) < 0.5:
-        print("VERDICT : spectre ~linéaire sur 1-45Hz -> garder 'fixed' (à documenter).")
+        verdict = "VERDICT : spectre ~linéaire sur 1-45Hz -> garder 'fixed' (à documenter)."
     else:
-        print("VERDICT : zone grise -> inspecter quelques fits superposés avant de trancher.")
+        verdict = "VERDICT : zone grise -> inspecter fooof_mode_example_fits_*.png avant de trancher."
+    print(verdict)
+
+    # écrire le verdict dans le CSV summary
+    df_sum.attrs["verdict"] = verdict
+    with open(args.out_dir / "fooof_mode_verdict.txt", "w") as f:
+        f.write(f"delta_R2 moyen     = {mean_dR2:+.4f}\n")
+        f.write(f"delta_npeaks moyen = {mean_dNP:+.2f}\n")
+        f.write(f"{verdict}\n")
+
+    # ─── figures ──────────────────────────────────────────────────────────────
+    print("\nGénération des figures...")
+    plot_delta_R2(df_raw, args.out_dir)
+    plot_delta_npeaks(df_raw, args.out_dir)
+    plot_r2_distributions(df_raw, args.out_dir)
+    print("Figures sauvées dans", args.out_dir)
+    print("Terminé.")
