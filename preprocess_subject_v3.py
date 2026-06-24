@@ -348,15 +348,28 @@ def drop_aux_channels(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
 
 
 def apply_average_reference(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
-    """5. Référence : nez d'origine conservée (identique à Arthur).
+    """5. Référence d'enregistrement (nez) conservée — identique à Dehgan (2023).
 
-    La CAR (average reference) avait été utilisée précédemment mais elle
-    dégrade le rang des matrices de covariance (rang 18/19 au lieu de 19/19)
-    ce qui fait planter le TSclassifier Riemannien (logm exige SPD strict).
-    La littérature déconseille explicitement la CAR pour < 64 canaux.
-    Arthur utilise la référence nez physique d'enregistrement (BrainAmp,
-    EEGReference = 'tip of the nose') -> on conserve cette référence.
-    Rang plein garanti, aucun shrinkage nécessaire, comparaison directe.
+    La CAR (average reference) avait été utilisée précédemment mais introduit
+    un projecteur qui réduit le rang de la matrice de covariance à N-1 = 18
+    (MNE documente ce comportement explicitement : "rank 58 computed from 59
+    data channels with 1 projector"). Une matrice de rang 18 sur 19 est
+    semi-définie positive (SPD au sens large), pas SPD stricte. Or le
+    classifieur Riemannien (TSclassifier, Barachant et al., 2012, IEEE Trans.
+    Biomed. Eng., 59(4):920-928) pose comme condition d'entrée des matrices
+    SPD STRICTES — le log-map Riemannien diverge sur une matrice singulière
+    (ValueError: Matrices must be positive definite, confirmé empiriquement
+    sur nos données, job 45584709).
+
+    La référence nez physique d'enregistrement (BrainAmp,
+    EEGReference = 'tip of the nose') est conservée :
+      - rang plein 19/19 garanti
+      - aucun shrinkage ou régularisation nécessaire
+      - directement comparable à Dehgan (2023) qui utilise la même référence
+
+    Ref : Barachant A, Bonnet S, Congedo M, Jutten C (2012). Multi-Class Brain
+    Computer Interface Classification by Riemannian Geometry. IEEE Trans.
+    Biomed. Eng., 59(4), 920-928. doi:10.1109/TBME.2011.2172210
     """
     # no-op : la référence nez d'origine est conservée telle quelle.
     return raw
