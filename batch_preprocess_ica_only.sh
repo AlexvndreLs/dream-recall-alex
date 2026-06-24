@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --account=def-kjerbi
 #SBATCH --job-name=dream_prep_ica
-#SBATCH --array=1-38%6
+#SBATCH --array=1-38
 #SBATCH --time=2:00:00
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --exclude=fc30555
 #SBATCH --output=/scratch/alouis/logs_dream/prep_ica_sub-%a_%A.out

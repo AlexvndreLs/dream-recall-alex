@@ -1,0 +1,30 @@
+# Versions épinglées — reproductibilité 100% (exigence publication).
+# Générées le 24 juin 2026 d'après l'environnement mne_env sur Fir.
+#
+# ATTENTION specparam : 2.0.0rc7 est une RELEASE CANDIDATE. Risque qu'elle
+# soit retirée de PyPI ou que l'API change. Pour la repro long terme :
+#   pip download specparam==2.0.0rc7 --no-deps -d ./vendor/
+# et committer le wheel dans le repo (ou pointer vers le commit git exact).
+#
+# API spécifiques vérifiées (ne pas mettre à jour sans re-tester) :
+#   - specparam 2.0 : get_params("aperiodic")  (PAS "aperiodic_params" de la 1.x)
+#   - pyriemann 0.11 : CoSpectra (PAS CospCovariances), TSClassifier (PAS TSclassifier),
+#                      overlap min strict > 0 (utiliser 0.01, pas 0.0)
+
+mne==1.12.1
+mne-bids
+mne-icalabel==0.9.0
+specparam==2.0.0rc7
+pyriemann==0.11
+antropy==0.2.2
+python-picard
+numpy
+scipy
+pandas
+scikit-learn
+joblib
+h5py
+tqdm
+mlxtend          # requis par classify_multifeature.py (EFS)
+umap-learn       # requis par visualize_umap.py
+matplotlib       # figures inspect_ica / visualize_umap
