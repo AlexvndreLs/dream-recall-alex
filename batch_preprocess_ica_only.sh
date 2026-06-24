@@ -6,8 +6,8 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
 #SBATCH --exclude=fc30555
-#SBATCH --output=logs/prep_ica_sub-%a_%A.out
-#SBATCH --error=logs/prep_ica_sub-%a_%A.err
+#SBATCH --output=/scratch/alouis/logs_dream/prep_ica_sub-%a_%A.out
+#SBATCH --error=/scratch/alouis/logs_dream/prep_ica_sub-%a_%A.err
 # ── Relance de la branche ICA uniquement (seuil EOG corr 0.6) ────────────────
 # Utilise --branches ica pour ne pas retoucher noica et iclabel déjà corrects.
 # s24 (gros sujet, OOM à 64G) : relancer séparément avec --mem=128G :

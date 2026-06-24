@@ -48,7 +48,6 @@ Usage :
 
 import argparse
 import traceback
-from itertools import product
 from pathlib import Path
 from time import time
 
@@ -389,32 +388,34 @@ def process_subject(
     print(f"sub-{sub_id}: done")
 
 
-# ─── combine: atomique par sujet -> états de classification (tous sujets) ─────
-
-def combine_classification_state(
-    save_path: Path, key: str, state: str, overwrite: bool = False
-) -> None:
-    """Concatène les tableaux atomiques par CLASSIFICATION_GROUPS[state], empile les sujets.
-
-    Fichier combined : dtype=object (n_epochs variable par sujet).
-    Charger avec np.load(path, allow_pickle=True).
-    """
-    out = save_path / key / f"{key}_{state}.npz"
-    if out.exists() and not overwrite:
-        return
-
-    stages = CLASSIFICATION_GROUPS[state]
-    arrays = []
-    for sub_id in SUBJECT_IDS:
-        parts = [
-            a for s in stages
-            if (a := load_atomic(save_path, key, sub_id, s)) is not None
-        ]
-        if parts:
-            arrays.append(np.concatenate(parts, axis=0))
-
-    if arrays:
-        np.savez_compressed(out, data=np.array(arrays, dtype=object))
+# ─── combine: DÉSACTIVÉ — code mort ──────────────────────────────────────────
+# combine_classification_state() produisait des .npz combinés (ex: SWS = S3+S4)
+# pour tous les sujets. classify.py ne les lit JAMAIS : il recharge les fichiers
+# atomiques par sujet séparément via load_atomic() et construit lui-même les
+# états de classification (CLASSIFICATION_GROUPS). Maintenu ici en commentaire
+# pour référence, mais ne pas réactiver sans modifier classify.py en conséquence.
+#
+# def combine_classification_state(
+#     save_path: Path, key: str, state: str, overwrite: bool = False
+# ) -> None:
+#     """Concatène les tableaux atomiques par CLASSIFICATION_GROUPS[state], empile les sujets.
+#     Fichier combined : dtype=object (n_epochs variable par sujet).
+#     Charger avec np.load(path, allow_pickle=True).
+#     """
+#     out = save_path / key / f"{key}_{state}.npz"
+#     if out.exists() and not overwrite:
+#         return
+#     stages = CLASSIFICATION_GROUPS[state]
+#     arrays = []
+#     for sub_id in SUBJECT_IDS:
+#         parts = [
+#             a for s in stages
+#             if (a := load_atomic(save_path, key, sub_id, s)) is not None
+#         ]
+#         if parts:
+#             arrays.append(np.concatenate(parts, axis=0))
+#     if arrays:
+#         np.savez_compressed(out, data=np.array(arrays, dtype=object))
 
 
 # ─── main ─────────────────────────────────────────────────────────────────────
@@ -434,13 +435,6 @@ if __name__ == "__main__":
         for sub_id in SUBJECT_IDS
     )
 
-    print("=== combinaison en états de classification ===")
-    Parallel(n_jobs=n_jobs)(
-        delayed(combine_classification_state)(save_path, key, state, overwrite)
-        for key, state in product(FEATURE_KEYS, STATE_LIST)
-    )
-
     m, s = divmod(int(time() - t0), 60)
     print(f"total: {m}m{s:02d}s")
     print("Lancer visualize_umap.py --save-path <save_path> pour le UMAP.")
-

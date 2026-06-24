@@ -42,7 +42,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import LeavePGroupsOut
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from pyriemann.classification import TSclassifier
+from pyriemann.classification import TSClassifier as TSclassifier
 
 from config_v3 import (
     CH_NAMES,
