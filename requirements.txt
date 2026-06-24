@@ -1,30 +1,54 @@
-# Versions épinglées — reproductibilité 100% (exigence publication).
-# Générées le 24 juin 2026 d'après l'environnement mne_env sur Fir.
+# requirements.txt — versions exactes de l'environnement mne_env sur Fir (Compute Canada)
+# Généré le 24 juin 2026 depuis `pip list` sur fc30560
+# Python 3.11
 #
-# ATTENTION specparam : 2.0.0rc7 est une RELEASE CANDIDATE. Risque qu'elle
-# soit retirée de PyPI ou que l'API change. Pour la repro long terme :
-#   pip download specparam==2.0.0rc7 --no-deps -d ./vendor/
-# et committer le wheel dans le repo (ou pointer vers le commit git exact).
-#
-# API spécifiques vérifiées (ne pas mettre à jour sans re-tester) :
-#   - specparam 2.0 : get_params("aperiodic")  (PAS "aperiodic_params" de la 1.x)
-#   - pyriemann 0.11 : CoSpectra (PAS CospCovariances), TSClassifier (PAS TSclassifier),
-#                      overlap min strict > 0 (utiliser 0.01, pas 0.0)
+# CRITIQUE — ne pas mettre à jour sans tester :
+#   specparam 2.0.0rc7 : release candidate, API instable entre versions
+#     get_params("aperiodic") — NE PAS utiliser get_params("aperiodic_params") (API 1.x)
+#     get_metrics("gof_rsquared") — NE PAS utiliser get_params("r_squared")
+#     itération sur fg : fg.get_model(i) — NE PAS itérer directement sur fg
+#   pyriemann 0.11 : CoSpectra (PAS CospCovariances), TSClassifier (PAS TSclassifier)
+#   mne-icalabel 0.9.0 : calibré sur EEG éveil, sous-optimal sur sommeil (documenté)
 
+# ─── pipeline EEG principal ───────────────────────────────────────────────────
 mne==1.12.1
-mne-bids
+mne-bids==0.18.0
 mne-icalabel==0.9.0
-specparam==2.0.0rc7
 pyriemann==0.11
+specparam==2.0.0rc7
 antropy==0.2.2
-python-picard
-numpy
-scipy
-pandas
-scikit-learn
-joblib
-h5py
-tqdm
-mlxtend          # requis par classify_multifeature.py (EFS)
-umap-learn       # requis par visualize_umap.py
-matplotlib       # figures inspect_ica / visualize_umap
+python-picard==0.8.2
+meegkit==0.1.9
+edfio==0.4.13
+pybv==0.7.6
+
+# ─── ML / stats ───────────────────────────────────────────────────────────────
+scikit-learn==1.8.0
+scipy==1.17.0
+statsmodels==0.14.6
+numpy==2.4.2
+pandas==3.0.0
+patsy==1.0.2
+
+# ─── visualisation ────────────────────────────────────────────────────────────
+matplotlib==3.10.8
+umap-learn==0.5.12
+
+# ─── cluster / parallélisme ───────────────────────────────────────────────────
+joblib==1.5.3
+numba==0.65.0
+llvmlite==0.47.0
+threadpoolctl==3.6.0
+
+# ─── deep learning (branche noica / DL future) ────────────────────────────────
+torch==2.12.1
+
+# ─── utilitaires ─────────────────────────────────────────────────────────────
+h5py==3.16.0
+tqdm==4.67.3
+pooch==1.9.0
+networkx==3.6.1
+pillow==12.1.0
+pynndescent==0.6.0   # dépendance umap-learn
+sympy==1.14.0
+mpmath==1.3.0
