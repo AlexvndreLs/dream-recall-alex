@@ -5,6 +5,7 @@ uniquement des primitives bas niveau réutilisables.
 """
 
 from pathlib import Path
+
 import numpy as np
 
 
@@ -19,5 +20,7 @@ def load_atomic(save_path: Path, key: str, sub_id: str, stage: str) -> np.ndarra
     f = save_path / key / f"{key}_s{sub_id}_{stage}.npz"
     if not f.exists():
         return None
+    # Fermeture explicite du fichier pour éviter le pickle error de joblib
+    # (np.load retourne un NpzFile avec un BufferedReader ouvert non-picklable)
     with np.load(f) as d:
         return d["data"].copy()
