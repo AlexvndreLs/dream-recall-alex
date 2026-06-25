@@ -5,7 +5,6 @@ uniquement des primitives bas niveau réutilisables.
 """
 
 from pathlib import Path
-
 import numpy as np
 
 
@@ -18,4 +17,7 @@ def upper_tri(arr: np.ndarray) -> np.ndarray:
 def load_atomic(save_path: Path, key: str, sub_id: str, stage: str) -> np.ndarray | None:
     """Charge un tableau atomique caché (.npz) ou retourne None si absent."""
     f = save_path / key / f"{key}_s{sub_id}_{stage}.npz"
-    return np.load(f)["data"] if f.exists() else None
+    if not f.exists():
+        return None
+    with np.load(f) as d:
+        return d["data"].copy()

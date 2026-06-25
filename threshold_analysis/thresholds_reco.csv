@@ -1,3 +1,0 @@
-methode,seuil_reco,rejets_moyen,CV_inter_sujets,accord_iclabel,remarque
-eog_corr,0.22,5.03,0.311,0.084,"min CV sous contrainte 0-rejet, departage par accord ICLabel"
-eog_zscore,n/a,,,,aucun seuil sans sujet a 0 rejet sur la plage testee

@@ -396,7 +396,7 @@ if __name__ == "__main__":
     combos = list(product(FEATURE_KEYS, STATE_LIST))
     print(f"=== classification : {len(combos)} combinaisons ===")
 
-    results = Parallel(n_jobs=args.n_jobs)(
+    results = Parallel(n_jobs=args.n_jobs, prefer="threads")(
         delayed(classify_one)(
             args.save_path, key, state, n_trials,
             args.n_bootstraps, args.n_perm, args.overwrite, args.normalize,

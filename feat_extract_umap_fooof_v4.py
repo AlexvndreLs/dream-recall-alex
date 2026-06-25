@@ -246,7 +246,11 @@ def compute_cov(data: np.ndarray) -> np.ndarray:
     Estimateur SCM (Sample Covariance Matrix) par défaut, cohérent avec
     le pipeline original d'Arthur. Ne pas changer en OAS/LWF sans documenter.
     """
-    return Covariances().fit_transform(data)
+    cov = Covariances().fit_transform(data)
+    n = cov.shape[-1]
+    mu = np.trace(cov, axis1=-2, axis2=-1) / n
+    cov += 1e-10 * mu[:, None, None] * np.eye(n)
+    return cov
 
 
 def compute_cosp(
@@ -262,7 +266,11 @@ def compute_cosp(
     mat = CoSpectra(
         window=WINDOW, overlap=0.01, fmin=fmin, fmax=fmax, fs=SF
     ).fit_transform(data)
-    return mat.mean(axis=-1) if mat.ndim == 4 else mat
+    mat = mat.mean(axis=-1) if mat.ndim == 4 else mat
+    n = mat.shape[-1]
+    mu = np.trace(mat, axis1=-2, axis2=-1) / n
+    mat += 1e-10 * mu[:, None, None] * np.eye(n)
+    return mat
     # pyriemann retourne (n_epochs, 19, 19, n_freqs) ou (n_epochs, 19, 19)
     # selon la version -> moyenne sur l'axe fréquences si 4D
     #a tester quand cluster plus down
