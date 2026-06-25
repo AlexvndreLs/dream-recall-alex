@@ -8,6 +8,8 @@
 #SBATCH --exclude=fc30555
 #SBATCH --output=/scratch/alouis/logs_dream/prep_all_sub-%a_%A.out
 #SBATCH --error=/scratch/alouis/logs_dream/prep_all_sub-%a_%A.err
+#SBATCH --mail-user=alexandre.louis@umontreal.ca
+#SBATCH --mail-type=END,FAIL
 
 # ── Preprocessing toutes branches (ica + noica + iclabel) ────────────────────
 # Patch CAR retiré : référence nez conservée (identique Arthur, rang plein).

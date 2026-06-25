@@ -8,6 +8,8 @@
 #SBATCH --output=/scratch/alouis/logs_dream/multifeat_branch-%a_%j.out
 #SBATCH --error=/scratch/alouis/logs_dream/multifeat_branch-%a_%j.err
 #SBATCH --exclude=fc30555
+#SBATCH --mail-user=alexandre.louis@umontreal.ca
+#SBATCH --mail-type=END,FAIL
 
 # Analyse multi-feature EFS par ROI (these §1.3.3, Fig 5).
 # Array :

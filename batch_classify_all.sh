@@ -8,6 +8,8 @@
 #SBATCH --output=/scratch/alouis/logs_dream/classify_branch-%a_%j.out
 #SBATCH --error=/scratch/alouis/logs_dream/classify_branch-%a_%j.err
 #SBATCH --exclude=fc30555
+#SBATCH --mail-user=alexandre.louis@umontreal.ca
+#SBATCH --mail-type=END,FAIL
 
 # Array :
 #   1 -> dream_features     (branche ica, résultat principal)
