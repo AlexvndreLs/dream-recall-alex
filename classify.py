@@ -16,13 +16,17 @@ garantie entre tous les états/features). Vérification d'intégrité optionnell
 Reproductibilité : _seed() via hashlib.md5 (déterministe cross-platform,
 contrairement à hash() Python dont le résultat dépend de PYTHONHASHSEED).
 
+Checkpoint progressif (--checkpoint-every N) : sauvegarde les bootstraps
+toutes les N itérations -> reprise après timeout sans repartir de zéro.
+
 Usage :
     python classify.py \\
         --save-path /path/to/dream_features \\
         --n-jobs    $SLURM_CPUS_PER_TASK \\
-        --n-perm    0 \\
-        --normalize \\
-        --skip-check
+        --n-perm    1000 \\
+        --key       cov \\
+        --state     S2 \\
+        --checkpoint-every 50
 """
 
 import argparse
@@ -55,27 +59,31 @@ from config_v3 import (
 )
 from utils import load_atomic
 
-PERM_SEED_OFFSET = 100_003  # >> n_bootstraps : garantit que les seeds perms
-                            # n'entrent pas en collision avec les seeds bootstrap
+PERM_SEED_OFFSET = 100_003
 REF_KEY          = "cov"
-# STATE_LIST trié par longueur décroissante pour éviter les faux positifs
-# dans build_summary_csv (ex: "REM" sous-chaîne de "NREM")
 _STATES_BY_LEN   = sorted(STATE_LIST, key=len, reverse=True)
+MATRIX_KEYS      = ["cov", "cosp_delta", "cosp_theta", "cosp_alpha", "cosp_sigma", "cosp_beta"]
 
 
 # ─── CLI ──────────────────────────────────────────────────────────────────────
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
-    p.add_argument("--save-path",    type=Path, required=True)
-    p.add_argument("--n-jobs",       type=int,  default=1)
-    p.add_argument("--n-perm",       type=int,  default=0)
-    p.add_argument("--n-bootstraps", type=int,  default=1000)
-    p.add_argument("--normalize",    action="store_true", default=False,
-                   help="StandardScaler sur train (vecteur uniquement, off=cohérent Arthur).")
-    p.add_argument("--skip-check",   action="store_true", default=False,
-                   help="Skip la vérification d'intégrité des .npz.")
-    p.add_argument("--overwrite",    action="store_true", default=False)
+    p.add_argument("--save-path",         type=Path, required=True)
+    p.add_argument("--n-jobs",            type=int,  default=1)
+    p.add_argument("--n-perm",            type=int,  default=0)
+    p.add_argument("--n-bootstraps",      type=int,  default=1000)
+    p.add_argument("--checkpoint-every",  type=int,  default=50,
+                   help="Sauvegarde checkpoint tous les N bootstraps (0=désactivé).")
+    p.add_argument("--key",               type=str,  default=None,
+                   help="Feature unique à classifier (ex: cov, cosp_sigma). "
+                        "Si absent, toutes les features sont classifiées.")
+    p.add_argument("--state",             type=str,  default=None,
+                   help="Stade unique (ex: S2, SWS, NREM, REM). "
+                        "Si absent, tous les stades sont classifiés.")
+    p.add_argument("--normalize",         action="store_true", default=False)
+    p.add_argument("--skip-check",        action="store_true", default=False)
+    p.add_argument("--overwrite",         action="store_true", default=False)
     return p.parse_args()
 
 
@@ -86,7 +94,6 @@ def is_matrix_feature(key: str) -> bool:
 
 
 def _seed(key: str, state: str, idx: int) -> int:
-    """Hash déterministe cross-platform (md5, pas hash() Python)."""
     h = md5(f"{key}_{state}_{idx}".encode()).digest()
     return int.from_bytes(h[:4], "big")
 
@@ -110,7 +117,6 @@ def load_all(save_path: Path, key: str, state: str) -> tuple[list, np.ndarray]:
 # ─── intégrité + n_trials_min ─────────────────────────────────────────────────
 
 def compute_global_n_trials(save_path: Path, skip_check: bool = False) -> int:
-    """n_trials_min depuis REF_KEY uniquement — propriété du signal, pas de la feature."""
     ref_counts: dict[tuple[str, str], int] = {}
     for state in STATE_LIST:
         for sub_id in SUBJECT_LIST_ORDERED:
@@ -155,8 +161,7 @@ def bootstrap_sample(
     for g, (arr, lab) in enumerate(zip(data, labels)):
         if len(arr) < n_trials:
             raise RuntimeError(
-                f"Sujet groupe {g} : {len(arr)} epochs < n_trials={n_trials}. "
-                "Relancer compute_global_n_trials ou vérifier feat_extract."
+                f"Sujet groupe {g} : {len(arr)} epochs < n_trials={n_trials}."
             )
         idx = rng.choice(len(arr), size=n_trials, replace=False)
         Xs.append(arr[idx])
@@ -166,12 +171,7 @@ def bootstrap_sample(
 
 
 def permute_subject_labels(labels: np.ndarray, seed: int) -> np.ndarray:
-    """Permute les labels HR/LR AU NIVEAU SUJET (pas epoch).
-
-    Le label est une propriété du sujet : permuter les epochs casserait la
-    cohérence intra-sujet et gonflerait la distribution nulle (p-value trop
-    optimiste). Réf : Combrisson & Jerbi 2015, cité dans la thèse §1.2.7.
-    """
+    """Permute les labels HR/LR AU NIVEAU SUJET. Réf : Combrisson & Jerbi 2015."""
     return np.random.RandomState(seed).permutation(labels)
 
 
@@ -206,32 +206,141 @@ class StratifiedLeave2GroupsOut:
 
 
 def run_cv(clf, splits, X, y) -> float:
-    """Accuracy moyenne sur des splits précalculés (réutilisables entre électrodes)."""
     return float(np.mean([
         accuracy_score(y[te], clone(clf).fit(X[tr], y[tr]).predict(X[te]))
         for tr, te in splits
     ]))
 
 
-# ─── bootstrap + perm loops ───────────────────────────────────────────────────
+# ─── bootstrap parallèle (1 bootstrap = 1 job) ────────────────────────────────
 
-def _run_bootstraps(clf, cv, data, labels, n_trials, n_bootstraps, key, state) -> np.ndarray:
-    accs = []
-    for i in range(n_bootstraps):
-        X, y, groups = bootstrap_sample(data, labels, n_trials, _seed(key, state, i))
-        splits = list(cv.split(X, y, groups))
-        accs.append(run_cv(clf, splits, X, y))
+def _one_bootstrap(clf, cv, data, labels, n_trials, key, state, i) -> float:
+    """Un seul bootstrap — appelé en parallèle par joblib."""
+    X, y, groups = bootstrap_sample(data, labels, n_trials, _seed(key, state, i))
+    splits = list(cv.split(X, y, groups))
+    return run_cv(clf, splits, X, y)
+
+
+def _one_perm(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> float:
+    """Une seule permutation — appelée en parallèle par joblib."""
+    labels_perm = permute_subject_labels(
+        labels, _seed(key, state, PERM_SEED_OFFSET + n_perm + p)
+    )
+    X, y, groups = bootstrap_sample(
+        data, labels_perm, n_trials, _seed(key, state, PERM_SEED_OFFSET + p)
+    )
+    splits = list(cv.split(X, y, groups))
+    return run_cv(clf, splits, X, y)
+
+
+# ─── checkpoint helpers ───────────────────────────────────────────────────────
+
+def _ckpt_path(result_path: Path, prefix: str) -> Path:
+    return result_path.parent / (result_path.stem + f"_{prefix}_ckpt.npz")
+
+
+def _load_checkpoint(result_path: Path, prefix: str) -> np.ndarray | None:
+    """Charge un checkpoint partiel (bootstraps ou perms déjà calculés)."""
+    p = _ckpt_path(result_path, prefix)
+    if p.exists():
+        return np.load(p)["data"]
+    return None
+
+
+def _save_checkpoint(result_path: Path, prefix: str, data: np.ndarray) -> None:
+    p = _ckpt_path(result_path, prefix)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(p, data=data)
+
+
+def _clear_checkpoints(result_path: Path) -> None:
+    for prefix in ["bootstrap", "perm"]:
+        p = _ckpt_path(result_path, prefix)
+        if p.exists():
+            p.unlink()
+
+
+# ─── bootstrap + perm loops avec checkpoint ───────────────────────────────────
+
+def _run_bootstraps_parallel(
+    clf, cv, data, labels, n_trials, n_bootstraps, key, state,
+    n_jobs, checkpoint_every, result_path
+) -> np.ndarray:
+    """1000 bootstraps parallèles avec sauvegarde progressive.
+
+    Reprend depuis le checkpoint si disponible (reprise après timeout).
+    checkpoint_every=0 désactive le checkpoint.
+    """
+    # Reprise depuis checkpoint
+    done = _load_checkpoint(result_path, "bootstrap")
+    start = len(done) if done is not None else 0
+    accs = list(done) if done is not None else []
+
+    if start >= n_bootstraps:
+        print(f"    bootstrap: checkpoint complet ({start}/{n_bootstraps}), skip")
+        return np.array(accs)
+
+    if start > 0:
+        print(f"    bootstrap: reprise depuis checkpoint ({start}/{n_bootstraps})")
+
+    remaining = list(range(start, n_bootstraps))
+
+    if checkpoint_every > 0:
+        # par blocs pour le checkpoint
+        for chunk_start in range(0, len(remaining), checkpoint_every):
+            chunk = remaining[chunk_start: chunk_start + checkpoint_every]
+            new_accs = Parallel(n_jobs=n_jobs, prefer="threads")(
+                delayed(_one_bootstrap)(clf, cv, data, labels, n_trials, key, state, i)
+                for i in chunk
+            )
+            accs.extend(new_accs)
+            _save_checkpoint(result_path, "bootstrap", np.array(accs))
+            print(f"    bootstrap: {len(accs)}/{n_bootstraps}")
+    else:
+        new_accs = Parallel(n_jobs=n_jobs, prefer="threads")(
+            delayed(_one_bootstrap)(clf, cv, data, labels, n_trials, key, state, i)
+            for i in remaining
+        )
+        accs.extend(new_accs)
+
     return np.array(accs)
 
 
-def _run_perms(clf, cv, data, labels, n_trials, n_perm, key, state) -> np.ndarray:
-    out = []
-    for p in range(n_perm):
-        labels_perm = permute_subject_labels(labels, _seed(key, state, PERM_SEED_OFFSET + n_perm + p))
-        X, y, groups = bootstrap_sample(data, labels_perm, n_trials, _seed(key, state, PERM_SEED_OFFSET + p))
-        splits = list(cv.split(X, y, groups))
-        out.append(run_cv(clf, splits, X, y))
-    return np.array(out)
+def _run_perms_parallel(
+    clf, cv, data, labels, n_trials, n_perm, key, state,
+    n_jobs, checkpoint_every, result_path
+) -> np.ndarray:
+    """1000 permutations parallèles avec sauvegarde progressive."""
+    done = _load_checkpoint(result_path, "perm")
+    start = len(done) if done is not None else 0
+    perms = list(done) if done is not None else []
+
+    if start >= n_perm:
+        return np.array(perms)
+
+    if start > 0:
+        print(f"    perm: reprise depuis checkpoint ({start}/{n_perm})")
+
+    remaining = list(range(start, n_perm))
+
+    if checkpoint_every > 0:
+        for chunk_start in range(0, len(remaining), checkpoint_every):
+            chunk = remaining[chunk_start: chunk_start + checkpoint_every]
+            new_perms = Parallel(n_jobs=n_jobs, prefer="threads")(
+                delayed(_one_perm)(clf, cv, data, labels, n_trials, key, state, p, n_perm)
+                for p in chunk
+            )
+            perms.extend(new_perms)
+            _save_checkpoint(result_path, "perm", np.array(perms))
+            print(f"    perm: {len(perms)}/{n_perm}")
+    else:
+        new_perms = Parallel(n_jobs=n_jobs, prefer="threads")(
+            delayed(_one_perm)(clf, cv, data, labels, n_trials, key, state, p, n_perm)
+            for p in remaining
+        )
+        perms.extend(new_perms)
+
+    return np.array(perms)
 
 
 # ─── cache helpers ────────────────────────────────────────────────────────────
@@ -247,7 +356,8 @@ def _save(path: Path, **arrays) -> None:
 
 # ─── classification ───────────────────────────────────────────────────────────
 
-def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm, overwrite, normalize):
+def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
+                    overwrite, normalize, n_jobs=1, checkpoint_every=50):
     if normalize:
         warnings.warn(f"--normalize ignoré pour la feature matricielle '{key}'.")
 
@@ -259,8 +369,13 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm, overw
     if len(data) < 4:
         return None
 
-    clf, cv    = TSclassifier(clf=LDA()), StratifiedLeave2GroupsOut()
-    acc_scores = _run_bootstraps(clf, cv, data, labels, n_trials, n_bootstraps, key, state)
+    clf = TSclassifier(clf=LDA())
+    cv  = StratifiedLeave2GroupsOut()
+
+    acc_scores = _run_bootstraps_parallel(
+        clf, cv, data, labels, n_trials, n_bootstraps,
+        key, state, n_jobs, checkpoint_every, out
+    )
 
     result = dict(
         acc_mean   = float(acc_scores.mean()),
@@ -271,15 +386,24 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm, overw
         normalized = False,
     )
     if n_perm > 0:
-        perm = _run_perms(clf, cv, data, labels, n_trials, n_perm, key, state)
+        perm = _run_perms_parallel(
+            clf, cv, data, labels, n_trials, n_perm,
+            key, state, n_jobs, checkpoint_every, out
+        )
         result["pval"]      = float((np.sum(perm >= result["acc_mean"]) + 1) / (n_perm + 1))
         result["perm_accs"] = perm
+        null_max = perm
+        result["pval_maxstat"] = float(
+            (np.sum(null_max >= result["acc_mean"]) + 1) / (n_perm + 1)
+        )
 
     _save(out, **result)
+    _clear_checkpoints(out)  # nettoie les checkpoints après sauvegarde finale
     return result
 
 
-def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm, overwrite, normalize):
+def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
+                    overwrite, normalize, n_jobs=1, checkpoint_every=0):
     out = _result_path(save_path, key, state)
     if out.exists() and not overwrite:
         return np.load(out, allow_pickle=True)
@@ -288,15 +412,15 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm, overw
     if len(data) < 4:
         return None
 
-    n_elec     = data[0].shape[1]
-    clf        = (Pipeline([("scaler", StandardScaler()), ("lda", LDA(solver="svd"))])
-                  if normalize else LDA(solver="svd"))
-    cv         = StratifiedLeave2GroupsOut()
+    n_elec = data[0].shape[1]
+    clf    = (Pipeline([("scaler", StandardScaler()), ("lda", LDA(solver="svd"))])
+              if normalize else LDA(solver="svd"))
+    cv     = StratifiedLeave2GroupsOut()
     acc_scores = np.zeros((n_bootstraps, n_elec))
 
     for i in range(n_bootstraps):
         X, y, groups = bootstrap_sample(data, labels, n_trials, _seed(key, state, i))
-        splits = list(cv.split(X, y, groups))  # identiques pour les 19 électrodes
+        splits = list(cv.split(X, y, groups))
         for e in range(n_elec):
             acc_scores[i, e] = run_cv(clf, splits, X[:, e:e+1], y)
 
@@ -312,20 +436,23 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm, overw
     if n_perm > 0:
         perm_accs = np.zeros((n_perm, n_elec))
         for p in range(n_perm):
-            labels_perm = permute_subject_labels(labels, _seed(key, state, PERM_SEED_OFFSET + n_perm + p))
-            X, y, groups = bootstrap_sample(data, labels_perm, n_trials, _seed(key, state, PERM_SEED_OFFSET + p))
+            labels_perm = permute_subject_labels(
+                labels, _seed(key, state, PERM_SEED_OFFSET + n_perm + p)
+            )
+            X, y, groups = bootstrap_sample(
+                data, labels_perm, n_trials, _seed(key, state, PERM_SEED_OFFSET + p)
+            )
             splits = list(cv.split(X, y, groups))
             for e in range(n_elec):
                 perm_accs[p, e] = run_cv(clf, splits, X[:, e:e+1], y)
-        result["pvals"]      = (np.sum(perm_accs >= result["acc_mean"][None, :], axis=0) + 1) / (n_perm + 1)
-        result["perm_accs"]  = perm_accs
-        # correction max-statistics (FWER) pour comparaisons multiples sur les 19 électrodes :
-        # distribution nulle partagée = max accuracy sur toutes les électrodes à chaque permutation.
-        # pvals_maxstat[e] = P(max_perm >= obs[e]) -> plus conservateur que pvals non corrigé.
-        # Garder pvals en parallèle pour diagnostic (voir si correction change les conclusions).
-        # Réf : Nichols & Holmes 2002 (non-parametric permutation tests neuroimaging).
-        null_max = perm_accs.max(axis=1)  # (n_perm,) max sur électrodes à chaque perm
-        result["pvals_maxstat"] = (np.sum(null_max[:, None] >= result["acc_mean"][None, :], axis=0) + 1) / (n_perm + 1)
+        result["pvals"] = (
+            np.sum(perm_accs >= result["acc_mean"][None, :], axis=0) + 1
+        ) / (n_perm + 1)
+        result["perm_accs"]   = perm_accs
+        null_max = perm_accs.max(axis=1)
+        result["pvals_maxstat"] = (
+            np.sum(null_max[:, None] >= result["acc_mean"][None, :], axis=0) + 1
+        ) / (n_perm + 1)
 
     _save(out, **result)
     return result
@@ -333,11 +460,15 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm, overw
 
 # ─── dispatcher ───────────────────────────────────────────────────────────────
 
-def classify_one(save_path, key, state, n_trials, n_bootstraps, n_perm, overwrite, normalize):
+def classify_one(save_path, key, state, n_trials, n_bootstraps, n_perm,
+                 overwrite, normalize, n_jobs=1, checkpoint_every=50):
     print(f"  {key} × {state}")
     try:
         fn = classify_matrix if is_matrix_feature(key) else classify_vector
-        return key, state, fn(save_path, key, state, n_trials, n_bootstraps, n_perm, overwrite, normalize)
+        return key, state, fn(
+            save_path, key, state, n_trials, n_bootstraps, n_perm,
+            overwrite, normalize, n_jobs, checkpoint_every
+        )
     except Exception:
         print(f"  ERROR {key} {state}\n{traceback.format_exc()}")
         return key, state, None
@@ -351,6 +482,9 @@ def build_summary_csv(save_path: Path) -> None:
         return
 
     for npz in sorted(results_dir.glob("*.npz")):
+        # ignorer les fichiers checkpoint
+        if "_ckpt" in npz.stem:
+            continue
         stem  = npz.stem
         state = next((s for s in _STATES_BY_LEN if stem.endswith(f"_{s}")), None)
         if state is None:
@@ -366,11 +500,13 @@ def build_summary_csv(save_path: Path) -> None:
         if acc_mean.ndim == 0:
             rows.append(dict(key=key, state=state, electrode="all",
                              acc_mean=float(acc_mean), acc_std=float(acc_std),
-                             n_trials=n_trials, normalized=normalized, pval=pval_scalar))
+                             n_trials=n_trials, normalized=normalized,
+                             pval=pval_scalar,
+                             pval_maxstat=float(d["pval_maxstat"]) if "pval_maxstat" in d else np.nan))
         else:
-            ch_names     = d["ch_names"].tolist() if "ch_names" in d else list(range(len(acc_mean)))
-            pvals        = d["pvals"]         if "pvals"         in d else [np.nan] * len(acc_mean)
-            pvals_maxstat = d["pvals_maxstat"] if "pvals_maxstat" in d else [np.nan] * len(acc_mean)
+            ch_names      = d["ch_names"].tolist() if "ch_names" in d else list(range(len(acc_mean)))
+            pvals         = d["pvals"]          if "pvals"         in d else [np.nan] * len(acc_mean)
+            pvals_maxstat = d["pvals_maxstat"]  if "pvals_maxstat" in d else [np.nan] * len(acc_mean)
             for ch, am, astd, pv, pv_ms in zip(ch_names, acc_mean, acc_std, pvals, pvals_maxstat):
                 rows.append(dict(key=key, state=state, electrode=ch,
                                  acc_mean=float(am), acc_std=float(astd),
@@ -393,16 +529,39 @@ if __name__ == "__main__":
     n_trials = compute_global_n_trials(args.save_path, skip_check=args.skip_check)
     print(f"n_trials_min = {n_trials}  |  normalize = {args.normalize}")
 
-    combos = list(product(FEATURE_KEYS, STATE_LIST))
+    # Filtrage par --key et --state si fournis (mode combo unique pour array SLURM)
+    keys   = [args.key]   if args.key   else FEATURE_KEYS
+    states = [args.state] if args.state else STATE_LIST
+    combos = list(product(keys, states))
     print(f"=== classification : {len(combos)} combinaisons ===")
 
-    results = Parallel(n_jobs=args.n_jobs, prefer="threads")(
-        delayed(classify_one)(
+    # Pour les features matricielles : n_jobs utilisés en interne (bootstraps parallèles)
+    # Pour les features vectorielles : n_jobs utilisés au niveau des combos (joblib externe)
+    matrix_combos = [(k, s) for k, s in combos if is_matrix_feature(k)]
+    vector_combos = [(k, s) for k, s in combos if not is_matrix_feature(k)]
+
+    results = []
+
+    # Vecteurs : parallélisme externe (combos en parallèle, 1 thread par combo)
+    if vector_combos:
+        vec_results = Parallel(n_jobs=args.n_jobs, prefer="threads")(
+            delayed(classify_one)(
+                args.save_path, key, state, n_trials,
+                args.n_bootstraps, args.n_perm, args.overwrite, args.normalize,
+                n_jobs=1, checkpoint_every=0
+            )
+            for key, state in vector_combos
+        )
+        results.extend(vec_results)
+
+    # Matrices : parallélisme interne (bootstraps en parallèle, 1 combo à la fois)
+    for key, state in matrix_combos:
+        res = classify_one(
             args.save_path, key, state, n_trials,
             args.n_bootstraps, args.n_perm, args.overwrite, args.normalize,
+            n_jobs=args.n_jobs, checkpoint_every=args.checkpoint_every
         )
-        for key, state in combos
-    )
+        results.append(res)
 
     print("\n=== résumé (features matricielles) ===")
     for key, state, res in sorted(results, key=lambda r: (r[1], r[0])):
