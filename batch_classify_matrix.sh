@@ -4,7 +4,7 @@
 #SBATCH --array=1-24
 #SBATCH --time=06:00:00
 #SBATCH --mem=32G
-#SBATCH --cpus-per-task=32
+#SBATCH --cpus-per-task=64
 #SBATCH --output=/scratch/alouis/logs_dream/classify_matrix-%a_%j.out
 #SBATCH --error=/scratch/alouis/logs_dream/classify_matrix-%a_%j.err
 #SBATCH --exclude=fc30555
