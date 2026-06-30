@@ -245,7 +245,9 @@ def fit_fooof(
 
     # Aligne l'espace pour la LDA et permet la moyenne arithmétique dans band_power.
     # Interprétation : Facteur d'excès au-dessus du 1/f (~1 hors pic, >1 sur pic).
-    # À tester via SOUSTRACTION (psds - 10**ap_fit_log) si le décodage passe les 50%.
+    # Ratio choisi vs soustraction linéaire : diag_foof.py (noica/REM/alpha,\
+    # n=6) montre r=0.927 entre les deux -> même signal, mais soustraction\
+    # en unités brutes (~1e-10) illisible sans rescaling. Ratio retenu.
 
     return exponent, flat_ratio.reshape(n_epochs, n_ch, n_freqs)
 

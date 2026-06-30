@@ -237,6 +237,9 @@ def fit_fooof(
     # seulement -> psd_osc_* reste dans le même espace que psd_* (comparable LDA).
     # interprétation : facteur d'excès au-dessus du 1/f (~1 hors pic, >1 sur pic).
     flat_ratio = flat_psds / (10 ** ap_fit_log)
+    # Ratio choisi vs soustraction linéaire : diag_foof.py (noica/REM/alpha,\
+    # n=6) montre r=0.927 entre les deux -> même signal, mais soustraction\
+    # en unités brutes (~1e-10) illisible sans rescaling. Ratio retenu.
 
     return exponent, flat_ratio.reshape(n_epochs, n_ch, n_freqs)
 

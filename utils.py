@@ -17,7 +17,7 @@ def upper_tri(arr: np.ndarray) -> np.ndarray:
 
 def load_atomic(save_path: Path, key: str, sub_id: str, stage: str) -> np.ndarray | None:
     """Charge un tableau atomique caché (.npz) ou retourne None si absent."""
-    f = save_path / key / f"{key}_s{sub_id}_{stage}.npz"
+    f = save_path / key / f"{key}_s{str(sub_id).zfill(2)}_{stage}.npz"
     if not f.exists():
         return None
     # Fermeture explicite du fichier pour éviter le pickle error de joblib
