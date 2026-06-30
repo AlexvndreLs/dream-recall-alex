@@ -2,9 +2,9 @@
 #SBATCH --job-name=classify_matrix
 #SBATCH --account=def-kjerbi
 #SBATCH --array=1-24
-#SBATCH --time=06:00:00
+#SBATCH --time=10:00:00
 #SBATCH --mem=32G
-#SBATCH --cpus-per-task=64
+#SBATCH --cpus-per-task=8
 #SBATCH --output=/scratch/alouis/logs_dream/classify_matrix-%a_%j.out
 #SBATCH --error=/scratch/alouis/logs_dream/classify_matrix-%a_%j.err
 #SBATCH --exclude=fc30555
@@ -51,6 +51,11 @@ echo "Job ${SLURM_JOB_ID} array ${SLURM_ARRAY_TASK_ID} on $(hostname)"
 echo "Start: $(date)"
 
 cd /home/alouis/dream-recall-alex
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export BLIS_NUM_THREADS=1
+export FLEXIBLAS_NUM_THREADS=1
 
 /home/alouis/mne_env/bin/python classify.py \
     --save-path       ${SAVE_ROOT}/${SAVE} \

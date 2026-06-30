@@ -476,9 +476,6 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
 
     _save(out, **result)
     return result
-# Bloque la normalisation incompatible avec la géométrie riemannienne et gère le cache pour éviter les recalculs inutiles.
-# Instancie le pipeline neuroscientifique (Tangent Space Mapping + LDA) et le validateur croisé stratifié (LPGO P=2).
-# Exécute les boucles parallèles de bootstraps et de permutations, calcule les p-values, puis archive le dictionnaire compressé final.
 
 # ─── dispatcher ───────────────────────────────────────────────────────────────
 
