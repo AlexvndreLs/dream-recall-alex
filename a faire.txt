@@ -1,0 +1,97 @@
++Calculer les 3 branche 
+=> Sur la meilleure
++ 1000hZ avec en vrai tte les feature sou juste cosp et psd ?
++ Le autoreject version riemman ou pas a voir enft sur quel features
+
++graphes pour seuil EOG et EMG
++ Graph / clacul knee vs fixed
+
++Window 500 et overlap 50% 
+Ne pas oublier pyriemme cosp qui est hardcodé
+=> remplacer 0.01 par overlap
+
++flat_ratio = flat_psds / (10 ** ap_fit_log)
+# À tester via SOUSTRACTION (psds - 10**ap_fit_log) si le décodage passe les 50%.
+
+
+
++def compute_cosp(
+    data: np.ndarray, fmin: float, fmax: float
+) -> np.ndarray:
+    """(n_epochs, 19, 7500) -> (n_epochs, 19, 19) cospectrum moyen sur la bande.
+
+    Mêmes paramètres Welch que compute_psd_spectrum (WINDOW) pour cohérence
+    avec la thèse §1.2.6. overlap=0.01 (quasi no-overlap) : pyriemann 0.11
+    refuse overlap=0.0 strictement (ValueError). 0.01 sur 250 samples = 2-3
+    samples de chevauchement, négligeable, cohérent avec l'esprit Arthur.
+    """
+    mat = CoSpectra(
+        window=WINDOW, overlap=0.01, fmin=fmin, fmax=fmax, fs=SF
+    ).fit_transform(data)
+    mat = mat.mean(axis=-1) if mat.ndim == 4 else mat
+    n = mat.shape[-1]
+    mu = np.trace(mat, axis1=-2, axis2=-1) / n
+    mat += 1e-10 * mu[:, None, None] * np.eye(n)
+    return mat
+    
+    # pyriemann retourne (n_epochs, 19, 19, n_freqs) ou (n_epochs, 19, 19)
+    # selon la version -> moyenne sur l'axe fréquences si 4D
+    #a tester quand cluster plus down
+
+=> faire ce test et ajuster code en fonction 3D/4D
+
++ elucider pk 50% sur vla les features
+
+
+
++ def compute_complexity(
+    data: np.ndarray, spectrum: np.ndarray
+) -> dict[str, np.ndarray]:
+    """(n_epochs, 19, 7500) + spectre Welch -> 3 features de complexité (n_epochs, 19).
+
+    permutation entropy et Higuchi FD opèrent sur le signal temporel brut
+    (boucle epoch x canal, antropy attend du 1D). spectral entropy dérivée
+    du spectre Welch déjà calculé (entropie de Shannon de la distribution de
+    puissance, normalisée) -> coût quasi nul, cohérent avec la PSD.
+
+    perm_entropy : order=3 par défaut antropy, normalize=True pour borner [0,1].
+    =>quantifie l'irrégularité/imprévisibilité de l'ordre temporel des valeurs 
+    en regardans si parmi les 6 permuations certaine apparaissent plus ou si toutes apparaissent pareil
+
+    higuchi_fd   : kmax=10 par défaut antropy.
+    => voir avec ariana
+    => mesure à quel point le signal "remplit" le plan temps-amplitude quand on le regarde à differentes resolutions
+    en gros si le signal est fractal ou irregulier a petite et grande echelle
+
+    spec_ent : =>  est-ce que cette énergie est concentrée sur quelques fréquences,
+    ou répartie uniformément sur tout le spectre ?
+    welch avec 0% chevauchement ici => cf config_v3.py mais pt mieux de quitter arthur et go 50%
+    => Welch opère à l'intérieur d'une seule epoch, pas entre epochs
+    => pas de leakage
+    
+    À comparer à l'exposant aperiodic (cf docstring d'en-tête).
+    """
+    n_epochs, n_ch, _ = data.shape
+
+    perm_ent   = np.empty((n_epochs, n_ch))
+    higuchi    = np.empty((n_epochs, n_ch))
+    for ep in range(n_epochs):
+        for ch in range(n_ch):
+            sig = data[ep, ch]
+            perm_ent[ep, ch] = ant.perm_entropy(sig, normalize=True) #m=3 mais a voir apres si plus de detail
+            higuchi[ep, ch]  = ant.higuchi_fd(sig) # k= 10 => 750 echantillon => 3s 
+
+    # spectral entropy depuis le spectre Welch : Shannon normalisé de la
+    # distribution de puissance (somme sur l'axe fréquences -> proba)
+    psd_norm  = spectrum / spectrum.sum(axis=-1, keepdims=True)
+    spec_ent  = -(psd_norm * np.log2(psd_norm)).sum(axis=-1)
+    spec_ent /= np.log2(spectrum.shape[-1])  # normalisation [0,1]
+
+    return {
+        "perm_entropy": perm_ent,
+        "higuchi_fd":   higuchi,
+        "spec_entropy": spec_ent,
+    }
+
+
+=> retour de gemini :  Spectral Entropy (spec_entropy)Mathematical Validity: High, but with a potential edge case. Spectral entropy applies Shannon entropy to the normalized Power Spectral Density (PSD), treating each frequency bin's power as a probability value.Critical Vulnerability: If your Welch spectrum contains any bins with exactly zero power (which can happen with specific preprocessing, padding, or filtering windows), np.log2(0) will evaluate to -inf. Multiplying $0 \times -\infty$ results in nan (Not a Number) values in NumPy
