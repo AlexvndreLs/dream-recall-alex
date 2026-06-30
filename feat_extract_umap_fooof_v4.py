@@ -266,14 +266,21 @@ def compute_cosp(
     mat = CoSpectra(
         window=WINDOW, overlap=0.01, fmin=fmin, fmax=fmax, fs=SF
     ).fit_transform(data)
-    mat = mat.mean(axis=-1) if mat.ndim == 4 else mat
+    # Testé hors-cluster avec pyriemann==0.11 (random data, 5 epochs x 19 ch
+    # x 750 samples @ 250Hz, fmin=8/fmax=12) : CoSpectra retourne TOUJOURS du
+    # 4D (n_epochs, 19, 19, n_freqs), jamais du 3D direct. Assertion stricte
+    # plutôt que fallback silencieux : si une future version de pyriemann
+    # change ce comportement, on veut un crash explicite, pas une matrice
+    # cassée (non-SPD) qui fausserait silencieusement la classification.
+    assert mat.ndim == 4, (
+        f"CoSpectra a retourné du {mat.ndim}D au lieu de 4D attendu "
+        f"(shape={mat.shape}) -> vérifier la version de pyriemann"
+    )
+    mat = mat.mean(axis=-1)
     n = mat.shape[-1]
     mu = np.trace(mat, axis1=-2, axis2=-1) / n
     mat += 1e-10 * mu[:, None, None] * np.eye(n)
     return mat
-    # pyriemann retourne (n_epochs, 19, 19, n_freqs) ou (n_epochs, 19, 19)
-    # selon la version -> moyenne sur l'axe fréquences si 4D
-    #a tester quand cluster plus down
 
 
 def compute_complexity(
