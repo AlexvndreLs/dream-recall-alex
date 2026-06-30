@@ -99,7 +99,7 @@ WINDOW         = 250   # Welch : fenêtre 1s Hanning, no overlap — thesis §1.
                         # (1s à 250Hz = 250 samples ; même durée temporelle qu'à 1000Hz)
                         # (au lieu de 1000 à 1000Hz, même durée en secondes)
                         #=> pt essayer d'aller plus loin avec 500 et 250 overlap
-OVERLAP        = 0
+OVERLAP        = 125
 
 
 # ─── feature extraction params ────────────────────────────────────────────────

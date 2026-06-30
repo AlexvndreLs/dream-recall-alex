@@ -261,13 +261,13 @@ def compute_cosp(
 ) -> np.ndarray:
     """(n_epochs, 19, 7500) -> (n_epochs, 19, 19) cospectrum moyen sur la bande.
 
-    Mêmes paramètres Welch que compute_psd_spectrum (WINDOW) pour cohérence
-    avec la thèse §1.2.6. overlap=0.01 (quasi no-overlap) : pyriemann 0.11
-    refuse overlap=0.0 strictement (ValueError). 0.01 sur 250 samples = 2-3
-    samples de chevauchement, négligeable, cohérent avec l'esprit Arthur.
+    WINDOW identique à compute_psd_spectrum (250 samples, cohérence Δf).
+    Overlap DIFFÉRENT volontairement : PSD à 50% (OVERLAP=125 samples),
+    cospectrum à 75% (overlap=0.75, défaut pyriemann). Choix justifiés par
+    la littérature Welch (1967) pour réduire la variance d'estimation.
     """
     mat = CoSpectra(
-        window=WINDOW, overlap=0.01, fmin=fmin, fmax=fmax, fs=SF
+        window=WINDOW, overlap=0.75, fmin=fmin, fmax=fmax, fs=SF
     ).fit_transform(data)
     # Testé hors-cluster avec pyriemann==0.11 (random data, 5 epochs x 19 ch
     # x 750 samples @ 250Hz, fmin=8/fmax=12) : CoSpectra retourne TOUJOURS du
