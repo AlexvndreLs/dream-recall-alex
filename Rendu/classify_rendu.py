@@ -18,6 +18,12 @@ contrairement à hash() Python dont le résultat dépend de PYTHONHASHSEED).
 
 Checkpoint progressif (--checkpoint-every N) : sauvegarde les bootstraps
 toutes les N itérations -> reprise après timeout sans repartir de zéro.
+Disponible pour les features matricielles ET vectorielles (MODIF : avant,
+seule classify_matrix en bénéficiait — voir _run_bootstraps_parallel).
+
+Parallélisation (--n-jobs) : un seul combo (key, state) à la fois reçoit
+tout n_jobs, pour matrices ET vecteurs (MODIF : avant, les vecteurs étaient
+parallélisés au niveau des combos eux-mêmes, plusieurs en même temps).
 
 Usage :
     python classify.py \\
@@ -245,6 +251,39 @@ def _one_perm(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> float:
 # Effectue le sous-tirage des époques en leur associant ces faux labels à l'aide d'une graine isolée des bootstraps.
 # Évalue le modèle sur ces données falsifiées pour alimenter la distribution statistique de l'hypothèse nulle.
 
+# MODIF : équivalents vectoriels de _one_bootstrap/_one_perm ci-dessus — boucle
+# sur les n_elec électrodes en interne, retourne un vecteur au lieu d'un float.
+# Permettent à classify_vector de réutiliser _run_bootstraps_parallel /
+# _run_perms_parallel (parallélisme + checkpoint) au lieu de sa double boucle
+# Python séquentielle d'origine.
+
+def _one_bootstrap_vector(clf, cv, data, labels, n_trials, key, state, i) -> np.ndarray:
+    """Un seul bootstrap — appelé en parallèle par joblib (cas vectoriel)."""
+    X, y, groups = bootstrap_sample(data, labels, n_trials, _seed(key, state, i))
+    splits = list(cv.split(X, y, groups))
+    n_elec = X.shape[1]
+    return np.array([
+        run_cv(clf, splits, X[:, e:e + 1], y) for e in range(n_elec)
+    ])
+# Échantillonne un nombre fixe d'époques par sujet à l'aide d'une graine aléatoire déterministe propre à l'itération.
+# Évalue séquentiellement chaque électrode (1 LDA par colonne) sur les mêmes splits et retourne le vecteur des n_elec scores.
+
+def _one_perm_vector(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> np.ndarray:
+    """Une seule permutation — appelée en parallèle par joblib (cas vectoriel)."""
+    labels_perm = permute_subject_labels(
+        labels, _seed(key, state, PERM_SEED_OFFSET + n_perm + p)
+    )
+    X, y, groups = bootstrap_sample(
+        data, labels_perm, n_trials, _seed(key, state, PERM_SEED_OFFSET + p)
+    )
+    splits = list(cv.split(X, y, groups))
+    n_elec = X.shape[1]
+    return np.array([
+        run_cv(clf, splits, X[:, e:e + 1], y) for e in range(n_elec)
+    ])
+# Permute les labels HR/LR au niveau sujet puis ré-échantillonne les époques avec ces faux labels, comme _one_perm.
+# Évalue séquentiellement chaque électrode sur les données falsifiées et retourne le vecteur de n_elec scores nuls.
+
 # ─── checkpoint helpers ───────────────────────────────────────────────────────
 
 def _ckpt_path(result_path: Path, prefix: str) -> Path:
@@ -274,9 +313,12 @@ def _clear_checkpoints(result_path: Path) -> None:
 
 # ─── bootstrap + perm loops avec checkpoint ───────────────────────────────────
 
+# MODIF : ajout du paramètre worker_fn (avant : _one_bootstrap codé en dur).
+# Permet à classify_vector de réutiliser cette fonction via worker_fn=_one_bootstrap_vector.
+# Comportement inchangé pour classify_matrix (valeur par défaut).
 def _run_bootstraps_parallel(
     clf, cv, data, labels, n_trials, n_bootstraps, key, state,
-    n_jobs, checkpoint_every, result_path
+    n_jobs, checkpoint_every, result_path, worker_fn=_one_bootstrap
 ) -> np.ndarray:
     """1000 bootstraps parallèles avec sauvegarde progressive.
 
@@ -302,7 +344,7 @@ def _run_bootstraps_parallel(
         for chunk_start in range(0, len(remaining), checkpoint_every):
             chunk = remaining[chunk_start: chunk_start + checkpoint_every]
             new_accs = Parallel(n_jobs=n_jobs, prefer="threads")(
-                delayed(_one_bootstrap)(clf, cv, data, labels, n_trials, key, state, i)
+                delayed(worker_fn)(clf, cv, data, labels, n_trials, key, state, i)
                 for i in chunk
             )
             accs.extend(new_accs)
@@ -310,7 +352,7 @@ def _run_bootstraps_parallel(
             print(f"    bootstrap: {len(accs)}/{n_bootstraps}")
     else:
         new_accs = Parallel(n_jobs=n_jobs, prefer="threads")(
-            delayed(_one_bootstrap)(clf, cv, data, labels, n_trials, key, state, i)
+            delayed(worker_fn)(clf, cv, data, labels, n_trials, key, state, i)
             for i in remaining
         )
         accs.extend(new_accs)
@@ -320,9 +362,10 @@ def _run_bootstraps_parallel(
 # Découpe les bootstraps restants en blocs (chunks) exécutés en parallèle par joblib selon le nombre de cœurs alloués.
 # Fusionne les résultats à chaque fin de bloc, exporte une sauvegarde compressée sur le disque et logue la progression.
 
+# MODIF : même ajout de worker_fn que _run_bootstraps_parallel ci-dessus.
 def _run_perms_parallel(
     clf, cv, data, labels, n_trials, n_perm, key, state,
-    n_jobs, checkpoint_every, result_path
+    n_jobs, checkpoint_every, result_path, worker_fn=_one_perm
 ) -> np.ndarray:
     """1000 permutations parallèles avec sauvegarde progressive."""
     done = _load_checkpoint(result_path, "perm")
@@ -341,7 +384,7 @@ def _run_perms_parallel(
         for chunk_start in range(0, len(remaining), checkpoint_every):
             chunk = remaining[chunk_start: chunk_start + checkpoint_every]
             new_perms = Parallel(n_jobs=n_jobs, prefer="threads")(
-                delayed(_one_perm)(clf, cv, data, labels, n_trials, key, state, p, n_perm)
+                delayed(worker_fn)(clf, cv, data, labels, n_trials, key, state, p, n_perm)
                 for p in chunk
             )
             perms.extend(new_perms)
@@ -349,7 +392,7 @@ def _run_perms_parallel(
             print(f"    perm: {len(perms)}/{n_perm}")
     else:
         new_perms = Parallel(n_jobs=n_jobs, prefer="threads")(
-            delayed(_one_perm)(clf, cv, data, labels, n_trials, key, state, p, n_perm)
+            delayed(worker_fn)(clf, cv, data, labels, n_trials, key, state, p, n_perm)
             for p in remaining
         )
         perms.extend(new_perms)
@@ -384,6 +427,10 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
 
     data, labels = load_all(save_path, key, state)
     if len(data) < 4:
+        warnings.warn(
+            f"Skipping {key}_{state}: cohorte insuffisante "
+            f"(n={len(data)} sujets disponibles, minimum requis = 4)."
+        )
         return None
 
     clf = TSclassifier(clf=LDA())
@@ -409,10 +456,7 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
         )
         result["pval"]      = float((np.sum(perm >= result["acc_mean"]) + 1) / (n_perm + 1))
         result["perm_accs"] = perm
-        null_max = perm
-        result["pval_maxstat"] = float(
-            (np.sum(null_max >= result["acc_mean"]) + 1) / (n_perm + 1)
-        )
+        # pas de correction maxstat ici : un seul classifieur global, contrairement a classify_vector (1 score par electrode)
 
     _save(out, **result)
     _clear_checkpoints(out)  # nettoie les checkpoints après sauvegarde finale
@@ -423,26 +467,33 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
 # Exécute les boucles parallèles de bootstraps et de permutations, calcule les p-values, puis archive le dictionnaire compressé final.
 
 def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
-                    overwrite, normalize, n_jobs=1, checkpoint_every=0):
+                    overwrite, normalize, n_jobs=1, checkpoint_every=50):
+    # MODIF : checkpoint_every=50 par défaut (avant : 0, ignoré de toute façon —
+    # voir corps de fonction, qui ne le lisait jamais).
     out = _result_path(save_path, key, state)
     if out.exists() and not overwrite:
         return np.load(out, allow_pickle=True)
 
     data, labels = load_all(save_path, key, state)
     if len(data) < 4:
+        warnings.warn(
+            f"Skipping {key}_{state}: cohorte insuffisante "
+            f"(n={len(data)} sujets disponibles, minimum requis = 4)."
+        )
         return None
 
     n_elec = data[0].shape[1]
     clf    = (Pipeline([("scaler", StandardScaler()), ("lda", LDA(solver="svd"))])
               if normalize else LDA(solver="svd"))
     cv     = StratifiedLeave2GroupsOut()
-    acc_scores = np.zeros((n_bootstraps, n_elec))
 
-    for i in range(n_bootstraps):
-        X, y, groups = bootstrap_sample(data, labels, n_trials, _seed(key, state, i))
-        splits = list(cv.split(X, y, groups))
-        for e in range(n_elec):
-            acc_scores[i, e] = run_cv(clf, splits, X[:, e:e+1], y)
+    # MODIF : avant, double boucle Python séquentielle ici (bootstraps × électrodes,
+    # sans parallélisme ni checkpoint). Remplacée par _run_bootstraps_parallel +
+    # worker_fn=_one_bootstrap_vector — même mécanisme que classify_matrix.
+    acc_scores = _run_bootstraps_parallel(
+        clf, cv, data, labels, n_trials, n_bootstraps,
+        key, state, n_jobs, checkpoint_every, out, worker_fn=_one_bootstrap_vector
+    )
 
     result = dict(
         acc_mean   = acc_scores.mean(axis=0),
@@ -454,17 +505,11 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
         normalized = normalize,
     )
     if n_perm > 0:
-        perm_accs = np.zeros((n_perm, n_elec))
-        for p in range(n_perm):
-            labels_perm = permute_subject_labels(
-                labels, _seed(key, state, PERM_SEED_OFFSET + n_perm + p)
-            )
-            X, y, groups = bootstrap_sample(
-                data, labels_perm, n_trials, _seed(key, state, PERM_SEED_OFFSET + p)
-            )
-            splits = list(cv.split(X, y, groups))
-            for e in range(n_elec):
-                perm_accs[p, e] = run_cv(clf, splits, X[:, e:e+1], y)
+        # MODIF : idem, remplace la boucle séquentielle de permutations d'origine.
+        perm_accs = _run_perms_parallel(
+            clf, cv, data, labels, n_trials, n_perm,
+            key, state, n_jobs, checkpoint_every, out, worker_fn=_one_perm_vector
+        )
         result["pvals"] = (
             np.sum(perm_accs >= result["acc_mean"][None, :], axis=0) + 1
         ) / (n_perm + 1)
@@ -475,7 +520,13 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
         ) / (n_perm + 1)
 
     _save(out, **result)
+    # MODIF : nettoyage des checkpoints ajouté (absent avant, vu qu'aucun
+    # checkpoint n'était jamais créé par cette fonction).
+    _clear_checkpoints(out)
     return result
+# Prépare un pipeline de mise à l'échelle (StandardScaler) sans fuite de données et isole les canaux EEG pour une analyse univariée.
+# Évalue séquentiellement la capacité de décodage de chaque électrode à travers les itérations de bootstraps.
+# Construit la distribution nulle par permutation et applique une correction de la statistique maximale (FWER) contre les faux positifs.
 
 # ─── dispatcher ───────────────────────────────────────────────────────────────
 
@@ -491,6 +542,9 @@ def classify_one(save_path, key, state, n_trials, n_bootstraps, n_perm,
     except Exception:
         print(f"  ERROR {key} {state}\n{traceback.format_exc()}")
         return key, state, None
+# Affiche le couple en cours et ouvre un bloc "try/except" pour immuniser le script contre les crashs bloquants.
+# Identifie dynamiquement la nature géométrique de la feature pour router le calcul vers le bon pipeline (matrice ou vecteur).
+# Intercepte les exceptions en encapsulant le traceback complet dans les logs SLURM, puis renvoie None pour préserver la suite du batch.
 
 
 # ─── résumé CSV ───────────────────────────────────────────────────────────────
@@ -536,7 +590,9 @@ def build_summary_csv(save_path: Path) -> None:
         out = results_dir / "classification_summary.csv"
         pd.DataFrame(rows).to_csv(out, index=False)
         print(f"CSV : {out}")
-
+# Scanne récursivement le dossier results/ pour identifier et parser les fichiers de résultats .npz finaux (hors checkpoints).
+# Discrimine les structures matricielles (une seule ligne globale 'all') des structures vectorielles univariées (une ligne par canal EEG).
+# Compile et exporte l'ensemble des métriques de performance et de p-values dans un unique tableur CSV Pandas consolidé.
 
 # ─── main ─────────────────────────────────────────────────────────────────────
 
@@ -554,27 +610,14 @@ if __name__ == "__main__":
     combos = list(product(keys, states))
     print(f"=== classification : {len(combos)} combinaisons ===")
 
-    # Pour les features matricielles : n_jobs utilisés en interne (bootstraps parallèles)
-    # Pour les features vectorielles : n_jobs utilisés au niveau des combos (joblib externe)
-    matrix_combos = [(k, s) for k, s in combos if is_matrix_feature(k)]
-    vector_combos = [(k, s) for k, s in combos if not is_matrix_feature(k)]
-
+    # MODIF : avant, deux chemins séparés (vector_combos en Parallel externe
+    # 1 thread/combo, n_jobs=1/checkpoint_every=0 forcés ; matrix_combos en
+    # boucle séquentielle avec n_jobs interne). Un seul chemin désormais :
+    # classify_vector parallélise + checkpointe en interne comme les matrices,
+    # cohérent aussi avec la topologie CCD/NUMA de Fir (1 combo à la fois sur
+    # n_jobs cœurs, plutôt que dispersé entre combos).
     results = []
-
-    # Vecteurs : parallélisme externe (combos en parallèle, 1 thread par combo)
-    if vector_combos:
-        vec_results = Parallel(n_jobs=args.n_jobs, prefer="threads")(
-            delayed(classify_one)(
-                args.save_path, key, state, n_trials,
-                args.n_bootstraps, args.n_perm, args.overwrite, args.normalize,
-                n_jobs=1, checkpoint_every=0
-            )
-            for key, state in vector_combos
-        )
-        results.extend(vec_results)
-
-    # Matrices : parallélisme interne (bootstraps en parallèle, 1 combo à la fois)
-    for key, state in matrix_combos:
+    for key, state in combos:
         res = classify_one(
             args.save_path, key, state, n_trials,
             args.n_bootstraps, args.n_perm, args.overwrite, args.normalize,
