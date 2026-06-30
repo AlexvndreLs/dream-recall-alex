@@ -95,7 +95,7 @@ SFREQ_TARGET   = 250.0  # décimation finale (= SFREQ_PREPROC)
 SFREQ_PREPROC  = 250.0                                # après décimation dans preprocess_subject.py
 EPOCH_DURATION = 30.0                                 # secondes (standard R&K / AASM)
 N_SAMPLES      = int(SFREQ_PREPROC * EPOCH_DURATION)  # 7500 samples par epoch à 250Hz
-WINDOW         = 250   # Welch : fenêtre 1s Hanning, no overlap — thesis §1.2.5
+WINDOW         = 250   # Welch : fenêtre 1s Hanning. Overlap PSD=50%, cosp=75% — écart volontaire vs thèse §1.2.5
                         # (1s à 250Hz = 250 samples ; même durée temporelle qu'à 1000Hz)
                         # (au lieu de 1000 à 1000Hz, même durée en secondes)
                         #=> pt essayer d'aller plus loin avec 500 et 250 overlap
