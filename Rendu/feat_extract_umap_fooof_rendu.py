@@ -285,6 +285,11 @@ def compute_cosp(
         f"CoSpectra a retourné du {mat.ndim}D au lieu de 4D attendu "
         f"(shape={mat.shape}) -> vérifier la version de pyriemann"
     )
+    # DIAG temporaire : nombre de bins de fréquence moyennés par bande.
+    # Sert à vérifier si les bandes étroites (ex. sigma 12-16Hz) ont trop
+    # peu de bins à 250Hz -> motiverait le recalcul du cospectrum à 1000Hz
+    # avant décimation. À retirer une fois le diagnostic fait.
+    print(f"  [DIAG cosp] band={fmin}-{fmax}Hz n_freqs={mat.shape[-1]}")
     mat = mat.mean(axis=-1)
     n = mat.shape[-1]
     mu = np.trace(mat, axis1=-2, axis2=-1) / n
@@ -329,14 +334,20 @@ def compute_complexity(
             perm_ent[ep, ch] = ant.perm_entropy(sig, normalize=True) #m=3 mais a voir apres si plus de detail
             higuchi[ep, ch]  = ant.higuchi_fd(sig) # k= 10 => 750 echantillon => 3s 
 
+    psd_sum = spectrum.sum(axis=-1, keepdims=True)
+    psd_norm = np.divide(                                                           #(a)
+        spectrum, psd_sum, out=np.zeros_like(spectrum), where=psd_sum > 0 
+    )
+    with np.errstate(divide="ignore", invalid="ignore"):
+        log_psd = np.where(psd_norm > 0, np.log2(psd_norm), 0.0)
 
+    spec_ent = -(psd_norm * log_psd).sum(axis=-1)   #(b)
+    spec_ent /= np.log2(spectrum.shape[-1])  # normalisation [0,1]
 
-    psd_norm  = spectrum / spectrum.sum(axis=-1, keepdims=True) #(a)
-    spec_ent  = -(psd_norm * np.log2(psd_norm)).sum(axis=-1)    #(b)
     # spectral entropy depuis le spectre Welch : 
     # Shannon normalisé (b) de la distribution de puissance (somme sur l'axe fréquences -> proba) (a)
-    
-    spec_ent /= np.log2(spectrum.shape[-1])  # normalisation [0,1]
+    #on s'assure aussi non division par zero
+
 
     return {
         "perm_entropy": perm_ent,
