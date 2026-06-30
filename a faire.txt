@@ -1,0 +1,9 @@
++Calculer les 3 branche 
+=> Sur la meilleure
++ 1000hZ avec en vrai tte les feature sou juste cosp et psd ?
++ Le autoreject version riemman ou pas a voir enft sur quel features
+
++graphes pour seuil EOG et EMG
++ Graph / clacul knee vs fixed
+
++Window 500 ??
