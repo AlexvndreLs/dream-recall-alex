@@ -3,7 +3,7 @@
 #SBATCH --account=def-kjerbi
 #SBATCH --array=1-24
 #SBATCH --time=10:00:00
-#SBATCH --mem=32G
+#SBATCH --mem=8G
 #SBATCH --cpus-per-task=8
 #SBATCH --output=/scratch/alouis/logs_dream/classify_matrix-%a_%j.out
 #SBATCH --error=/scratch/alouis/logs_dream/classify_matrix-%a_%j.err
@@ -13,7 +13,6 @@
 
 # Batch par combo matriciel (cov/cosp_* × 4 stades × 3 branches).
 # 1 job = 1 (key, state) = 1 feature × 1 stade.
-# Bootstraps parallélisés en interne sur 32 CPU -> gain ~4x vs 8 CPU séquentiel.
 # Checkpoint toutes les 50 itérations -> reprise après timeout sans repartir de 0.
 #
 # Array 1-24 : 6 features matricielles × 4 stades
