@@ -100,6 +100,7 @@ WINDOW         = 250   # Welch : fenêtre 1s Hanning. Overlap PSD=50%, cosp=75% 
                         # (au lieu de 1000 à 1000Hz, même durée en secondes)
                         #=> pt essayer d'aller plus loin avec 500 et 250 overlap
 OVERLAP        = 125
+OVERLAP_COSP   = 0.75   # fraction (pyriemann CoSpectra), distinct de OVERLAP (samples, PSD/MNE)
 
 
 # ─── feature extraction params ────────────────────────────────────────────────

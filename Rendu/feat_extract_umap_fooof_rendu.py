@@ -63,7 +63,7 @@ from pyriemann.estimation import Covariances, CoSpectra
 from config_v3 import (
     SFREQ_PREPROC, PER_BLACKLIST_STR, JBE_SUBJECTS_STR,
     N_SAMPLES, N_EEG, CH_NAMES,
-    WINDOW, OVERLAP, FREQ_DICT, FOOOF_FREQ_RANGE,
+    WINDOW, OVERLAP, OVERLAP_COSP, FREQ_DICT, FOOOF_FREQ_RANGE,
     ATOMIC_STAGES, STAGE_LABEL_TO_ATOMIC,
     CLASSIFICATION_GROUPS, STATE_LIST,
     FEATURE_KEYS, SUBJECT_IDS,
@@ -275,7 +275,7 @@ def compute_cosp(
     la littérature Welch (1967) pour réduire la variance d'estimation.
     """
     mat = CoSpectra(
-        window=WINDOW, overlap=0.75, fmin=fmin, fmax=fmax, fs=SF
+        window=WINDOW, overlap=OVERLAP_COSP, fmin=fmin, fmax=fmax, fs=SF
     ).fit_transform(data)
     # Testé hors-cluster avec pyriemann==0.11 (random data, 5 epochs x 19 ch
     # x 750 samples @ 250Hz, fmin=8/fmax=12) : CoSpectra retourne TOUJOURS du
@@ -320,7 +320,7 @@ def compute_complexity(
 
     spec_ent : =>  est-ce que cette énergie est concentrée sur quelques fréquences,
     ou répartie uniformément sur tout le spectre ?
-    welch avec 0% chevauchement ici => cf config_v3.py mais pt mieux de quitter arthur et go 50%
+    welch avec OVERLAP=50% chevauchement ici => cf config_v3.py (ecart volontaire vs Arthur, perf-max)
     => Welch opère à l'intérieur d'une seule epoch, pas entre epochs
     => pas de leakage
     
