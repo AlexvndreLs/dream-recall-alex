@@ -91,18 +91,18 @@ def parse_args() -> argparse.Namespace:
 
 def is_matrix_feature(key: str) -> bool:
     return key == "cov" or key.startswith("cosp_")
-
+# Détermine si la clé correspond à une feature matricielle (covariance ou cross-spectre) ou vectorielle.
 
 def _seed(key: str, state: str, idx: int) -> int:
     h = md5(f"{key}_{state}_{idx}".encode()).digest()
     return int.from_bytes(h[:4], "big")
-
+# Génère une graine aléatoire entière et déterministe par hachage MD5 pour garantir la reproductibilité cross-platform.
 
 def load_subject(save_path: Path, key: str, sub_id: str, state: str) -> np.ndarray | None:
     stages = CLASSIFICATION_GROUPS[state]
     parts  = [a for s in stages if (a := load_atomic(save_path, key, sub_id, s)) is not None]
     return np.concatenate(parts, axis=0) if parts else None
-
+# Charge et concatène les données atomiques de toutes les phases de sommeil associées à un stade pour un sujet donné.
 
 def load_all(save_path: Path, key: str, state: str) -> tuple[list, np.ndarray]:
     data, labels = [], []
@@ -112,7 +112,7 @@ def load_all(save_path: Path, key: str, state: str) -> tuple[list, np.ndarray]:
             data.append(arr)
             labels.append(label)
     return data, np.array(labels)
-
+# Compile l'ensemble des matrices/vecteurs de caractéristiques et les étiquettes de groupe associées pour tous les sujets.
 
 # ─── intégrité + n_trials_min ─────────────────────────────────────────────────
 
@@ -149,7 +149,10 @@ def compute_global_n_trials(save_path: Path, skip_check: bool = False) -> int:
             )
 
     return int(min(ref_counts.values()))
-
+# Compte le nombre d'époques disponibles par sujet et par stade pour la feature de référence (cov).
+# Vérifie la cohérence des données en s'assurant qu'aucune feature ne présente de données manquantes ou asymétriques.
+# Retourne le nombre minimal global d'époques (n_trials_min) pour permettre un sous-tirage équilibré entre tous les sujets.
+# Attention min parmi le nombre d'epoch mais c'est notre max du coup 
 
 # ─── bootstrap ────────────────────────────────────────────────────────────────
 
@@ -168,12 +171,14 @@ def bootstrap_sample(
         ys.extend([lab] * n_trials)
         gs.extend([g]   * n_trials)
     return np.concatenate(Xs), np.array(ys), np.array(gs)
-
+# Initialise un générateur aléatoire reproductible et des listes pour collecter les données échantillonnées.
+# Tire au hasard et sans remise un nombre fixe d'époques (n_trials) pour chaque sujet afin d'équilibrer l'ensemble.
+# Aligne les étiquettes (HR/LR) et les identifiants de sujets par époque, puis concatène le tout pour le classifieur.
 
 def permute_subject_labels(labels: np.ndarray, seed: int) -> np.ndarray:
     """Permute les labels HR/LR AU NIVEAU SUJET. Réf : Combrisson & Jerbi 2015."""
     return np.random.RandomState(seed).permutation(labels)
-
+# Mélange aléatoirement les étiquettes de diagnostic (HR/LR) directement au niveau des sujets pour les tests de permutations.
 
 # ─── cross-validation ─────────────────────────────────────────────────────────
 
@@ -195,6 +200,9 @@ class StratifiedLeave2GroupsOut:
                 np.concatenate([idx_per_cls[0][s0[0]], idx_per_cls[1][s1[0]]]),
                 np.concatenate([idx_per_cls[0][s0[1]], idx_per_cls[1][s1[1]]]),
             )
+    # Isole les indices des époques de chaque classe (HR/LR) pour préparer un découpage stratifié.
+    # Génère toutes les exclusions de groupes possibles (1 sujet par classe) grâce au produit cartésien.
+    # Concatène et distribue à la volée les indices des sujets pour les blocs d'entraînement et de test.
 
     def get_n_splits(self, X, y, groups):
         y, groups = np.asarray(y), np.asarray(groups)
@@ -203,14 +211,14 @@ class StratifiedLeave2GroupsOut:
             idx = np.where(y == c)[0]
             n *= LeavePGroupsOut(1).get_n_splits(None, y[idx], groups[idx])
         return n
-
+    # Calcule à l'avance le nombre total de splits (combinaisons) en multipliant le nombre de sujets HR par le nombre de sujets LR.
 
 def run_cv(clf, splits, X, y) -> float:
     return float(np.mean([
         accuracy_score(y[te], clone(clf).fit(X[tr], y[tr]).predict(X[te]))
         for tr, te in splits
     ]))
-
+# Évalue le modèle par validation croisée en calculant la moyenne des scores d'exactitude (accuracy) obtenus sur l'ensemble des splits.
 
 # ─── bootstrap parallèle (1 bootstrap = 1 job) ────────────────────────────────
 
@@ -219,7 +227,9 @@ def _one_bootstrap(clf, cv, data, labels, n_trials, key, state, i) -> float:
     X, y, groups = bootstrap_sample(data, labels, n_trials, _seed(key, state, i))
     splits = list(cv.split(X, y, groups))
     return run_cv(clf, splits, X, y)
-
+# Échantillonne un nombre fixe d'époques par sujet à l'aide d'une graine aléatoire déterministe propre à l'itération.
+# Génère et fige la liste des 324 splits de validation croisée (LPGO P=2) adaptés à ce tirage de données.
+# Exécute l'évaluation croisée complète (entraînement + test) et retourne le score d'accuracy moyen obtenu.
 
 def _one_perm(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> float:
     """Une seule permutation — appelée en parallèle par joblib."""
@@ -231,13 +241,15 @@ def _one_perm(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> float:
     )
     splits = list(cv.split(X, y, groups))
     return run_cv(clf, splits, X, y)
-
+# Permute aléatoirement les étiquettes HR/LR au niveau des sujets pour rompre l'association biologique avec le signal.
+# Effectue le sous-tirage des époques en leur associant ces faux labels à l'aide d'une graine isolée des bootstraps.
+# Évalue le modèle sur ces données falsifiées pour alimenter la distribution statistique de l'hypothèse nulle.
 
 # ─── checkpoint helpers ───────────────────────────────────────────────────────
 
 def _ckpt_path(result_path: Path, prefix: str) -> Path:
     return result_path.parent / (result_path.stem + f"_{prefix}_ckpt.npz")
-
+# Génère le chemin absolu du fichier de checkpoint temporaire (.npz).
 
 def _load_checkpoint(result_path: Path, prefix: str) -> np.ndarray | None:
     """Charge un checkpoint partiel (bootstraps ou perms déjà calculés)."""
@@ -245,20 +257,20 @@ def _load_checkpoint(result_path: Path, prefix: str) -> np.ndarray | None:
     if p.exists():
         return np.load(p)["data"]
     return None
-
+# Charge le tableau de scores NumPy si un fichier de checkpoint existe, sinon renvoie None.
 
 def _save_checkpoint(result_path: Path, prefix: str, data: np.ndarray) -> None:
     p = _ckpt_path(result_path, prefix)
     p.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(p, data=data)
-
+# Crée le dossier parent si nécessaire et sauvegarde l'état des calculs au format compressé.
 
 def _clear_checkpoints(result_path: Path) -> None:
     for prefix in ["bootstrap", "perm"]:
         p = _ckpt_path(result_path, prefix)
         if p.exists():
             p.unlink()
-
+# Supprime physiquement les fichiers temporaires de bootstrap et de permutation du disque.
 
 # ─── bootstrap + perm loops avec checkpoint ───────────────────────────────────
 
@@ -304,7 +316,9 @@ def _run_bootstraps_parallel(
         accs.extend(new_accs)
 
     return np.array(accs)
-
+# Vérifie l'existence d'un checkpoint partiel pour déterminer l'index de reprise et éviter de recalculer les bootstraps déjà faits.
+# Découpe les bootstraps restants en blocs (chunks) exécutés en parallèle par joblib selon le nombre de cœurs alloués.
+# Fusionne les résultats à chaque fin de bloc, exporte une sauvegarde compressée sur le disque et logue la progression.
 
 def _run_perms_parallel(
     clf, cv, data, labels, n_trials, n_perm, key, state,
@@ -341,18 +355,21 @@ def _run_perms_parallel(
         perms.extend(new_perms)
 
     return np.array(perms)
-
+# Gère la reprise sur panne pour les permutations en chargeant l'historique des calculs interrompus depuis le disque.
+# Distribue le calcul des permutations par blocs successifs sur l'ensemble des workers joblib configurés.
+# Met à jour progressivement le fichier de checkpoint des permutations pour sécuriser les données face aux limites de temps SLURM.
 
 # ─── cache helpers ────────────────────────────────────────────────────────────
 
 def _result_path(save_path: Path, key: str, state: str) -> Path:
     return save_path / "results" / f"{key}_{state}.npz"
-
+# Construit le chemin normalisé du fichier de résultats finaux (.npz) selon la feature et le stade de sommeil.
 
 def _save(path: Path, **arrays) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(path, **arrays)
-
+# Assure la création sécurisée des dossiers parents sur le disque s'ils sont manquants pour éviter tout crash.
+# Archive et compresse efficacement l'ensemble des tableaux NumPy dans un fichier .npz unique.
 
 # ─── classification ───────────────────────────────────────────────────────────
 
@@ -456,7 +473,9 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
 
     _save(out, **result)
     return result
-
+# Bloque la normalisation incompatible avec la géométrie riemannienne et gère le cache pour éviter les recalculs inutiles.
+# Instancie le pipeline neuroscientifique (Tangent Space Mapping + LDA) et le validateur croisé stratifié (LPGO P=2).
+# Exécute les boucles parallèles de bootstraps et de permutations, calcule les p-values, puis archive le dictionnaire compressé final.
 
 # ─── dispatcher ───────────────────────────────────────────────────────────────
 
