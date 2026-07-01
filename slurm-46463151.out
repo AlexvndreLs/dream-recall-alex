@@ -1,0 +1,8 @@
+=== vérification intégrité + n_trials_min global ===
+n_trials_min = 61  |  normalize = False
+=== classification : 1 combinaisons ===
+  cov × S2
+    bootstrap: 50/200
+    bootstrap: 100/200
+    bootstrap: 150/200
+slurmstepd: error: *** JOB 46463151 ON fc30616 CANCELLED AT 2026-06-30T18:36:32 DUE TO TIME LIMIT ***

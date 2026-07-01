@@ -2,14 +2,14 @@
 #SBATCH --job-name=classify_matrix
 #SBATCH --account=def-kjerbi
 #SBATCH --array=1-24
-#SBATCH --time=10:00:00
+#SBATCH --time=18:00:00
 #SBATCH --mem=8G
 #SBATCH --cpus-per-task=8
 #SBATCH --output=/scratch/alouis/logs_dream/classify_matrix-%a_%j.out
 #SBATCH --error=/scratch/alouis/logs_dream/classify_matrix-%a_%j.err
 #SBATCH --exclude=fc30555
 #SBATCH --mail-user=alexandre.louis@umontreal.ca
-#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-type=BEGIN,END,FAIL
 
 # Batch par combo matriciel (cov/cosp_* × 4 stades × 3 branches).
 # 1 job = 1 (key, state) = 1 feature × 1 stade.
@@ -50,6 +50,7 @@ echo "Job ${SLURM_JOB_ID} array ${SLURM_ARRAY_TASK_ID} on $(hostname)"
 echo "Start: $(date)"
 
 cd /home/alouis/dream-recall-alex
+export PYTHONUNBUFFERED=1
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1

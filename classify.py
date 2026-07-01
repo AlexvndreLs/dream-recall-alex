@@ -424,6 +424,13 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
     out = _result_path(save_path, key, state)
     if out.exists() and not overwrite:
         return np.load(out, allow_pickle=True)
+    if overwrite:
+        # BUGFIX : --overwrite ne nettoyait que le résultat final, jamais
+        # les checkpoints. Un checkpoint plus ancien avec plus d'itérations
+        # que n_bootstraps était silencieusement considéré "complet" et
+        # court-circuitait tout recalcul. Sans ce fix, --overwrite n'était
+        # pas fiable.
+        _clear_checkpoints(out)
 
     data, labels = load_all(save_path, key, state)
     if len(data) < 4:
@@ -473,6 +480,13 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
     out = _result_path(save_path, key, state)
     if out.exists() and not overwrite:
         return np.load(out, allow_pickle=True)
+    if overwrite:
+        # BUGFIX : --overwrite ne nettoyait que le résultat final, jamais
+        # les checkpoints. Un checkpoint plus ancien avec plus d'itérations
+        # que n_bootstraps était silencieusement considéré "complet" et
+        # court-circuitait tout recalcul. Sans ce fix, --overwrite n'était
+        # pas fiable.
+        _clear_checkpoints(out)
 
     data, labels = load_all(save_path, key, state)
     if len(data) < 4:
