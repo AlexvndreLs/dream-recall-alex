@@ -240,10 +240,10 @@ def _one_bootstrap(clf, cv, data, labels, n_trials, key, state, i) -> float:
 def _one_perm(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> float:
     """Une seule permutation — appelée en parallèle par joblib."""
     labels_perm = permute_subject_labels(
-        labels, _seed(key, state, PERM_SEED_OFFSET + n_perm + p)
+        labels, _seed('perm', state, PERM_SEED_OFFSET + n_perm + p)
     )
     X, y, groups = bootstrap_sample(
-        data, labels_perm, n_trials, _seed(key, state, PERM_SEED_OFFSET + p)
+        data, labels_perm, n_trials, _seed('perm', state, PERM_SEED_OFFSET + p)
     )
     splits = list(cv.split(X, y, groups))
     return run_cv(clf, splits, X, y)
@@ -271,10 +271,10 @@ def _one_bootstrap_vector(clf, cv, data, labels, n_trials, key, state, i) -> np.
 def _one_perm_vector(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> np.ndarray:
     """Une seule permutation — appelée en parallèle par joblib (cas vectoriel)."""
     labels_perm = permute_subject_labels(
-        labels, _seed(key, state, PERM_SEED_OFFSET + n_perm + p)
+        labels, _seed('perm', state, PERM_SEED_OFFSET + n_perm + p)
     )
     X, y, groups = bootstrap_sample(
-        data, labels_perm, n_trials, _seed(key, state, PERM_SEED_OFFSET + p)
+        data, labels_perm, n_trials, _seed('perm', state, PERM_SEED_OFFSET + p)
     )
     splits = list(cv.split(X, y, groups))
     n_elec = X.shape[1]
@@ -527,11 +527,8 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
         result["pvals"] = (
             np.sum(perm_accs >= result["acc_mean"][None, :], axis=0) + 1
         ) / (n_perm + 1)
-        result["perm_accs"]   = perm_accs
-        null_max = perm_accs.max(axis=1)
-        result["pvals_maxstat"] = (
-            np.sum(null_max[:, None] >= result["acc_mean"][None, :], axis=0) + 1
-        ) / (n_perm + 1)
+        result["perm_accs"] = perm_accs
+        # BUGFIX : correction maxstat retiree d ici, incomplete (voir plot_results.py)
 
     _save(out, **result)
     # MODIF : nettoyage des checkpoints ajouté (absent avant, vu qu'aucun
