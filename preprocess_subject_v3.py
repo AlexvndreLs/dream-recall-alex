@@ -384,7 +384,7 @@ def apply_decimation(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
     couvre largement FREQ_DICT max 35Hz et FOOOF_FREQ_RANGE max 45Hz.
     Réduit la taille des fichiers et le temps de calcul par un facteur 4.
     """
-    raw.resample(SFREQ_TARGET, verbose=False)
+    # raw.resample(SFREQ_TARGET, verbose=False) #commented pour garder 1000hz
     return raw
 
 
@@ -465,7 +465,7 @@ if __name__ == '__main__':
              ])
      raw_ica_branch      = drop_aux_channels(raw_ica_branch)        # 4. drop aux
      raw_ica_branch      = apply_average_reference(raw_ica_branch)  # 5. avg ref
-     raw_ica_branch      = apply_decimation(raw_ica_branch)         # 6. 250Hz
+    #  raw_ica_branch      = apply_decimation(raw_ica_branch)         # 6. 250Hz pareil commented pr eviter decimation
      out_ica = save_bids_derivatives(                               # 7. save
          raw_ica_branch, sub_str, args.deriv_root, 'preprocessed-ica'
      )
@@ -476,7 +476,7 @@ if __name__ == '__main__':
      print("  -- branche noICA --")
      raw_noica_branch = drop_aux_channels(raw_noica_branch)         # 4. drop aux
      raw_noica_branch = apply_average_reference(raw_noica_branch)   # 5. avg ref
-     raw_noica_branch = apply_decimation(raw_noica_branch)          # 6. 250Hz
+    #  raw_noica_branch = apply_decimation(raw_noica_branch)          # 6. 250Hz commented pr eviter decimation
      out_noica = save_bids_derivatives(                             # 7. save
          raw_noica_branch, sub_str, args.deriv_root, 'preprocessed-noica'
      )
@@ -495,7 +495,7 @@ if __name__ == '__main__':
      print(f"  ICA sauvegardé  : {icl_path}")
      raw_iclabel_branch = drop_aux_channels(raw_iclabel_branch)            # 4. drop aux
      raw_iclabel_branch = apply_average_reference(raw_iclabel_branch)      # 5. avg ref
-     raw_iclabel_branch = apply_decimation(raw_iclabel_branch)             # 6. 250Hz
+    #  raw_iclabel_branch = apply_decimation(raw_iclabel_branch)             # 6. 250Hz commented pr eviter decimation
      out_iclabel = save_bids_derivatives(                                  # 7. save
          raw_iclabel_branch, sub_str, args.deriv_root, 'preprocessed-iclabel'
      )
