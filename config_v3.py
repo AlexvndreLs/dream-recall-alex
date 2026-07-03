@@ -91,18 +91,25 @@ LINE_FREQ      = 50.0   # bruit de ligne secteur (France/Lyon)
 HP_FREQ_FINAL  = 0.1    # HP final (matche hardware BIDS, préserve delta/SWS)
 HP_FREQ_ICA    = 1.0    # HP temporaire pour le fit ICA uniquement (MNE trick)
 SFREQ_TARGET   = 1000.0  # décimation finale (= SFREQ_PREPROC)
+DECIMATE       = False   # si True : raw.resample(SFREQ_TARGET) dans preprocess_subject_v3.py.
+                          # False = réplication exacte thèse Arthur §1.2.3 (1000Hz, pas de downsampling).
+                          # Remettre à True pour revenir au pipeline 250Hz (volume/temps de calcul ÷4).
 
-SFREQ_PREPROC  = 1000.0                                # après décimation dans preprocess_subject.py
+SFREQ_PREPROC  = 1000.0                                # sfreq réelle en sortie de preprocess_subject_v3.py,
+                                                        # dépend de DECIMATE ci-dessus (1000.0 si False,
+                                                        # SFREQ_TARGET si True) -> garder synchronisé à la main
 EPOCH_DURATION = 30.0                                 # secondes (standard R&K / AASM)
-N_SAMPLES      = int(SFREQ_PREPROC * EPOCH_DURATION)  # 7500 samples par epoch à 250Hz
-WINDOW         = 1000   # Welch : fenêtre 1s Hanning. Overlap PSD=50%, cosp=75% — écart volontaire vs thèse §1.2.5
-                        # (1s à 250Hz = 250 samples ; même durée temporelle qu'à 1000Hz)
-                        # (au lieu de 1000 à 1000Hz, même durée en secondes)
-                        #=> pt essayer d'aller plus loin avec 500 et 250 overlap
+N_SAMPLES      = int(SFREQ_PREPROC * EPOCH_DURATION)  # 30000 samples/epoch à 1000Hz (DECIMATE=False)
+WINDOW         = 1000   # Welch : fenêtre Hanning 1000 samples = 1s à 1000Hz. Match exact thèse
+                        # §1.2.5/1.2.6 ("Hanning windows of 1000 samples, no overlap"). Si DECIMATE=True
+                        # un jour, il faudra ajuster WINDOW en conséquence (pas fait automatiquement).
 OVERLAP        = 0
-OVERLAP_COSP   = 0.0   # fraction (pyriemann CoSpectra), distinct de OVERLAP (samples, PSD/MNE)
-
-
+OVERLAP_COSP   = 1e-6  # pyriemann CoSpectra rejette overlap=0.0 exactement (ValueError,
+                        # cf cross_spectrum: `if not 0 < overlap < 1: raise ValueError`).
+                        # 1e-6 -> step = int((1-1e-6)*1024) = 1023 sur 1024, soit 1 sample
+                        # de chevauchement (0.1%) : négligeable, équivalent en pratique à
+                        # l'absence d'overlap voulue par la thèse §1.2.6. Testé empiriquement
+                        # (pyriemann==0.11).
 # ─── feature extraction params ────────────────────────────────────────────────
 
 N_EEG = 19  # les 19 premiers canaux de CH_NAMES sont l'EEG

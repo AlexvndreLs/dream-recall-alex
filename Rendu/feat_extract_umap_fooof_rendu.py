@@ -20,9 +20,11 @@ La visualisation UMAP est séparée dans visualize_umap.py, qui lit les mêmes
 
 Notes :
 
-- Données en entrée : derivatives/preprocessed-ica/, 19 canaux EEG, 250Hz,
-  average reference, ICA appliqué. Différent du pipeline Arthur (référence nez,
-  1000Hz, pas d'ICA) -> cov/cosp non directement comparables.
+- Données en entrée : derivatives/preprocessed-ica/, 19 canaux EEG, 1000Hz
+  (DECIMATE=False dans config_v3.py), référence nez conservée (pas de CAR),
+  ICA appliqué. SFreq et référence identiques à Arthur désormais ; seule l'ICA
+  reste une différence méthodologique assumée (branche noica = référence directe
+  Arthur, sans ICA, pour comparaison).
 - Covariances() utilise l'estimateur SCM par défaut. On n'utilise pas de shrinkage 
   statistique avancé (OAS/LW), cohérent avec le pipeline d'Arthur.
   Une régularisation numérique (diagonal loading de 1e-10) est appliquée manuellement 
@@ -70,7 +72,7 @@ from config_v3 import (
 )
 from utils import load_atomic
 
-SF = int(SFREQ_PREPROC)  # 250 Hz après décimation dans le prepro
+SF = int(SFREQ_PREPROC)  # 1000 Hz (DECIMATE=False, cf config_v3.py) — match thèse Arthur §1.2.3
 
 
 # ─── CLI ──────────────────────────────────────────────────────────────────────
@@ -121,12 +123,17 @@ def load_epochs_by_atomic_stage(
     Lit le raw preprocessé + _events.tsv une seule fois.
     Coupe des epochs non-chevauchants de 30s, groupés par stade atomique.
 
-    Returns dict[atomic_stage] -> (n_epochs, 19, 7500) à 250Hz.
+    Returns dict[atomic_stage] -> (n_epochs, 19, 30000) à 1000Hz (DECIMATE=False).
     """
     raw = mne.io.read_raw_brainvision(
         _vhdr(deriv_path, sub_id), preload=True, verbose=False
     )
     raw.pick(CH_NAMES[:N_EEG])  # selection par nom
+    assert raw.info["sfreq"] == SFREQ_PREPROC, (
+        f"sub-{sub_id}: sfreq réel du fichier ({raw.info['sfreq']}) != "
+        f"SFREQ_PREPROC config ({SFREQ_PREPROC}) — DECIMATE et SFREQ_PREPROC "
+        f"désynchronisés dans config_v3.py, corriger avant de continuer."
+    )
     n_total = raw.n_times
 
     scorer = _choose_scorer(sub_id)
@@ -150,7 +157,7 @@ def load_epochs_by_atomic_stage(
         if not (np.all(samples == samples[0] + np.arange(30) * SF) and 
                 np.all(stages == stages[0])):
             #on verifie si  les 30 annotations sont espacées 
-            #exactement de 250 samples (1s à 250Hz), sans trou ni saut
+            #exactement de SF samples (1s), sans trou ni saut — SF=1000 en DECIMATE=False
             #et que toutes les 30 secondes appartiennent au même stade
             i += 1
             continue
@@ -191,6 +198,15 @@ def compute_psd_spectrum(data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         verbose=False,
     )
 
+    # NOTE : la thèse §1.2.5 dit "Hanning windows", mais le vrai
+    # code d'Arthur (utils.py::computePSD du repo, pas juste le texte) utilise
+    # scipy.signal.welch(..., window="hamming"). Divergence texte/code chez
+    # Arthur lui-même. On garde "hann" ici : cohérent avec le texte publié,
+    # cohérent avec pyriemann.CoSpectra qui hardcode np.hanning() en interne
+    # (aucune option pour changer), et théoriquement plus adapté à des
+    # fenêtres non-chevauchantes sur un signal à forte dominante delta (fuite
+    # spectrale longue distance plus faible qu'avec Hamming). À reconsidérer
+    # si jamais on veut matcher le CODE exact d'Arthur plutôt que sa thèse.
 
 def band_power(
     spectrum: np.ndarray, freqs: np.ndarray, fmin: float, fmax: float
@@ -269,10 +285,21 @@ def compute_cosp(
 ) -> np.ndarray:
     """(n_epochs, 19, 7500) -> (n_epochs, 19, 19) cospectrum moyen sur la bande.
 
-    WINDOW identique à compute_psd_spectrum (250 samples, cohérence Δf).
-    Overlap DIFFÉRENT volontairement : PSD à 50% (OVERLAP=125 samples),
-    cospectrum à 75% (overlap=0.75, défaut pyriemann). Choix justifiés par
-    la littérature Welch (1967) pour réduire la variance d'estimation.
+    (n_epochs, 19, 30000) -> (n_epochs, 19, 19) cospectrum moyen sur la bande.
+
+    WINDOW=1000 (1s à 1000Hz, cf thèse §1.2.6 "Hanning window size of 1000,
+    no overlap"). ATTENTION : pyriemann arrondit silencieusement window au
+    prochain multiple de 2 en interne (CrossSpectra.__init__ fait
+    `self.window = _nextpow2(window)`) -> window réellement utilisé = 1024,
+    pas 1000. Conséquences : résolution fréquentielle réelle = 1000/1024 ≈
+    0.977Hz (pas 1Hz exact), fenêtre réelle 1024ms. Vérifié empiriquement
+    (pyriemann==0.11, 03/07/2026) : `CoSpectra(window=1000,...).window == 1024`.
+    Si Arthur a utilisé le même appel pyriemann avec window=1000, son propre
+    résultat publié a probablement le même arrondi -> pas forcément un écart
+    introduit ici, mais à garder en tête si l'écart cosp_sigma persiste.
+
+    OVERLAP_COSP=1e-6 (pas 0.0 exactement) : pyriemann rejette overlap=0.0
+    (`ValueError: Value overlap must be included in (0, 1)`), cf config_v3.py.
     """
     mat = CoSpectra(
         window=WINDOW, overlap=OVERLAP_COSP, fmin=fmin, fmax=fmax, fs=SF

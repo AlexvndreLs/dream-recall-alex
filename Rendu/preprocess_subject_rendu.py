@@ -67,7 +67,7 @@ from mne_icalabel import label_components
 
 from config_v3 import (
     CH_NAMES, SFREQ,
-    LINE_FREQ, HP_FREQ_FINAL, HP_FREQ_ICA, SFREQ_TARGET, N_EEG,
+    LINE_FREQ, HP_FREQ_FINAL, HP_FREQ_ICA, SFREQ_TARGET, DECIMATE, N_EEG,
 )
 
 
@@ -344,15 +344,25 @@ def apply_average_reference(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
 
 
 def apply_decimation(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
-    """6. Décimation 1000 -> 250 Hz.
+    """6. Décimation optionnelle 1000 -> SFREQ_TARGET Hz, pilotée par DECIMATE (config_v3.py).
 
-    Commun aux deux branches. Fait APRÈS l'ICA (qui bénéficie de la
-    résolution temporelle complète à 1000Hz) et APRÈS le filtrage HP
-    (anti-aliasing implicite : le signal est déjà bandlimité). 250Hz
-    couvre largement FREQ_DICT max 35Hz et FOOOF_FREQ_RANGE max 45Hz.
-    Réduit la taille des fichiers et le temps de calcul par un facteur 4.
+    DECIMATE=False (défaut actuel, 03/07/2026) : réplication exacte thèse Arthur
+    §1.2.3, données gardées à 1000Hz -> no-op.
+    DECIMATE=True : fait APRÈS l'ICA (résolution temporelle complète pour le fit)
+    et APRÈS le filtrage HP (anti-aliasing implicite, signal déjà bandlimité).
+    SFREQ_TARGET=250Hz couvre largement FREQ_DICT max 35Hz et FOOOF_FREQ_RANGE
+    max 45Hz. Réduit taille fichiers et temps de calcul par ~4.
+
+    Si DECIMATE=True, il faut aussi ajuster WINDOW dans config_v3.py (actuellement
+    câblé pour 1000Hz) -> non fait automatiquement, à vérifier manuellement.
     """
-    raw.resample(SFREQ_TARGET, verbose=False)
+    if DECIMATE:
+        raw.resample(SFREQ_TARGET, verbose=False)
+    expected_sfreq = SFREQ_TARGET if DECIMATE else SFREQ
+    assert raw.info["sfreq"] == expected_sfreq, (
+        f"apply_decimation: sfreq={raw.info['sfreq']} != attendu {expected_sfreq} "
+        f"(DECIMATE={DECIMATE}) -> incohérence config_v3.py, à corriger avant de continuer."
+    )
     return raw
 
 
@@ -433,7 +443,7 @@ if __name__ == '__main__':
              ])
      raw_ica_branch      = drop_aux_channels(raw_ica_branch)        # 4. drop aux
      raw_ica_branch      = apply_average_reference(raw_ica_branch)  # 5. avg ref
-     raw_ica_branch      = apply_decimation(raw_ica_branch)         # 6. 250Hz
+     raw_ica_branch      = apply_decimation(raw_ica_branch)         # 6. no-op si DECIMATE=False
      out_ica = save_bids_derivatives(                               # 7. save
          raw_ica_branch, sub_str, args.deriv_root, 'preprocessed-ica'
      )
@@ -444,7 +454,7 @@ if __name__ == '__main__':
      print("  -- branche noICA --")
      raw_noica_branch = drop_aux_channels(raw_noica_branch)         # 4. drop aux
      raw_noica_branch = apply_average_reference(raw_noica_branch)   # 5. avg ref
-     raw_noica_branch = apply_decimation(raw_noica_branch)          # 6. 250Hz
+     raw_noica_branch = apply_decimation(raw_noica_branch)          # 6. no-op si DECIMATE=False
      out_noica = save_bids_derivatives(                             # 7. save
          raw_noica_branch, sub_str, args.deriv_root, 'preprocessed-noica'
      )
@@ -463,7 +473,7 @@ if __name__ == '__main__':
      print(f"  ICA sauvegardé  : {icl_path}")
      raw_iclabel_branch = drop_aux_channels(raw_iclabel_branch)            # 4. drop aux
      raw_iclabel_branch = apply_average_reference(raw_iclabel_branch)      # 5. avg ref
-     raw_iclabel_branch = apply_decimation(raw_iclabel_branch)             # 6. 250Hz
+     raw_iclabel_branch = apply_decimation(raw_iclabel_branch)             # 6. no-op si DECIMATE=False
      out_iclabel = save_bids_derivatives(                                  # 7. save
          raw_iclabel_branch, sub_str, args.deriv_root, 'preprocessed-iclabel'
      )

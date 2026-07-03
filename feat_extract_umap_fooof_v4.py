@@ -20,9 +20,11 @@ La visualisation UMAP est séparée dans visualize_umap.py, qui lit les mêmes
 
 Notes
 -----
-- Données en entrée : derivatives/preprocessed-ica/, 19 canaux EEG, 250Hz,
-  average reference, ICA appliqué. Différent du pipeline Arthur (référence nez,
-  1000Hz, pas d'ICA) -> cov/cosp non directement comparables.
+- Données en entrée : derivatives/preprocessed-ica/, 19 canaux EEG, 1000Hz
+  (DECIMATE=False dans config_v3.py), référence nez conservée (pas de CAR),
+  ICA appliqué. SFreq et référence identiques à Arthur désormais ; seule l'ICA
+  reste une différence méthodologique assumée (branche noica = référence directe
+  Arthur, sans ICA, pour comparaison).
 - Covariances() utilise l'estimateur SCM par défaut (pas de shrinkage),
   cohérent avec le pipeline original d'Arthur. Ne pas changer en "oas"/"lwf"
   sans documenter la déviation.
@@ -69,7 +71,7 @@ from config_v3 import (
 )
 from utils import load_atomic
 
-SF = int(SFREQ_PREPROC)  # 250 Hz après décimation dans le prepro
+SF = int(SFREQ_PREPROC)  # 1000 Hz (DECIMATE=False, cf config_v3.py) — match thèse Arthur §1.2.3
 
 
 # ─── CLI ──────────────────────────────────────────────────────────────────────
@@ -120,12 +122,17 @@ def load_epochs_by_atomic_stage(
     Lit le raw preprocessé + _events.tsv une seule fois.
     Coupe des epochs non-chevauchants de 30s, groupés par stade atomique.
 
-    Returns dict[atomic_stage] -> (n_epochs, 19, 7500) à 250Hz.
+    Returns dict[atomic_stage] -> (n_epochs, 19, 30000) à 1000Hz (DECIMATE=False).
     """
     raw = mne.io.read_raw_brainvision(
         _vhdr(deriv_path, sub_id), preload=True, verbose=False
     )
     raw.pick(CH_NAMES[:N_EEG])  # selection par nom
+    assert raw.info["sfreq"] == SFREQ_PREPROC, (
+        f"sub-{sub_id}: sfreq réel du fichier ({raw.info['sfreq']}) != "
+        f"SFREQ_PREPROC config ({SFREQ_PREPROC}) — DECIMATE et SFREQ_PREPROC "
+        f"désynchronisés dans config_v3.py, corriger avant de continuer."
+    )
     n_total = raw.n_times
 
     scorer = _choose_scorer(sub_id)
@@ -149,7 +156,7 @@ def load_epochs_by_atomic_stage(
         if not (np.all(samples == samples[0] + np.arange(30) * SF) and 
                 np.all(stages == stages[0])):
             #on verifie si  les 30 annotations sont espacées 
-            #exactement de 250 samples (1s à 250Hz), sans trou ni saut
+            #exactement de SF samples (1s), sans trou ni saut — SF=1000 en DECIMATE=False
             #et que toutes les 30 secondes appartiennent au même stade
             i += 1
             continue
