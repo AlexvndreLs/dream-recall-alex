@@ -90,17 +90,17 @@ JBE_SUBJECTS_STR = {f"{i:02d}" for i in JBE_SUBJECTS}
 LINE_FREQ      = 50.0   # bruit de ligne secteur (France/Lyon)
 HP_FREQ_FINAL  = 0.1    # HP final (matche hardware BIDS, préserve delta/SWS)
 HP_FREQ_ICA    = 1.0    # HP temporaire pour le fit ICA uniquement (MNE trick)
-SFREQ_TARGET   = 250.0  # décimation finale (= SFREQ_PREPROC)
+SFREQ_TARGET   = 1000.0  # décimation finale (= SFREQ_PREPROC)
 
-SFREQ_PREPROC  = 250.0                                # après décimation dans preprocess_subject.py
+SFREQ_PREPROC  = 1000.0                                # après décimation dans preprocess_subject.py
 EPOCH_DURATION = 30.0                                 # secondes (standard R&K / AASM)
 N_SAMPLES      = int(SFREQ_PREPROC * EPOCH_DURATION)  # 7500 samples par epoch à 250Hz
-WINDOW         = 250   # Welch : fenêtre 1s Hanning. Overlap PSD=50%, cosp=75% — écart volontaire vs thèse §1.2.5
+WINDOW         = 1000   # Welch : fenêtre 1s Hanning. Overlap PSD=50%, cosp=75% — écart volontaire vs thèse §1.2.5
                         # (1s à 250Hz = 250 samples ; même durée temporelle qu'à 1000Hz)
                         # (au lieu de 1000 à 1000Hz, même durée en secondes)
                         #=> pt essayer d'aller plus loin avec 500 et 250 overlap
-OVERLAP        = 125
-OVERLAP_COSP   = 0.75   # fraction (pyriemann CoSpectra), distinct de OVERLAP (samples, PSD/MNE)
+OVERLAP        = 0
+OVERLAP_COSP   = 0.0   # fraction (pyriemann CoSpectra), distinct de OVERLAP (samples, PSD/MNE)
 
 
 # ─── feature extraction params ────────────────────────────────────────────────

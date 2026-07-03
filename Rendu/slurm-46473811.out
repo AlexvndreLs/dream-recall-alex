@@ -1,5 +1,0 @@
-=== vérification intégrité + n_trials_min global ===
-n_trials_min = 61  |  normalize = False
-=== classification : 1 combinaisons ===
-  cov × S2
-slurmstepd: error: *** JOB 46473811 ON fc30617 CANCELLED AT 2026-06-30T19:59:53 DUE TO TIME LIMIT ***
