@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=recompute_perms_epoch_vec
-#SBATCH --account=def-kjerbi
+#SBATCH --account=rrg-kjerbi
 #SBATCH --array=1-56
 #SBATCH --time=8:00:00
 #SBATCH --mem=8G
