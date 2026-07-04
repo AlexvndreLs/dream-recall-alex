@@ -4,7 +4,7 @@
 #SBATCH --array=1-24
 #SBATCH --time=18:00:00
 #SBATCH --mem=8G
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=32
 #SBATCH --output=/scratch/alouis/logs_dream/classify_matrix-%a_%j.out
 #SBATCH --error=/scratch/alouis/logs_dream/classify_matrix-%a_%j.err
 #SBATCH --exclude=fc30555
@@ -31,7 +31,7 @@ BRANCH=${BRANCH:-1}   # branche par défaut : ica
 
 case $BRANCH in
     1) SAVE=dream_features         ;;
-    2) SAVE=dream_features_noica   ;;
+    2) SAVE=dream_features_noica_1000hz   ;;
     3) SAVE=dream_features_iclabel ;;
 esac
 

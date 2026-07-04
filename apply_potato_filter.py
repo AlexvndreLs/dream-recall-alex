@@ -13,6 +13,11 @@ l'autre (impédance, montage, etc.) — un seuil global mélangerait cette
 variabilité inter-sujet avec les vrais artefacts intra-sujet qu'on veut
 détecter.
 
+Retry I/O : Lustre peut renvoyer des erreurs transitoires (Errno 5) sous
+forte contention (plusieurs jobs concurrents sur le même filesystem
+partage) — observe empiriquement (25/190 fichiers en echec) quand ce
+script tournait en meme temps que 24 taches recompute_perms_synchronized.
+
 Usage :
     python apply_potato_filter.py \\
         --save-path-in  /home/alouis/scratch/dream_features_noica \\
@@ -20,13 +25,14 @@ Usage :
         --threshold 3.0
 """
 import argparse
+import time
 from pathlib import Path
 
 import numpy as np
 from pyriemann.clustering import Potato
 
 MATRIX_KEYS = ["cov", "cosp_delta", "cosp_theta", "cosp_alpha", "cosp_sigma", "cosp_beta"]
-STATES = ["S1", "S2", "SWS", "REM"]  # stages atomiques (avant regroupement CLASSIFICATION_GROUPS)
+STATES = ["S1", "S2", "SWS", "REM"]
 
 
 def parse_args():
@@ -35,39 +41,60 @@ def parse_args():
     p.add_argument("--save-path-out", type=Path, required=True)
     p.add_argument("--threshold", type=float, default=3.0,
                     help="Seuil z-score riemannien au-dela duquel une epoch est rejetee (defaut pyriemann: 3.0)")
+    p.add_argument("--n-iter-max", type=int, default=300,
+                    help="Iterations max pour la moyenne riemannienne interne au Potato")
     p.add_argument("--keys", nargs="+", default=MATRIX_KEYS,
                     help="Features a filtrer (matricielles uniquement, Potato opere sur des matrices SPD)")
     return p.parse_args()
 
 
-def filter_subject_key_stage(in_path: Path, out_path: Path, threshold: float) -> tuple[int, int]:
+def _load_with_retry(path: Path, n_retries: int = 3, delay: float = 2.0):
+    for attempt in range(n_retries):
+        try:
+            return np.load(path)
+        except OSError as e:
+            if attempt == n_retries - 1:
+                raise
+            print(f"    retry lecture {path.name} ({attempt+1}/{n_retries}) apres: {e}")
+            time.sleep(delay)
+
+
+def _save_with_retry(path: Path, data, n_retries: int = 3, delay: float = 2.0):
+    for attempt in range(n_retries):
+        try:
+            np.savez_compressed(path, data=data)
+            return
+        except OSError as e:
+            if attempt == n_retries - 1:
+                raise
+            print(f"    retry ecriture {path.name} ({attempt+1}/{n_retries}) apres: {e}")
+            time.sleep(delay)
+
+
+def filter_subject_key_stage(in_path: Path, out_path: Path, threshold: float, n_iter_max: int = 300) -> tuple[int, int]:
     """Ajuste un Potato sur les matrices d'un fichier .npz atomique, filtre, sauvegarde.
 
     Retourne (n_avant, n_apres) pour le rapport.
     """
-    d = np.load(in_path)
-    mats = d["data"]  # shape (n_epochs, n_channels, n_channels)
+    d = _load_with_retry(in_path)
+    mats = d["data"]
     n_before = len(mats)
 
     if n_before < 10:
-        # Trop peu d'epochs pour ajuster un Potato de façon fiable : on garde tel quel.
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        np.savez_compressed(out_path, data=mats)
+        _save_with_retry(out_path, mats)
         return n_before, n_before
 
-    potato = Potato(threshold=threshold, n_iter_max=300)
+    potato = Potato(threshold=threshold, n_iter_max=n_iter_max)
     potato.fit(mats)
-    labels = potato.predict(mats)  # 1 = inlier, 0 = outlier
+    labels = potato.predict(mats)
     kept = mats[labels == 1]
 
-    # Garde-fou : si le Potato rejette trop d'epochs (>50%), le seuil est
-    # probablement trop agressif pour ce sujet — on garde les données brutes
-    # plutôt que de risquer de casser n_trials_min pour tout le monde.
     if len(kept) < n_before * 0.5:
         kept = mats
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(out_path, data=kept)
+    _save_with_retry(out_path, kept)
     return n_before, len(kept)
 
 
@@ -86,7 +113,7 @@ if __name__ == "__main__":
         for f in sorted(in_dir.glob("*.npz")):
             out_file = args.save_path_out / key / f.name
             try:
-                n_before, n_after = filter_subject_key_stage(f, out_file, args.threshold)
+                n_before, n_after = filter_subject_key_stage(f, out_file, args.threshold, args.n_iter_max)
                 total_before += n_before
                 total_after += n_after
                 pct_kept = 100 * n_after / n_before if n_before else 100

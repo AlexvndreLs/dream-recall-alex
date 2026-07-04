@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=classify_dream
 #SBATCH --account=def-kjerbi
-#SBATCH --array=1-3
+#SBATCH --array=2-2
 #SBATCH --time=12:00:00
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=8
@@ -20,7 +20,7 @@ SAVE_ROOT=/home/alouis/scratch
 
 case $SLURM_ARRAY_TASK_ID in
     1) SAVE=dream_features       ;;
-    2) SAVE=dream_features_noica ;;
+    2) SAVE=dream_features_noica_1000hz ;;
     3) SAVE=dream_features_iclabel ;;
 esac
 

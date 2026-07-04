@@ -1,0 +1,8 @@
+=== vérification intégrité + n_trials_min global ===
+n_trials_min = 61  |  normalize = False
+=== classification : 1 combinaisons ===
+  psd_delta × S2
+    bootstrap: 50/100
+    bootstrap: 100/100
+    perm: 50/100
+slurmstepd: error: *** JOB 46622693 ON fc20214 CANCELLED AT 2026-07-01T22:09:12 DUE TO TIME LIMIT ***

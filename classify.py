@@ -318,7 +318,7 @@ def _clear_checkpoints(result_path: Path) -> None:
 # Comportement inchangé pour classify_matrix (valeur par défaut).
 def _run_bootstraps_parallel(
     clf, cv, data, labels, n_trials, n_bootstraps, key, state,
-    n_jobs, checkpoint_every, result_path, worker_fn=_one_bootstrap
+    n_jobs, checkpoint_every, result_path, worker_fn=_one_bootstrap, prefer="threads"
 ) -> np.ndarray:
     """1000 bootstraps parallèles avec sauvegarde progressive.
 
@@ -343,7 +343,7 @@ def _run_bootstraps_parallel(
         # par blocs pour le checkpoint
         for chunk_start in range(0, len(remaining), checkpoint_every):
             chunk = remaining[chunk_start: chunk_start + checkpoint_every]
-            new_accs = Parallel(n_jobs=n_jobs, prefer="threads")(
+            new_accs = Parallel(n_jobs=n_jobs, prefer=prefer)(
                 delayed(worker_fn)(clf, cv, data, labels, n_trials, key, state, i)
                 for i in chunk
             )
@@ -351,7 +351,7 @@ def _run_bootstraps_parallel(
             _save_checkpoint(result_path, "bootstrap", np.array(accs))
             print(f"    bootstrap: {len(accs)}/{n_bootstraps}")
     else:
-        new_accs = Parallel(n_jobs=n_jobs, prefer="threads")(
+        new_accs = Parallel(n_jobs=n_jobs, prefer=prefer)(
             delayed(worker_fn)(clf, cv, data, labels, n_trials, key, state, i)
             for i in remaining
         )
@@ -365,7 +365,7 @@ def _run_bootstraps_parallel(
 # MODIF : même ajout de worker_fn que _run_bootstraps_parallel ci-dessus.
 def _run_perms_parallel(
     clf, cv, data, labels, n_trials, n_perm, key, state,
-    n_jobs, checkpoint_every, result_path, worker_fn=_one_perm
+    n_jobs, checkpoint_every, result_path, worker_fn=_one_perm, prefer="threads"
 ) -> np.ndarray:
     """1000 permutations parallèles avec sauvegarde progressive."""
     done = _load_checkpoint(result_path, "perm")
@@ -383,7 +383,7 @@ def _run_perms_parallel(
     if checkpoint_every > 0:
         for chunk_start in range(0, len(remaining), checkpoint_every):
             chunk = remaining[chunk_start: chunk_start + checkpoint_every]
-            new_perms = Parallel(n_jobs=n_jobs, prefer="threads")(
+            new_perms = Parallel(n_jobs=n_jobs, prefer=prefer)(
                 delayed(worker_fn)(clf, cv, data, labels, n_trials, key, state, p, n_perm)
                 for p in chunk
             )
@@ -391,7 +391,7 @@ def _run_perms_parallel(
             _save_checkpoint(result_path, "perm", np.array(perms))
             print(f"    perm: {len(perms)}/{n_perm}")
     else:
-        new_perms = Parallel(n_jobs=n_jobs, prefer="threads")(
+        new_perms = Parallel(n_jobs=n_jobs, prefer=prefer)(
             delayed(worker_fn)(clf, cv, data, labels, n_trials, key, state, p, n_perm)
             for p in remaining
         )
@@ -506,7 +506,7 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
     # worker_fn=_one_bootstrap_vector — même mécanisme que classify_matrix.
     acc_scores = _run_bootstraps_parallel(
         clf, cv, data, labels, n_trials, n_bootstraps,
-        key, state, n_jobs, checkpoint_every, out, worker_fn=_one_bootstrap_vector
+        key, state, n_jobs, checkpoint_every, out, worker_fn=_one_bootstrap_vector, prefer="processes"
     )
 
     result = dict(
@@ -522,7 +522,7 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
         # MODIF : idem, remplace la boucle séquentielle de permutations d'origine.
         perm_accs = _run_perms_parallel(
             clf, cv, data, labels, n_trials, n_perm,
-            key, state, n_jobs, checkpoint_every, out, worker_fn=_one_perm_vector
+            key, state, n_jobs, checkpoint_every, out, worker_fn=_one_perm_vector, prefer="processes"
         )
         result["pvals"] = (
             np.sum(perm_accs >= result["acc_mean"][None, :], axis=0) + 1

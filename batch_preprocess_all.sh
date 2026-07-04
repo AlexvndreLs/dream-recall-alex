@@ -25,7 +25,7 @@
 #     sbatch --array=24 --mem=128G --time=4:00:00 batch_preprocess_all.sh
 
 BIDS_PATH=/home/alouis/scratch/dream_bids
-DERIV_ROOT=/home/alouis/scratch/dream_bids/derivatives
+DERIV_ROOT=/home/alouis/scratch/dream_bids/derivatives_1000hz
 SUBJECT=$SLURM_ARRAY_TASK_ID
 
 echo "=== Job array $SLURM_ARRAY_TASK_ID -> sujet $SUBJECT  ($(date)) ==="
