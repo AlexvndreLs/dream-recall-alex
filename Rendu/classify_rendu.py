@@ -186,6 +186,33 @@ def permute_subject_labels(labels: np.ndarray, seed: int) -> np.ndarray:
     return np.random.RandomState(seed).permutation(labels)
 # Mélange aléatoirement les étiquettes de diagnostic (HR/LR) directement au niveau des sujets pour les tests de permutations.
 
+# MODIF (04/07) : permutation NIVEAU EPOCH — réplique EXACTEMENT utils.py:103
+# du repo arthurdehgan/sleep (fonction permutation_test). Utilisée uniquement
+# par recompute_perms_epoch_arthur.py (script séparé), jamais par le pipeline
+# principal ci-dessous (classify_matrix/classify_vector/main restent intacts).
+def permute_epoch_labels(
+    y: np.ndarray, groups: np.ndarray, seed: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Permute les labels HR/LR AU NIVEAU EPOCH — réplique utils.py:103 d'Arthur.
+
+    Arthur (permutation_test, github.com/arthurdehgan/sleep, utils.py) :
+        perm_index = permutation(len(y))
+        y_perm      = y[perm_index]
+        groups_perm = groups[perm_index]
+    Le MÊME index de permutation est appliqué à y ET à groups : les epochs
+    sont mélangées globalement, labels et groupes réassignés ensemble. Chaque
+    "groupe" (sujet) permuté devient un paquet aléatoire d'epochs des deux
+    classes -> distribution nulle très resserrée -> p-values basses (mécanisme
+    du p<0.001 de la thèse). Appliqué APRÈS le bootstrap (sur les tableaux
+    concaténés y et groups produits par bootstrap_sample), contrairement au
+    schéma subject qui permute AVANT (sur les labels sujets).
+    """
+    perm_index = np.random.RandomState(seed).permutation(len(y))
+    return y[perm_index], groups[perm_index]
+# Applique un unique index de permutation aux labels ET aux groupes au niveau epoch (code exact d'Arthur).
+# Détruit la correspondance sujet<->epochs, produisant une distribution nulle étroite (p plus faibles).
+
+
 # ─── cross-validation ─────────────────────────────────────────────────────────
 
 class StratifiedLeave2GroupsOut:
@@ -283,6 +310,43 @@ def _one_perm_vector(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> 
     ])
 # Permute les labels HR/LR au niveau sujet puis ré-échantillonne les époques avec ces faux labels, comme _one_perm.
 # Évalue séquentiellement chaque électrode sur les données falsifiées et retourne le vecteur de n_elec scores nuls.
+
+# MODIF (04/07) : workers de permutation NIVEAU EPOCH (schéma Arthur). Utilisés
+# uniquement par recompute_perms_epoch_arthur.py (script séparé) — le bootstrap
+# est fait avec les VRAIS labels (identique aux bootstraps déjà calculés par le
+# schéma subject), PUIS y et groups sont permutés ensemble au niveau epoch via
+# permute_epoch_labels (utils.py:103 d'Arthur). Même signature que _one_perm/
+# _one_perm_vector -> réutilisables tels quels par _run_perms_parallel via
+# worker_fn, sans toucher à la machinerie de checkpoint existante.
+
+def _one_perm_epoch(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> float:
+    """Une permutation niveau epoch (matrice) — réplique Arthur (utils.py:103)."""
+    X, y, groups = bootstrap_sample(
+        data, labels, n_trials, _seed('perm', state, PERM_SEED_OFFSET + p)
+    )
+    y, groups = permute_epoch_labels(
+        y, groups, _seed('perm', state, PERM_SEED_OFFSET + n_perm + p)
+    )
+    splits = list(cv.split(X, y, groups))
+    return run_cv(clf, splits, X, y)
+# Sous-tire les époques avec les VRAIS labels, puis permute y+groups au niveau epoch (ordre inverse du schéma subject).
+# Évalue la CV sur ces données mélangées et retourne le score nul (distribution resserrée -> p bas).
+
+def _one_perm_epoch_vector(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> np.ndarray:
+    """Une permutation niveau epoch (vecteur) — réplique Arthur (utils.py:103)."""
+    X, y, groups = bootstrap_sample(
+        data, labels, n_trials, _seed('perm', state, PERM_SEED_OFFSET + p)
+    )
+    y, groups = permute_epoch_labels(
+        y, groups, _seed('perm', state, PERM_SEED_OFFSET + n_perm + p)
+    )
+    splits = list(cv.split(X, y, groups))
+    n_elec = X.shape[1]
+    return np.array([
+        run_cv(clf, splits, X[:, e:e + 1], y) for e in range(n_elec)
+    ])
+# Version électrode-par-électrode du worker epoch : bootstrap réel, permutation y+groups niveau epoch, 1 LDA/colonne.
+# Retourne le vecteur de n_elec scores nuls pour la correction max-stat sur électrodes.
 
 # ─── checkpoint helpers ───────────────────────────────────────────────────────
 
