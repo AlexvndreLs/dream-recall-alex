@@ -13,11 +13,6 @@ l'autre (impédance, montage, etc.) — un seuil global mélangerait cette
 variabilité inter-sujet avec les vrais artefacts intra-sujet qu'on veut
 détecter.
 
-Retry I/O : Lustre peut renvoyer des erreurs transitoires (Errno 5) sous
-forte contention (plusieurs jobs concurrents sur le même filesystem
-partage) — observe empiriquement (25/190 fichiers en echec) quand ce
-script tournait en meme temps que 24 taches recompute_perms_synchronized.
-
 Usage :
     python apply_potato_filter.py \\
         --save-path-in  /home/alouis/scratch/dream_features_noica \\
@@ -32,7 +27,7 @@ import numpy as np
 from pyriemann.clustering import Potato
 
 MATRIX_KEYS = ["cov", "cosp_delta", "cosp_theta", "cosp_alpha", "cosp_sigma", "cosp_beta"]
-STATES = ["S1", "S2", "SWS", "REM"]
+STATES = ["S1", "S2", "SWS", "REM"]  # stages atomiques (avant regroupement CLASSIFICATION_GROUPS)
 
 
 def parse_args():
@@ -42,13 +37,17 @@ def parse_args():
     p.add_argument("--threshold", type=float, default=3.0,
                     help="Seuil z-score riemannien au-dela duquel une epoch est rejetee (defaut pyriemann: 3.0)")
     p.add_argument("--n-iter-max", type=int, default=300,
-                    help="Iterations max pour la moyenne riemannienne interne au Potato")
+                    help="Iterations max pour le calcul de la moyenne riemannienne interne au Potato "
+                         "(defaut pyriemann: 100 -> augmente a 300 suite a 1/189 non-convergences observees)")
     p.add_argument("--keys", nargs="+", default=MATRIX_KEYS,
                     help="Features a filtrer (matricielles uniquement, Potato opere sur des matrices SPD)")
     return p.parse_args()
 
 
 def _load_with_retry(path: Path, n_retries: int = 3, delay: float = 2.0):
+    """Charge un .npz avec retry — Lustre peut renvoyer des erreurs I/O
+    transitoires (Errno 5) sous forte contention (plusieurs jobs concurrents
+    lisant/écrivant en même temps sur le même filesystem partagé)."""
     for attempt in range(n_retries):
         try:
             return np.load(path)
@@ -60,6 +59,7 @@ def _load_with_retry(path: Path, n_retries: int = 3, delay: float = 2.0):
 
 
 def _save_with_retry(path: Path, data, n_retries: int = 3, delay: float = 2.0):
+    """Sauvegarde un .npz avec retry, meme raison que _load_with_retry."""
     for attempt in range(n_retries):
         try:
             np.savez_compressed(path, data=data)
@@ -77,19 +77,23 @@ def filter_subject_key_stage(in_path: Path, out_path: Path, threshold: float, n_
     Retourne (n_avant, n_apres) pour le rapport.
     """
     d = _load_with_retry(in_path)
-    mats = d["data"]
+    mats = d["data"]  # shape (n_epochs, n_channels, n_channels)
     n_before = len(mats)
 
     if n_before < 10:
+        # Trop peu d'epochs pour ajuster un Potato de façon fiable : on garde tel quel.
         out_path.parent.mkdir(parents=True, exist_ok=True)
         _save_with_retry(out_path, mats)
         return n_before, n_before
 
     potato = Potato(threshold=threshold, n_iter_max=n_iter_max)
     potato.fit(mats)
-    labels = potato.predict(mats)
+    labels = potato.predict(mats)  # 1 = inlier, 0 = outlier
     kept = mats[labels == 1]
 
+    # Garde-fou : si le Potato rejette trop d'epochs (>50%), le seuil est
+    # probablement trop agressif pour ce sujet — on garde les données brutes
+    # plutôt que de risquer de casser n_trials_min pour tout le monde.
     if len(kept) < n_before * 0.5:
         kept = mats
 

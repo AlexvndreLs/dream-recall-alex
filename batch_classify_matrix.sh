@@ -20,11 +20,17 @@
 #   stades   : S2, SWS, NREM, REM
 #
 # Pour lancer sur 1 seule branche :
-#   sbatch --array=1-24 batch_classify_matrix.sh 1    (ica)
-#   sbatch --array=1-24 batch_classify_matrix.sh 2    (noica)
-#   sbatch --array=1-24 batch_classify_matrix.sh 3    (iclabel)
-# Ou les 3 branches en parallèle :
-#   for b in 1 2 3; do sbatch --export=BRANCH=$b batch_classify_matrix.sh; done
+#   sbatch --export=BRANCH=1 --array=1-24 batch_classify_matrix.sh    (ica)
+#   sbatch --export=BRANCH=2 --array=1-24 batch_classify_matrix.sh    (noica_1000hz_overlap, baseline)
+#   sbatch --export=BRANCH=3 --array=1-24 batch_classify_matrix.sh    (iclabel)
+#   sbatch --export=BRANCH=4 --array=1-24 batch_classify_matrix.sh    (noica_1000hz_overlap_potato, comparaison potato)
+# Ou plusieurs branches en parallèle :
+#   for b in 1 2 3 4; do sbatch --export=BRANCH=$b batch_classify_matrix.sh; done
+#
+# NOTE (BRANCH=4) : le dossier potato ne contient QUE les 6 features matricielles
+# (cov, cosp_*) — apply_potato_filter.py ne touche pas aux features vectorielles.
+# --skip-check (déjà présent plus bas) est donc obligatoire pour cette branche,
+# sinon compute_global_n_trials() crashe en cherchant les features absentes.
 
 SAVE_ROOT=/home/alouis/scratch
 BRANCH=${BRANCH:-2}   # branche par défaut : ica
@@ -33,6 +39,7 @@ case $BRANCH in
     1) SAVE=dream_features         ;;
     2) SAVE=dream_features_noica_1000hz_overlap   ;;
     3) SAVE=dream_features_iclabel ;;
+    4) SAVE=dream_features_noica_1000hz_overlap_potato ;;
 esac
 
 # Mapping array -> (key, state)
