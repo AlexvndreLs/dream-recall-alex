@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=classify_vector
-#SBATCH --account=def-kjerbi
+#SBATCH --account=rrg-kjerbi
 #SBATCH --array=1-56
 #SBATCH --time=02:00:00
 #SBATCH --mem=4G
@@ -15,11 +15,11 @@
 # --time provisoire, a corriger apres mesure reelle (jamais chronometre cette feature avant).
 
 SAVE_ROOT=/home/alouis/scratch
-BRANCH=${BRANCH:-1}
+BRANCH=${BRANCH:-2}
 
 case $BRANCH in
     1) SAVE=dream_features         ;;
-    2) SAVE=dream_features_noica_1000hz   ;;
+    2) SAVE=dream_features_noica_1000hz_overlap   ;;
     3) SAVE=dream_features_iclabel ;;
 esac
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=classify_matrix
-#SBATCH --account=def-kjerbi
+#SBATCH --account=rrg-kjerbi
 #SBATCH --array=1-24
 #SBATCH --time=18:00:00
 #SBATCH --mem=8G
@@ -27,11 +27,11 @@
 #   for b in 1 2 3; do sbatch --export=BRANCH=$b batch_classify_matrix.sh; done
 
 SAVE_ROOT=/home/alouis/scratch
-BRANCH=${BRANCH:-1}   # branche par défaut : ica
+BRANCH=${BRANCH:-2}   # branche par défaut : ica
 
 case $BRANCH in
     1) SAVE=dream_features         ;;
-    2) SAVE=dream_features_noica_1000hz   ;;
+    2) SAVE=dream_features_noica_1000hz_overlap   ;;
     3) SAVE=dream_features_iclabel ;;
 esac
 
