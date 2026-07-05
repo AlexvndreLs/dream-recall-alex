@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=feat_extract_all
-#SBATCH --account=def-kjerbi
-#SBATCH --array=1-3
+#SBATCH --account=rrg-kjerbi
+#SBATCH --array=2
 #SBATCH --time=1:00:00
 #SBATCH --mem=96G
 #SBATCH --cpus-per-task=8
@@ -32,7 +32,7 @@ case $SLURM_ARRAY_TASK_ID in
         ;;
     2)
         BRANCH=preprocessed-noica
-        SAVE=dream_features_noica_1000hz
+        SAVE=dream_features_noica_1000hz_overlap
         ;;
     3)
         BRANCH=preprocessed-iclabel

@@ -103,8 +103,8 @@ N_SAMPLES      = int(SFREQ_PREPROC * EPOCH_DURATION)  # 30000 samples/epoch à 1
 WINDOW         = 1000   # Welch : fenêtre Hanning 1000 samples = 1s à 1000Hz. Match exact thèse
                         # §1.2.5/1.2.6 ("Hanning windows of 1000 samples, no overlap"). Si DECIMATE=True
                         # un jour, il faudra ajuster WINDOW en conséquence (pas fait automatiquement).
-OVERLAP        = 0
-OVERLAP_COSP   = 1e-6  # pyriemann CoSpectra rejette overlap=0.0 exactement (ValueError,
+OVERLAP        = 500
+OVERLAP_COSP   = 0.75  # pyriemann CoSpectra rejette overlap=0.0 exactement (ValueError,
                         # cf cross_spectrum: `if not 0 < overlap < 1: raise ValueError`).
                         # 1e-6 -> step = int((1-1e-6)*1024) = 1023 sur 1024, soit 1 sample
                         # de chevauchement (0.1%) : négligeable, équivalent en pratique à
