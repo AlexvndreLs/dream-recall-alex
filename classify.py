@@ -89,6 +89,15 @@ def parse_args() -> argparse.Namespace:
                         "Si absent, tous les stades sont classifiés.")
     p.add_argument("--normalize",         action="store_true", default=False)
     p.add_argument("--skip-check",        action="store_true", default=False)
+    p.add_argument("--potato-mode",       action="store_true", default=False,
+                   help="Dossier filtre par potato riemannien par-feature : calcule "
+                        "n_trials comme le min sur les 6 features matricielles (pas cov "
+                        "seul), et remplace le check strict par un check de presence souple.")
+    p.add_argument("--force-n-trials",    type=int,  default=None,
+                   help="Force n_trials a cette valeur au lieu de le calculer. Sert au "
+                        "bras de controle baseline@52 : sous-echantillonner le baseline "
+                        "NON filtre au meme n_trials que le potato, pour isoler l'effet du "
+                        "filtre de l'effet de la perte de puissance.")
     p.add_argument("--overwrite",         action="store_true", default=False)
     return p.parse_args()
 
@@ -122,23 +131,53 @@ def load_all(save_path: Path, key: str, state: str) -> tuple[list, np.ndarray]:
 
 # ─── intégrité + n_trials_min ─────────────────────────────────────────────────
 
-def compute_global_n_trials(save_path: Path, skip_check: bool = False) -> int:
-    ref_counts: dict[tuple[str, str], int] = {}
+def compute_global_n_trials(save_path: Path, skip_check: bool = False,
+                            potato_mode: bool = False) -> int:
+    # --potato-mode : le rejet riemannien par-feature (apply_potato_filter.py)
+    # casse VOLONTAIREMENT l'egalite cov == cosp_* : chaque feature garde un
+    # sous-ensemble d'epochs different (une epoch peut etre aberrante en alpha
+    # mais normale en covariance large-bande). On calcule alors n_trials comme
+    # le MIN sur les 6 features matricielles (pas cov seul), pour garantir
+    # qu'aucun bootstrap ne demande plus d'epochs qu'une feature n'en possede
+    # (sinon RuntimeError dans bootstrap_sample, tirage sans remise).
+    keys_for_min = MATRIX_KEYS if potato_mode else [REF_KEY]
+
+    ref_counts: dict[tuple[str, str, str], int] = {}
     for state in STATE_LIST:
         for sub_id in SUBJECT_LIST_ORDERED:
-            arr = load_subject(save_path, REF_KEY, sub_id, state)
-            if arr is not None:
-                ref_counts[(sub_id, state)] = len(arr)
+            for key in keys_for_min:
+                arr = load_subject(save_path, key, sub_id, state)
+                if arr is not None:
+                    ref_counts[(sub_id, state, key)] = len(arr)
 
     if not ref_counts:
-        raise RuntimeError(f"Aucun .npz '{REF_KEY}' trouvé — feat_extract complet ?")
+        raise RuntimeError(f"Aucun .npz trouvé — feat_extract complet ?")
 
-    if not skip_check:
+    if potato_mode:
+        # check souple : en mode potato, l'egalite stricte cov==cosp_* est
+        # attendue-fausse (c'est le but du filtre). On verifie seulement que
+        # chaque feature matricielle EXISTE (>=1 epoch) pour chaque sujet/stade,
+        # ce qui detecte les vraies absences sans exiger l'egalite cassee.
+        missing = []
+        for key in MATRIX_KEYS:
+            for state in STATE_LIST:
+                for sub_id in SUBJECT_LIST_ORDERED:
+                    arr = load_subject(save_path, key, sub_id, state)
+                    if arr is None:
+                        missing.append(f"{key} / sub-{sub_id} / {state} : absent")
+        if missing:
+            raise RuntimeError(
+                f"potato-mode : features matricielles absentes ({len(missing)} cas) :\n"
+                + "\n".join(missing[:20])
+                + ("\n  ..." if len(missing) > 20 else "")
+            )
+
+    elif not skip_check:
         missing = []
         for key in FEATURE_KEYS:
             if key == REF_KEY:
                 continue
-            for (sub_id, state), n_ref in ref_counts.items():
+            for (sub_id, state, _), n_ref in ref_counts.items():
                 arr = load_subject(save_path, key, sub_id, state)
                 if arr is None:
                     missing.append(f"{key} / sub-{sub_id} / {state} : absent")
@@ -509,7 +548,7 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
 
     acc_scores = _run_bootstraps_parallel(
         clf, cv, data, labels, n_trials, n_bootstraps,
-        key, state, n_jobs, checkpoint_every, out
+        key, state, n_jobs, checkpoint_every, out, prefer="processes"
     )
 
     result = dict(
@@ -523,7 +562,7 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
     if n_perm > 0:
         perm = _run_perms_parallel(
             clf, cv, data, labels, n_trials, n_perm,
-            key, state, n_jobs, checkpoint_every, out
+            key, state, n_jobs, checkpoint_every, out, prefer="processes"
         )
         result["pval"]      = float((np.sum(perm >= result["acc_mean"]) + 1) / (n_perm + 1))
         result["perm_accs"] = perm
@@ -676,8 +715,13 @@ if __name__ == "__main__":
     t0   = time()
 
     print("=== vérification intégrité + n_trials_min global ===")
-    n_trials = compute_global_n_trials(args.save_path, skip_check=args.skip_check)
-    print(f"n_trials_min = {n_trials}  |  normalize = {args.normalize}")
+    if args.force_n_trials is not None:
+        n_trials = args.force_n_trials
+        print(f"n_trials_min = {n_trials} (FORCE via --force-n-trials)  |  normalize = {args.normalize}")
+    else:
+        n_trials = compute_global_n_trials(args.save_path, skip_check=args.skip_check,
+                                           potato_mode=args.potato_mode)
+        print(f"n_trials_min = {n_trials}  |  normalize = {args.normalize}")
 
     # Filtrage par --key et --state si fournis (mode combo unique pour array SLURM)
     keys   = [args.key]   if args.key   else FEATURE_KEYS

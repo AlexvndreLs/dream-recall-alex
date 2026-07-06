@@ -509,7 +509,7 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
 
     acc_scores = _run_bootstraps_parallel(
         clf, cv, data, labels, n_trials, n_bootstraps,
-        key, state, n_jobs, checkpoint_every, out
+        key, state, n_jobs, checkpoint_every, out, prefer="processes"
     )
 
     result = dict(
@@ -523,7 +523,7 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
     if n_perm > 0:
         perm = _run_perms_parallel(
             clf, cv, data, labels, n_trials, n_perm,
-            key, state, n_jobs, checkpoint_every, out
+            key, state, n_jobs, checkpoint_every, out, prefer="processes"
         )
         result["pval"]      = float((np.sum(perm >= result["acc_mean"]) + 1) / (n_perm + 1))
         result["perm_accs"] = perm
