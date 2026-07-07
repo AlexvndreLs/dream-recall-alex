@@ -41,6 +41,12 @@ def parse_args():
                          "(defaut pyriemann: 100 -> augmente a 300 suite a 1/189 non-convergences observees)")
     p.add_argument("--keys", nargs="+", default=MATRIX_KEYS,
                     help="Features a filtrer (matricielles uniquement, Potato opere sur des matrices SPD)")
+    p.add_argument("--n-trials-target", type=int, default=None,
+                    help="Si fourni, annule le filtre pour un sujet/stade/feature des que "
+                         "le nombre d'epochs gardees tomberait sous ce seuil (garde les "
+                         "donnees brutes intactes pour ce cas precis), au lieu du garde-fou "
+                         "generique a 50%%. Permet de garantir un n_trials_min cible (ex: 61, "
+                         "le baseline) meme apres potato.")
     return p.parse_args()
 
 
@@ -71,7 +77,7 @@ def _save_with_retry(path: Path, data, n_retries: int = 3, delay: float = 2.0):
             time.sleep(delay)
 
 
-def filter_subject_key_stage(in_path: Path, out_path: Path, threshold: float, n_iter_max: int = 300) -> tuple[int, int]:
+def filter_subject_key_stage(in_path: Path, out_path: Path, threshold: float, n_iter_max: int = 300, n_trials_target: int = None) -> tuple[int, int]:
     """Ajuste un Potato sur les matrices d'un fichier .npz atomique, filtre, sauvegarde.
 
     Retourne (n_avant, n_apres) pour le rapport.
@@ -94,7 +100,8 @@ def filter_subject_key_stage(in_path: Path, out_path: Path, threshold: float, n_
     # Garde-fou : si le Potato rejette trop d'epochs (>50%), le seuil est
     # probablement trop agressif pour ce sujet — on garde les données brutes
     # plutôt que de risquer de casser n_trials_min pour tout le monde.
-    if len(kept) < n_before * 0.5:
+    guard = n_trials_target if n_trials_target is not None else n_before * 0.5
+    if len(kept) < guard:
         kept = mats
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -117,7 +124,7 @@ if __name__ == "__main__":
         for f in sorted(in_dir.glob("*.npz")):
             out_file = args.save_path_out / key / f.name
             try:
-                n_before, n_after = filter_subject_key_stage(f, out_file, args.threshold, args.n_iter_max)
+                n_before, n_after = filter_subject_key_stage(f, out_file, args.threshold, args.n_iter_max, args.n_trials_target)
                 total_before += n_before
                 total_after += n_after
                 pct_kept = 100 * n_after / n_before if n_before else 100
