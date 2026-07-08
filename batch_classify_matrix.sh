@@ -36,9 +36,9 @@ SAVE_ROOT=/home/alouis/scratch
 BRANCH=${BRANCH:-2}   # branche par défaut : ica
 
 case $BRANCH in
-    1) SAVE=dream_features         ;;
+    1) SAVE=dream_features_ica_1000hz_overlap         ;;
     2) SAVE=dream_features_noica_1000hz_overlap   ;;
-    3) SAVE=dream_features_iclabel ;;
+    3) SAVE=dream_features_iclabel_1000hz_overlap ;;
     4) SAVE=dream_features_noica_1000hz_overlap_potato ;;
 esac
 
