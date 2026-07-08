@@ -36,7 +36,7 @@ case $SLURM_ARRAY_TASK_ID in
         ;;
     3)
         BRANCH=preprocessed-iclabel
-        SAVE=dream_features_iclabe_1000hz_overlap
+        SAVE=dream_features_iclabel_1000hz_overlap
         ;;
 esac
 
