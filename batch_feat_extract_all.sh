@@ -28,7 +28,7 @@ SAVE_ROOT=/home/alouis/scratch
 case $SLURM_ARRAY_TASK_ID in
     1)
         BRANCH=preprocessed-ica
-        SAVE=dream_features_1000hz_overlap
+        SAVE=dream_features_ica_1000hz_overlap
         ;;
     2)
         BRANCH=preprocessed-noica
