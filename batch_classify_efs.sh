@@ -3,8 +3,8 @@
 #SBATCH --account=rrg-kjerbi
 #SBATCH --exclude=fc30555
 #SBATCH --time=12:00:00
-#SBATCH --cpus-per-task=32
-#SBATCH --mem=64G
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=128G
 #SBATCH --mail-user=alexandre.louis@umontreal.ca
 #SBATCH --mail-type=END,FAIL
 #SBATCH --output=/scratch/alouis/logs_dream/efs_%A.out
@@ -23,10 +23,15 @@
 # nulle. Cache de projection tangent space intra-run_efs (projete 1x par appel,
 # reutilise pour tous les combos).
 #
-# Cout estime : projection tangent ~9min x 399 appels (200 boot + 199 perm) par
-# etat = ~60h sequentiel/etat. Sur 32 coeurs (~70% scaling effectif d'apres bench
-# recent EPYC 9655) = ~2.7h/etat. S2 et SWS ont 3 survivantes chacun -> tient
-# largement dans la limite 12h.
+# Ressources : 16 workers (--cpus-per-task=16) + 128G. Le run precedent a 32
+# workers/64G a fait OOM (Memory 99.99% de 64G, tue a 9min avant de reveler le
+# vrai pic). Cause : prefer="processes" duplique le fold_cache (324 folds projetes)
+# dans chaque worker -> 32 caches simultanes saturent la RAM. Fix rapide : 2x moins
+# de workers (moins de caches simultanes) + marge memoire large. CPU efficiency
+# etait 61% sur 32 coeurs (processes OK, le probleme etait purement memoire).
+# Solution de fond non appliquee ici : streaming du cache fold-par-fold (diviserait
+# le pic memoire par ~324, permettrait de revenir a 32 coeurs).
+# Cout : ~3h/etat intra (S2, SWS) + ~1h cross = ~7h, un peu plus lent qu'a 32 workers.
 #
 # Prerequis : results/pvalue_summary_table.csv doit exister (lance
 # build_pvalue_summary_table.py avant). Le repertoire de features par defaut est
@@ -58,7 +63,7 @@ python -u classify_efs.py \
     --n-perm       199 \
     --n-bootstraps 200 \
     --alpha        0.05 \
-    --pval-col     p_non_corrige_subject \
+    --pval-col     p_maxstat_pooled_subject \
     --max-features 3 \
     --mode         both \
     --overwrite
