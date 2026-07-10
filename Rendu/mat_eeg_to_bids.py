@@ -16,7 +16,7 @@ import json
 import argparse
 from tqdm import tqdm
 
-from config_v3 import CH_NAMES, CH_TYPES, SFREQ, STAGE_MAP, PER_BLACKLIST, JBE_SUBJECTS
+from config import CH_NAMES, CH_TYPES, SFREQ, STAGE_MAP, PER_BLACKLIST, JBE_SUBJECTS
 # Pas d'infos sur les 3 derniers canaux M1,M2 et autre peut etre => message arthur
 # arthur n'utilise que les 19 premiers
 

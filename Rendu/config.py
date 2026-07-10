@@ -80,29 +80,29 @@ JBE_SUBJECTS_STR = {f"{i:02d}" for i in JBE_SUBJECTS}
 
 
 # ─── preprocessing params ─────────────────────────────────────────────────────
-#
-# Mis à jour après preprocessing (preprocess_subject_v2.py) :
-# les données passent de 1000Hz à 250Hz -> N_SAMPLES et WINDOW mis à jour.
+
 # SFREQ (raw) conservé pour mat_eeg_to_bids_v2.py qui lit les .mat originaux.
 # Tous les scripts en aval (feat_extract, classify) utilisent SFREQ_PREPROC.
 
-# Paramètres ZapLine / filtrage / ICA (utilisés dans preprocess_subject_v2.py)
+# Paramètres (utilisés dans preprocess_subject.py)
 LINE_FREQ      = 50.0   # bruit de ligne secteur (France/Lyon)
 HP_FREQ_FINAL  = 0.1    # HP final (matche hardware BIDS, préserve delta/SWS)
 HP_FREQ_ICA    = 1.0    # HP temporaire pour le fit ICA uniquement (MNE trick)
 SFREQ_TARGET   = 1000.0  # décimation finale (= SFREQ_PREPROC)
-DECIMATE       = False   # si True : raw.resample(SFREQ_TARGET) dans preprocess_subject_v3.py.
+DECIMATE       = False   # si True : raw.resample(SFREQ_TARGET) dans preprocess_subject.py.
                           # False = réplication exacte thèse Arthur §1.2.3 (1000Hz, pas de downsampling).
-                          # Remettre à True pour revenir au pipeline 250Hz (volume/temps de calcul ÷4).
+                          # Remettre à True pour downsamplé 
 
-SFREQ_PREPROC  = 1000.0                                # sfreq réelle en sortie de preprocess_subject_v3.py,
+SFREQ_PREPROC  = 1000.0                                # sfreq réelle en sortie de preprocess_subject.py,
                                                         # dépend de DECIMATE ci-dessus (1000.0 si False,
                                                         # SFREQ_TARGET si True) -> garder synchronisé à la main
+
 EPOCH_DURATION = 30.0                                 # secondes (standard R&K / AASM)
 N_SAMPLES      = int(SFREQ_PREPROC * EPOCH_DURATION)  # 30000 samples/epoch à 1000Hz (DECIMATE=False)
-WINDOW         = 1000   # Welch : fenêtre Hanning 1000 samples = 1s à 1000Hz. Match exact thèse
-                        # §1.2.5/1.2.6 ("Hanning windows of 1000 samples, no overlap"). Si DECIMATE=True
+
+WINDOW         = 1000   # Welch : fenêtre Hanning 1000 samples = 1s à 1000Hz. Si DECIMATE=True
                         # un jour, il faudra ajuster WINDOW en conséquence (pas fait automatiquement).
+
 OVERLAP        = 500
 OVERLAP_COSP   = 0.75  # pyriemann CoSpectra rejette overlap=0.0 exactement (ValueError,
                         # cf cross_spectrum: `if not 0 < overlap < 1: raise ValueError`).
@@ -110,6 +110,7 @@ OVERLAP_COSP   = 0.75  # pyriemann CoSpectra rejette overlap=0.0 exactement (Val
                         # de chevauchement (0.1%) : négligeable, équivalent en pratique à
                         # l'absence d'overlap voulue par la thèse §1.2.6. Testé empiriquement
                         # (pyriemann==0.11).
+
 # ─── feature extraction params ────────────────────────────────────────────────
 
 N_EEG = 19  # les 19 premiers canaux de CH_NAMES sont l'EEG
@@ -123,7 +124,6 @@ FREQ_DICT = {
 }
 
 FOOOF_FREQ_RANGE = (1, 45)  # plage complète pour le fit aperiodic FOOOF
-                             # 45Hz < Nyquist (125Hz à 250Hz) -> pas d'aliasing
 
 
 # ─── sleep stages : segmentation atomique + groupements dérivés ───────────────

@@ -20,7 +20,7 @@
 # automatiquement les .npz existants (cache atomique par sujet/stade).
 # N'utiliser --overwrite que si les .npz sont obsoletes (ex: changement
 # de reference EEG). Dans ce cas, renommer d'abord les anciens dossiers
-# en _CAR (archive), puis relancer sans --overwrite.
+# en autre (archive), puis relancer sans --overwrite.
 
 DERIV_ROOT=/home/alouis/scratch/dream_bids/derivatives_1000hz
 SAVE_ROOT=/home/alouis/scratch

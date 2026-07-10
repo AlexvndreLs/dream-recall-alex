@@ -8,13 +8,13 @@ from pathlib import Path
 
 import numpy as np
 
-
+#utilise que pour visualise umap finalement
 def upper_tri(arr: np.ndarray) -> np.ndarray:
     """(n, p, p) -> (n, p*(p+1)/2) triangle supérieur inclusif."""
     idx = np.triu_indices(arr.shape[-1])
     return arr[..., idx[0], idx[1]].reshape(len(arr), -1)
 
-
+#utile pour classify et feat_extract
 def load_atomic(save_path: Path, key: str, sub_id: str, stage: str) -> np.ndarray | None:
     """Charge un tableau atomique caché (.npz) ou retourne None si absent."""
     f = save_path / key / f"{key}_s{str(sub_id).zfill(2)}_{stage}.npz"

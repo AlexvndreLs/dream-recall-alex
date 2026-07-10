@@ -65,7 +65,7 @@ import mne_bids
 import numpy as np
 from mne_icalabel import label_components
 
-from config_v3 import (
+from config import (
     CH_NAMES, SFREQ,
     LINE_FREQ, HP_FREQ_FINAL, HP_FREQ_ICA, SFREQ_TARGET, DECIMATE, N_EEG,
 )
