@@ -22,8 +22,7 @@ Disponible pour les features matricielles ET vectorielles (MODIF : avant,
 seule classify_matrix en bénéficiait — voir _run_bootstraps_parallel).
 
 Parallélisation (--n-jobs) : un seul combo (key, state) à la fois reçoit
-tout n_jobs, pour matrices ET vecteurs (MODIF : avant, les vecteurs étaient
-parallélisés au niveau des combos eux-mêmes, plusieurs en même temps).
+tout n_jobs, pour matrices ET vecteurs.
 
 Usage :
     python classify.py \\
@@ -77,7 +76,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
     p.add_argument("--save-path",         type=Path, required=True)
     p.add_argument("--n-jobs",            type=int,  default=1)
-    p.add_argument("--n-perm",            type=int,  default=0)
+    p.add_argument("--n-perm",            type=int,  default=1000)
     p.add_argument("--n-bootstraps",      type=int,  default=1000)
     p.add_argument("--checkpoint-every",  type=int,  default=50,
                    help="Sauvegarde checkpoint tous les N bootstraps (0=désactivé).")
@@ -87,7 +86,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--state",             type=str,  default=None,
                    help="Stade unique (ex: S2, SWS, NREM, REM). "
                         "Si absent, tous les stades sont classifiés.")
-    p.add_argument("--normalize",         action="store_true", default=False)
+    p.add_argument("--normalize",         action="store_true", default=False) # que pour les vecteurs 
+    # cov/cosp_* sont des matrices SPD (symétriques définies positives) qui vivent sur une variété riemannienne,
+    # pas dans un espace euclidien. TSclassifier (Tangent Space) fait déjà sa propre normalisation intrinsèque
     p.add_argument("--skip-check",        action="store_true", default=False)
     p.add_argument("--overwrite",         action="store_true", default=False)
     return p.parse_args()
@@ -186,7 +187,7 @@ def permute_subject_labels(labels: np.ndarray, seed: int) -> np.ndarray:
     return np.random.RandomState(seed).permutation(labels)
 # Mélange aléatoirement les étiquettes de diagnostic (HR/LR) directement au niveau des sujets pour les tests de permutations.
 
-# MODIF (04/07) : permutation NIVEAU EPOCH — réplique EXACTEMENT utils.py:103
+# Permutation NIVEAU EPOCH, réplique EXACTEMENT utils.py:103
 # du repo arthurdehgan/sleep (fonction permutation_test). Utilisée uniquement
 # par recompute_perms_epoch_arthur.py (script séparé), jamais par le pipeline
 # principal ci-dessous (classify_matrix/classify_vector/main restent intacts).
@@ -278,7 +279,7 @@ def _one_perm(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> float:
 # Effectue le sous-tirage des époques en leur associant ces faux labels à l'aide d'une graine isolée des bootstraps.
 # Évalue le modèle sur ces données falsifiées pour alimenter la distribution statistique de l'hypothèse nulle.
 
-# MODIF : équivalents vectoriels de _one_bootstrap/_one_perm ci-dessus — boucle
+# Equivalents vectoriels de _one_bootstrap/_one_perm ci-dessus, boucle
 # sur les n_elec électrodes en interne, retourne un vecteur au lieu d'un float.
 # Permettent à classify_vector de réutiliser _run_bootstraps_parallel /
 # _run_perms_parallel (parallélisme + checkpoint) au lieu de sa double boucle
@@ -311,8 +312,8 @@ def _one_perm_vector(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> 
 # Permute les labels HR/LR au niveau sujet puis ré-échantillonne les époques avec ces faux labels, comme _one_perm.
 # Évalue séquentiellement chaque électrode sur les données falsifiées et retourne le vecteur de n_elec scores nuls.
 
-# MODIF (04/07) : workers de permutation NIVEAU EPOCH (schéma Arthur). Utilisés
-# uniquement par recompute_perms_epoch_arthur.py (script séparé) — le bootstrap
+# Workers de permutation NIVEAU EPOCH (schéma Arthur). Utilisés
+# uniquement par recompute_perms_epoch_arthur.py (script séparé), le bootstrap
 # est fait avec les VRAIS labels (identique aux bootstraps déjà calculés par le
 # schéma subject), PUIS y et groups sont permutés ensemble au niveau epoch via
 # permute_epoch_labels (utils.py:103 d'Arthur). Même signature que _one_perm/
@@ -377,7 +378,7 @@ def _clear_checkpoints(result_path: Path) -> None:
 
 # ─── bootstrap + perm loops avec checkpoint ───────────────────────────────────
 
-# MODIF : ajout du paramètre worker_fn (avant : _one_bootstrap codé en dur).
+# Ajout du paramètre worker_fn.
 # Permet à classify_vector de réutiliser cette fonction via worker_fn=_one_bootstrap_vector.
 # Comportement inchangé pour classify_matrix (valeur par défaut).
 def _run_bootstraps_parallel(
@@ -426,7 +427,7 @@ def _run_bootstraps_parallel(
 # Découpe les bootstraps restants en blocs (chunks) exécutés en parallèle par joblib selon le nombre de cœurs alloués.
 # Fusionne les résultats à chaque fin de bloc, exporte une sauvegarde compressée sur le disque et logue la progression.
 
-# MODIF : même ajout de worker_fn que _run_bootstraps_parallel ci-dessus.
+# Même ajout de worker_fn que _run_bootstraps_parallel ci-dessus.
 def _run_perms_parallel(
     clf, cv, data, labels, n_trials, n_perm, key, state,
     n_jobs, checkpoint_every, result_path, worker_fn=_one_perm, prefer="threads"
@@ -489,11 +490,6 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
     if out.exists() and not overwrite:
         return np.load(out, allow_pickle=True)
     if overwrite:
-        # BUGFIX : --overwrite ne nettoyait que le résultat final, jamais
-        # les checkpoints. Un checkpoint plus ancien avec plus d'itérations
-        # que n_bootstraps était silencieusement considéré "complet" et
-        # court-circuitait tout recalcul. Sans ce fix, --overwrite n'était
-        # pas fiable.
         _clear_checkpoints(out)
 
     data, labels = load_all(save_path, key, state)
@@ -539,17 +535,11 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
 
 def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
                     overwrite, normalize, n_jobs=1, checkpoint_every=50):
-    # MODIF : checkpoint_every=50 par défaut (avant : 0, ignoré de toute façon —
-    # voir corps de fonction, qui ne le lisait jamais).
+    # checkpoint_every=50 par défaut
     out = _result_path(save_path, key, state)
     if out.exists() and not overwrite:
         return np.load(out, allow_pickle=True)
     if overwrite:
-        # BUGFIX : --overwrite ne nettoyait que le résultat final, jamais
-        # les checkpoints. Un checkpoint plus ancien avec plus d'itérations
-        # que n_bootstraps était silencieusement considéré "complet" et
-        # court-circuitait tout recalcul. Sans ce fix, --overwrite n'était
-        # pas fiable.
         _clear_checkpoints(out)
 
     data, labels = load_all(save_path, key, state)
