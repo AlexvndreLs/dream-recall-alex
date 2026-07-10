@@ -1,0 +1,17 @@
+# Dépendances de Rendu/ — versions de mne_env (Fir/Compute Canada), suffixes locaux retirés.
+# specparam est une release candidate -> installer avec: pip install --pre -r requirements.txt
+
+mne==1.12.1
+mne-bids==0.18.0
+mne-icalabel==0.9.0
+pyriemann==0.11
+specparam==2.0.0rc7
+antropy==0.2.2
+python-picard==0.8.2
+scikit-learn==1.8.0
+scipy==1.17.0
+numpy==2.4.2
+pandas==3.0.0
+joblib==1.5.3
+h5py==3.16.0
+tqdm==4.67.3
