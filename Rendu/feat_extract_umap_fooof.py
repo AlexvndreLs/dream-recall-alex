@@ -13,7 +13,7 @@ calculées une fois par groupe atomique et cachées sur disque.
 
 Les états de classification (S2, SWS, REM, NREM) sont obtenus par
 concaténation des tableaux atomiques cachés, sans relecture des données
-brutes ni recalcul (cf CLASSIFICATION_GROUPS dans config_v3.py).
+brutes ni recalcul (cf CLASSIFICATION_GROUPS dans config.py).
 
 La visualisation UMAP est séparée dans visualize_umap.py, qui lit les mêmes
 .npz atomiques.
@@ -21,7 +21,7 @@ La visualisation UMAP est séparée dans visualize_umap.py, qui lit les mêmes
 Notes :
 
 - Données en entrée : derivatives/preprocessed-ica/, 19 canaux EEG, 1000Hz
-  (DECIMATE=False dans config_v3.py), référence nez conservée (pas de CAR),
+  (DECIMATE=False dans config.py), référence nez conservée (pas de CAR),
   ICA appliqué. SFreq et référence identiques à Arthur désormais ; seule l'ICA
   reste une différence méthodologique assumée (branche noica = référence directe
   Arthur, sans ICA, pour comparaison).
@@ -72,7 +72,7 @@ from config import (
 )
 from utils import load_atomic
 
-SF = int(SFREQ_PREPROC)  # 1000 Hz (DECIMATE=False, cf config_v3.py), match thèse Arthur
+SF = int(SFREQ_PREPROC)  # 1000 Hz (DECIMATE=False, cf config.py), match thèse Arthur
 
 
 # ─── CLI ──────────────────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ def parse_args() -> argparse.Namespace:
 
 # ─── path helpers ─────────────────────────────────────────────────────────────
 #chemins vers les fichiers preprocessed (proc-clean) 
-#produits par preprocess_subject_v2.py
+#produits par preprocess_subject.py
 
 def _vhdr(deriv_path: Path, sub_id: str) -> Path:
     return (deriv_path / f"sub-{sub_id}" / "eeg"
@@ -132,7 +132,7 @@ def load_epochs_by_atomic_stage(
     assert raw.info["sfreq"] == SFREQ_PREPROC, (
         f"sub-{sub_id}: sfreq réel du fichier ({raw.info['sfreq']}) != "
         f"SFREQ_PREPROC config ({SFREQ_PREPROC}), DECIMATE et SFREQ_PREPROC "
-        f"désynchronisés dans config_v3.py, corriger avant de continuer."
+        f"désynchronisés dans config.py, corriger avant de continuer."
     )
     n_total = raw.n_times
 
@@ -299,7 +299,7 @@ def compute_cosp(
     introduit ici, mais à garder en tête si l'écart cosp_sigma persiste.
 
     OVERLAP_COSP=1e-6 (pas 0.0 exactement) : pyriemann rejette overlap=0.0
-    (`ValueError: Value overlap must be included in (0, 1)`), cf config_v3.py.
+    (`ValueError: Value overlap must be included in (0, 1)`), cf config.py.
     """
     mat = CoSpectra(
         window=WINDOW, overlap=OVERLAP_COSP, fmin=fmin, fmax=fmax, fs=SF
@@ -343,7 +343,7 @@ def compute_complexity(
 
     spec_ent : =>  est-ce que cette énergie est concentrée sur quelques fréquences,
     ou répartie uniformément sur tout le spectre ?
-    welch avec OVERLAP=50% chevauchement ici => cf config_v3.py (ecart volontaire vs Arthur, perf-max)
+    welch avec OVERLAP=50% chevauchement ici => cf config.py (ecart volontaire vs Arthur, perf-max)
     => Welch opère à l'intérieur d'une seule epoch, pas entre epochs
     => pas de leakage
     

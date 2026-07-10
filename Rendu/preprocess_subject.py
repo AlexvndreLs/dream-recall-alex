@@ -1,6 +1,6 @@
 """
 Preprocessing offline des données EEG sommeil (dataset Ruby/Eichenlaub, CRNL Lyon)
-avant extraction de features (feat_extract_umap_fooof_v2.py) et entraînement réseau DL.
+avant extraction de features (feat_extract_umap_fooof.py) et entraînement réseau DL.
 
 Ce script produit DEUX sorties BIDS derivatives par sujet :
 
@@ -33,11 +33,11 @@ Pipeline (ordre important, cf justifications inline) :
   6. Décimation 250Hz          [commun]  réduire volume, suffisant pour <=45Hz
   7. Save BrainVision          [commun]  un fichier par branche par sujet
 
-Ce script prend en entrée le BIDS produit par mat_eeg_to_bids_v2.py (25 canaux,
+Ce script prend en entrée le BIDS produit par mat_eeg_to_bids.py (25 canaux,
 1000 Hz, raw, référence nez).
 
 Usage (1 job SLURM par sujet) :
-    python preprocess_subject_v2.py 5 --bids-path /path/to/dream_bids \\
+    python preprocess_subject.py 5 --bids-path /path/to/dream_bids \\
                                        --deriv-root /path/to/dream_bids/derivatives
 
 Note bad channels : pas de détection/rejet de canaux entiers dans ce script.
@@ -52,7 +52,7 @@ A documenter lors de la comparaison avec ses résultats.
 
 Note sujets 21/22 : ces sujets sont preprocessés normalement ici.
 Leur exclusion de l'analyse HR/LR se fait en aval dans classify.py
-(EXCLUDED_SUBJECTS dans config_v3.py). Les données preprocessées sont
+(EXCLUDED_SUBJECTS dans config.py). Les données preprocessées sont
 produites car elles pourront servir pour d'autres analyses (ex: réseau DL
 en mode non-supervisé) ou si la raison de l'exclusion est clarifiée.
 """
@@ -77,7 +77,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('subject', type=int)
     parser.add_argument('--bids-path', type=Path, required=True,
-                        help="Racine du BIDS produit par mat_eeg_to_bids_v2.py")
+                        help="Racine du BIDS produit par mat_eeg_to_bids.py")
     parser.add_argument('--deriv-root', type=Path, required=True,
                         help="Racine derivatives (contiendra preprocessed-ica/, "
                              "preprocessed-noica/, ica/)")
@@ -343,7 +343,7 @@ def apply_average_reference(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
 
 
 def apply_decimation(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
-    """6. Décimation optionnelle 1000 -> SFREQ_TARGET Hz, pilotée par DECIMATE (config_v3.py).
+    """6. Décimation optionnelle 1000 -> SFREQ_TARGET Hz, pilotée par DECIMATE (config.py).
 
     DECIMATE=False (défaut actuel, 03/07/2026) : réplication exacte thèse Arthur
     §1.2.3, données gardées à 1000Hz -> no-op.
@@ -352,7 +352,7 @@ def apply_decimation(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
     SFREQ_TARGET=250Hz couvre largement FREQ_DICT max 35Hz et FOOOF_FREQ_RANGE
     max 45Hz. Réduit taille fichiers et temps de calcul par ~4.
 
-    Si DECIMATE=True, il faut aussi ajuster WINDOW dans config_v3.py (actuellement
+    Si DECIMATE=True, il faut aussi ajuster WINDOW dans config.py (actuellement
     câblé pour 1000Hz) -> non fait automatiquement, à vérifier manuellement.
     """
     if DECIMATE:
@@ -360,7 +360,7 @@ def apply_decimation(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
     expected_sfreq = SFREQ_TARGET if DECIMATE else SFREQ
     assert raw.info["sfreq"] == expected_sfreq, (
         f"apply_decimation: sfreq={raw.info['sfreq']} != attendu {expected_sfreq} "
-        f"(DECIMATE={DECIMATE}) -> incohérence config_v3.py, à corriger avant de continuer."
+        f"(DECIMATE={DECIMATE}) -> incohérence config.py, à corriger avant de continuer."
     )
     return raw
 

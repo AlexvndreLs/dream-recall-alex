@@ -81,7 +81,7 @@ JBE_SUBJECTS_STR = {f"{i:02d}" for i in JBE_SUBJECTS}
 
 # ─── preprocessing params ─────────────────────────────────────────────────────
 
-# SFREQ (raw) conservé pour mat_eeg_to_bids_v2.py qui lit les .mat originaux.
+# SFREQ (raw) conservé pour mat_eeg_to_bids.py qui lit les .mat originaux.
 # Tous les scripts en aval (feat_extract, classify) utilisent SFREQ_PREPROC.
 
 # Paramètres (utilisés dans preprocess_subject.py)
