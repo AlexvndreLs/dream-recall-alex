@@ -12,7 +12,7 @@ aperiodic, covariance temporelle, cospectrum, entropie/complexité) sont
 calculées une fois par groupe atomique et cachées sur disque.
 
 Les états de classification (S2, SWS, REM, NREM) sont obtenus par
-concaténation des tableaux atomiques cachés — sans relecture des données
+concaténation des tableaux atomiques cachés, sans relecture des données
 brutes ni recalcul (cf CLASSIFICATION_GROUPS dans config_v3.py).
 
 La visualisation UMAP est séparée dans visualize_umap.py, qui lit les mêmes
@@ -62,7 +62,7 @@ from specparam import SpectralGroupModel
 from joblib import Parallel, delayed
 from pyriemann.estimation import Covariances, CoSpectra
 
-from config_v3 import (
+from config import (
     SFREQ_PREPROC, PER_BLACKLIST_STR, JBE_SUBJECTS_STR,
     N_SAMPLES, N_EEG, CH_NAMES,
     WINDOW, OVERLAP, OVERLAP_COSP, FREQ_DICT, FOOOF_FREQ_RANGE,
@@ -72,7 +72,7 @@ from config_v3 import (
 )
 from utils import load_atomic
 
-SF = int(SFREQ_PREPROC)  # 1000 Hz (DECIMATE=False, cf config_v3.py) — match thèse Arthur §1.2.3
+SF = int(SFREQ_PREPROC)  # 1000 Hz (DECIMATE=False, cf config_v3.py), match thèse Arthur
 
 
 # ─── CLI ──────────────────────────────────────────────────────────────────────
@@ -131,7 +131,7 @@ def load_epochs_by_atomic_stage(
     raw.pick(CH_NAMES[:N_EEG])  # selection par nom
     assert raw.info["sfreq"] == SFREQ_PREPROC, (
         f"sub-{sub_id}: sfreq réel du fichier ({raw.info['sfreq']}) != "
-        f"SFREQ_PREPROC config ({SFREQ_PREPROC}) — DECIMATE et SFREQ_PREPROC "
+        f"SFREQ_PREPROC config ({SFREQ_PREPROC}), DECIMATE et SFREQ_PREPROC "
         f"désynchronisés dans config_v3.py, corriger avant de continuer."
     )
     n_total = raw.n_times
@@ -157,7 +157,7 @@ def load_epochs_by_atomic_stage(
         if not (np.all(samples == samples[0] + np.arange(30) * SF) and 
                 np.all(stages == stages[0])):
             #on verifie si  les 30 annotations sont espacées 
-            #exactement de SF samples (1s), sans trou ni saut — SF=1000 en DECIMATE=False
+            #exactement de SF samples (1s), sans trou ni saut SF=1000 en DECIMATE=False
             #et que toutes les 30 secondes appartiennent au même stade
             i += 1
             continue
@@ -206,7 +206,7 @@ def compute_psd_spectrum(data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     # (aucune option pour changer), et théoriquement plus adapté à des
     # fenêtres non-chevauchantes sur un signal à forte dominante delta (fuite
     # spectrale longue distance plus faible qu'avec Hamming). À reconsidérer
-    # si jamais on veut matcher le CODE exact d'Arthur plutôt que sa thèse.
+    # si jamais on veut matcher le code exact d'Arthur plutôt que sa thèse.
 
 def band_power(
     spectrum: np.ndarray, freqs: np.ndarray, fmin: float, fmax: float
@@ -222,7 +222,7 @@ def fit_fooof(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Fit FOOOF (mode aperiodic fixe) sur chaque spectre (epoch, canal).
 
-    specparam (ex-FOOOF) — Donoghue et al. 2020, Nature Neuroscience.
+    specparam (ex-FOOOF), Donoghue et al. 2020, Nature Neuroscience.
     aperiodic_mode="fixed" : pas de knee, adapté à la plage 1-45Hz
     (à réévaluer si les résultats delta SWS semblent aberrants).
 
@@ -314,11 +314,7 @@ def compute_cosp(
         f"CoSpectra a retourné du {mat.ndim}D au lieu de 4D attendu "
         f"(shape={mat.shape}) -> vérifier la version de pyriemann"
     )
-    # DIAG temporaire : nombre de bins de fréquence moyennés par bande.
-    # Sert à vérifier si les bandes étroites (ex. sigma 12-16Hz) ont trop
-    # peu de bins à 250Hz -> motiverait le recalcul du cospectrum à 1000Hz
-    # avant décimation. À retirer une fois le diagnostic fait.
-    print(f"  [DIAG cosp] band={fmin}-{fmax}Hz n_freqs={mat.shape[-1]}")
+    print(f"  [cosp] band={fmin}-{fmax}Hz n_freqs={mat.shape[-1]}")
     mat = mat.mean(axis=-1)
     n = mat.shape[-1]
     mu = np.trace(mat, axis1=-2, axis2=-1) / n
@@ -360,7 +356,7 @@ def compute_complexity(
     for ep in range(n_epochs):
         for ch in range(n_ch):
             sig = data[ep, ch]
-            perm_ent[ep, ch] = ant.perm_entropy(sig, normalize=True) #m=3 mais a voir apres si plus de detail
+            perm_ent[ep, ch] = ant.perm_entropy(sig, normalize=True) # m=3 mais a voir apres si plus de detail
             higuchi[ep, ch]  = ant.higuchi_fd(sig) # k= 10 => 750 echantillon => 3s 
 
     psd_sum = spectrum.sum(axis=-1, keepdims=True)

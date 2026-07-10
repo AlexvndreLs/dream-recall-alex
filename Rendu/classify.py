@@ -19,7 +19,7 @@ contrairement à hash() Python dont le résultat dépend de PYTHONHASHSEED).
 Checkpoint progressif (--checkpoint-every N) : sauvegarde les bootstraps
 toutes les N itérations -> reprise après timeout sans repartir de zéro.
 Disponible pour les features matricielles ET vectorielles (MODIF : avant,
-seule classify_matrix en bénéficiait — voir _run_bootstraps_parallel).
+seule classify_matrix en bénéficiait, voir _run_bootstraps_parallel).
 
 Parallélisation (--n-jobs) : un seul combo (key, state) à la fois reçoit
 tout n_jobs, pour matrices ET vecteurs.
@@ -53,7 +53,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from pyriemann.classification import TSClassifier as TSclassifier
 
-from config_v3 import (
+from config import (
     CH_NAMES,
     CLASSIFICATION_GROUPS,
     FEATURE_KEYS,
@@ -132,7 +132,7 @@ def compute_global_n_trials(save_path: Path, skip_check: bool = False) -> int:
                 ref_counts[(sub_id, state)] = len(arr)
 
     if not ref_counts:
-        raise RuntimeError(f"Aucun .npz '{REF_KEY}' trouvé — feat_extract complet ?")
+        raise RuntimeError(f"Aucun .npz '{REF_KEY}' trouvé, feat_extract complet ?")
 
     if not skip_check:
         missing = []
@@ -194,7 +194,7 @@ def permute_subject_labels(labels: np.ndarray, seed: int) -> np.ndarray:
 def permute_epoch_labels(
     y: np.ndarray, groups: np.ndarray, seed: int
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Permute les labels HR/LR AU NIVEAU EPOCH — réplique utils.py:103 d'Arthur.
+    """Permute les labels HR/LR AU NIVEAU EPOCH, réplique utils.py:103 d'Arthur.
 
     Arthur (permutation_test, github.com/arthurdehgan/sleep, utils.py) :
         perm_index = permutation(len(y))
@@ -257,7 +257,7 @@ def run_cv(clf, splits, X, y) -> float:
 # ─── bootstrap parallèle (1 bootstrap = 1 job) ────────────────────────────────
 
 def _one_bootstrap(clf, cv, data, labels, n_trials, key, state, i) -> float:
-    """Un seul bootstrap — appelé en parallèle par joblib."""
+    """Un seul bootstrap, appelé en parallèle par joblib."""
     X, y, groups = bootstrap_sample(data, labels, n_trials, _seed(key, state, i))
     splits = list(cv.split(X, y, groups))
     return run_cv(clf, splits, X, y)
@@ -266,7 +266,7 @@ def _one_bootstrap(clf, cv, data, labels, n_trials, key, state, i) -> float:
 # Exécute l'évaluation croisée complète (entraînement + test) et retourne le score d'accuracy moyen obtenu.
 
 def _one_perm(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> float:
-    """Une seule permutation — appelée en parallèle par joblib."""
+    """Une seule permutation, appelée en parallèle par joblib."""
     labels_perm = permute_subject_labels(
         labels, _seed('perm', state, PERM_SEED_OFFSET + n_perm + p)
     )
@@ -286,7 +286,7 @@ def _one_perm(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> float:
 # Python séquentielle d'origine.
 
 def _one_bootstrap_vector(clf, cv, data, labels, n_trials, key, state, i) -> np.ndarray:
-    """Un seul bootstrap — appelé en parallèle par joblib (cas vectoriel)."""
+    """Un seul bootstrap, appelé en parallèle par joblib (cas vectoriel)."""
     X, y, groups = bootstrap_sample(data, labels, n_trials, _seed(key, state, i))
     splits = list(cv.split(X, y, groups))
     n_elec = X.shape[1]
@@ -297,7 +297,7 @@ def _one_bootstrap_vector(clf, cv, data, labels, n_trials, key, state, i) -> np.
 # Évalue séquentiellement chaque électrode (1 LDA par colonne) sur les mêmes splits et retourne le vecteur des n_elec scores.
 
 def _one_perm_vector(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> np.ndarray:
-    """Une seule permutation — appelée en parallèle par joblib (cas vectoriel)."""
+    """Une seule permutation, appelée en parallèle par joblib (cas vectoriel)."""
     labels_perm = permute_subject_labels(
         labels, _seed('perm', state, PERM_SEED_OFFSET + n_perm + p)
     )
@@ -321,7 +321,7 @@ def _one_perm_vector(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> 
 # worker_fn, sans toucher à la machinerie de checkpoint existante.
 
 def _one_perm_epoch(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> float:
-    """Une permutation niveau epoch (matrice) — réplique Arthur (utils.py:103)."""
+    """Une permutation niveau epoch (matrice), réplique Arthur (utils.py:103)."""
     X, y, groups = bootstrap_sample(
         data, labels, n_trials, _seed('perm', state, PERM_SEED_OFFSET + p)
     )
@@ -334,7 +334,7 @@ def _one_perm_epoch(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> f
 # Évalue la CV sur ces données mélangées et retourne le score nul (distribution resserrée -> p bas).
 
 def _one_perm_epoch_vector(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> np.ndarray:
-    """Une permutation niveau epoch (vecteur) — réplique Arthur (utils.py:103)."""
+    """Une permutation niveau epoch (vecteur), réplique Arthur (utils.py:103)."""
     X, y, groups = bootstrap_sample(
         data, labels, n_trials, _seed('perm', state, PERM_SEED_OFFSET + p)
     )
@@ -555,9 +555,7 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
               if normalize else LDA(solver="svd"))
     cv     = StratifiedLeave2GroupsOut()
 
-    # MODIF : avant, double boucle Python séquentielle ici (bootstraps × électrodes,
-    # sans parallélisme ni checkpoint). Remplacée par _run_bootstraps_parallel +
-    # worker_fn=_one_bootstrap_vector — même mécanisme que classify_matrix.
+    # _run_bootstraps_parallel + worker_fn=_one_bootstrap_vector, même mécanisme que classify_matrix.
     acc_scores = _run_bootstraps_parallel(
         clf, cv, data, labels, n_trials, n_bootstraps,
         key, state, n_jobs, checkpoint_every, out, worker_fn=_one_bootstrap_vector, prefer="processes"
@@ -573,7 +571,6 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
         normalized = normalize,
     )
     if n_perm > 0:
-        # MODIF : idem, remplace la boucle séquentielle de permutations d'origine.
         perm_accs = _run_perms_parallel(
             clf, cv, data, labels, n_trials, n_perm,
             key, state, n_jobs, checkpoint_every, out, worker_fn=_one_perm_vector, prefer="processes"
@@ -582,11 +579,8 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
             np.sum(perm_accs >= result["acc_mean"][None, :], axis=0) + 1
         ) / (n_perm + 1)
         result["perm_accs"] = perm_accs
-        # BUGFIX : correction maxstat retiree d ici, incomplete (voir plot_results.py)
 
     _save(out, **result)
-    # MODIF : nettoyage des checkpoints ajouté (absent avant, vu qu'aucun
-    # checkpoint n'était jamais créé par cette fonction).
     _clear_checkpoints(out)
     return result
 # Prépare un pipeline de mise à l'échelle (StandardScaler) sans fuite de données et isole les canaux EEG pour une analyse univariée.
@@ -597,7 +591,7 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
 
 def classify_one(save_path, key, state, n_trials, n_bootstraps, n_perm,
                  overwrite, normalize, n_jobs=1, checkpoint_every=50):
-    print(f"  {key} × {state}")
+    print(f"  {key} x {state}")
     try:
         fn = classify_matrix if is_matrix_feature(key) else classify_vector
         return key, state, fn(
@@ -675,9 +669,7 @@ if __name__ == "__main__":
     combos = list(product(keys, states))
     print(f"=== classification : {len(combos)} combinaisons ===")
 
-    # MODIF : avant, deux chemins séparés (vector_combos en Parallel externe
-    # 1 thread/combo, n_jobs=1/checkpoint_every=0 forcés ; matrix_combos en
-    # boucle séquentielle avec n_jobs interne). Un seul chemin désormais :
+    # Un seul chemin :
     # classify_vector parallélise + checkpointe en interne comme les matrices,
     # cohérent aussi avec la topologie CCD/NUMA de Fir (1 combo à la fois sur
     # n_jobs cœurs, plutôt que dispersé entre combos).

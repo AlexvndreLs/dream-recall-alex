@@ -196,8 +196,7 @@ def run_ica(
     raw_eog.set_channel_types({'EOG_horiz': 'eog'}, verbose=False)
 
     # Méthode retenue : corrélation absolue, seuil 0.6.
-    # Analyse empirique sur 38 sujets (analyze_thresholds.py + analyze_zscore.py,
-    # juin 2026).
+    # Analyse empirique sur 38 sujets (analyze_thresholds.py + analyze_zscore.py)
 
     # La corrélation 0.6 donne ~1.4 rejets/sujet (plage physiologique 1-2),
     # CV inter-sujets stable (~0.6), et préserve le signal frontal (objectif
@@ -208,8 +207,8 @@ def run_ica(
         measure='correlation', threshold=0.6, verbose=False,
     )
 
-    # find_bads_muscle retiré définitivement (23 juin 2026).
-    # Raisons empiriques : balayage seuils 0.1-0.9 sur 38 sujets → CV entre
+    # find_bads_muscle retiré définitivement.
+    # Raisons empiriques : balayage seuils 0.1-0.9 sur 38 sujets => CV entre
     # 0.77 et 1.13 sans zone stable, distribution quasi-uniforme en log (pas
     # de frontière bruit/artefact). Atonie musculaire du sommeil = peu de
     # vrai EMG à capturer. La branche noica couvre le risque résiduel.

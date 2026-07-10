@@ -21,7 +21,7 @@ from config_v3 import CH_NAMES, CH_TYPES, SFREQ, STAGE_MAP, PER_BLACKLIST, JBE_S
 # arthur n'utilise que les 19 premiers
 
 # Corrections ponctuelles d'alignement des hypnogrammes sur des epochs de 30s.
-# (4, 'per') : hyp_per_s4 a perdu son 1er sample → offset {29} au lieu de {0}.
+# (4, 'per') : hyp_per_s4 a perdu son 1er sample => offset {29} au lieu de {0}.
 # Correction : préfixer d'1 sample (= hypno[0]) en tête.
 
 HYPNO_FIXES = {
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     bids_path = args.bids_path
 
     data = load_mat(data_path / 'data' / f's{sub_str}_sleep.mat', sub)
-    data *= 1e-6  # µV → V pour mne qui attend des V
+    data *= 1e-6  # µV => V pour mne qui attend des V
     info = mne.create_info(CH_NAMES, SFREQ, CH_TYPES)
     info['line_freq'] = 50  # 50 Hz standard européen
     raw = mne.io.RawArray(data, info, verbose=False)
