@@ -91,11 +91,11 @@ LINE_FREQ      = 50.0   # bruit de ligne secteur (France/Lyon)
 HP_FREQ_FINAL  = 0.1    # HP final (matche hardware BIDS, préserve delta/SWS)
 HP_FREQ_ICA    = 1.0    # HP temporaire pour le fit ICA uniquement (MNE trick)
 SFREQ_TARGET   = 1000.0  # décimation finale (= SFREQ_PREPROC)
-DECIMATE       = False   # si True : raw.resample(SFREQ_TARGET) dans preprocess_subject_v3.py.
+DECIMATE       = True   # si True : raw.resample(SFREQ_TARGET) dans preprocess_subject_v3.py.
                           # False = réplication exacte thèse Arthur §1.2.3 (1000Hz, pas de downsampling).
                           # Remettre à True pour revenir au pipeline 250Hz (volume/temps de calcul ÷4).
 
-SFREQ_PREPROC  = 1000.0                                # sfreq réelle en sortie de preprocess_subject_v3.py,
+SFREQ_PREPROC  = 250.0                                # sfreq réelle en sortie de preprocess_subject_v3.py,
                                                         # dépend de DECIMATE ci-dessus (1000.0 si False,
                                                         # SFREQ_TARGET si True) -> garder synchronisé à la main
 EPOCH_DURATION = 30.0                                 # secondes (standard R&K / AASM)
