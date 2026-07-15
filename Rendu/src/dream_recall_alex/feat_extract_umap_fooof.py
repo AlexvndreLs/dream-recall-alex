@@ -62,7 +62,7 @@ from specparam import SpectralGroupModel
 from joblib import Parallel, delayed
 from pyriemann.estimation import Covariances, CoSpectra
 
-from config import (
+from .config import (
     SFREQ_PREPROC, PER_BLACKLIST_STR, JBE_SUBJECTS_STR,
     N_SAMPLES, N_EEG, CH_NAMES,
     WINDOW, OVERLAP, OVERLAP_COSP, FREQ_DICT, FOOOF_FREQ_RANGE,
@@ -70,7 +70,7 @@ from config import (
     CLASSIFICATION_GROUPS, STATE_LIST,
     FEATURE_KEYS, SUBJECT_IDS,
 )
-from utils import load_atomic
+from .utils import load_atomic
 
 SF = int(SFREQ_PREPROC)  # 1000 Hz (DECIMATE=False, cf config.py), match thèse Arthur
 
@@ -453,7 +453,7 @@ def process_subject(
 
 # ─── main ─────────────────────────────────────────────────────────────────────
 
-if __name__ == "__main__":
+def main():
     args       = parse_args()
     deriv_path = args.deriv_path
     save_path  = args.save_path
@@ -471,3 +471,7 @@ if __name__ == "__main__":
     m, s = divmod(int(time() - t0), 60)
     print(f"total: {m}m{s:02d}s")
     print("Lancer visualize_umap.py --save-path <save_path> pour le UMAP.")
+
+
+if __name__ == "__main__":
+    main()

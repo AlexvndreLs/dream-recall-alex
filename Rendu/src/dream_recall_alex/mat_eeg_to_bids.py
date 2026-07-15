@@ -16,7 +16,7 @@ import json
 import argparse
 from tqdm import tqdm
 
-from config import CH_NAMES, CH_TYPES, SFREQ, STAGE_MAP, PER_BLACKLIST, JBE_SUBJECTS
+from .config import CH_NAMES, CH_TYPES, SFREQ, STAGE_MAP, PER_BLACKLIST, JBE_SUBJECTS
 # Pas d'infos sur les 3 derniers canaux M1,M2 et autre peut etre => message arthur
 # arthur n'utilise que les 19 premiers
 
@@ -74,7 +74,7 @@ def load_hypno_annotations(path, prefix, sub):
     return mne.Annotations(onsets, durations, descriptions)
 
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
     sub = args.subject
     sub_str = str(sub)
@@ -137,3 +137,7 @@ if __name__ == '__main__':
         json.dump(sidecar, f, indent=4)  # pour que ca reste lisible
 
     print("Done:", bids_output)
+
+
+if __name__ == "__main__":
+    main()

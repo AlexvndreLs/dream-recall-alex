@@ -65,7 +65,7 @@ import mne_bids
 import numpy as np
 from mne_icalabel import label_components
 
-from config import (
+from .config import (
     CH_NAMES, SFREQ,
     LINE_FREQ, HP_FREQ_FINAL, HP_FREQ_ICA, SFREQ_TARGET, DECIMATE, N_EEG,
 )
@@ -396,7 +396,7 @@ def save_bids_derivatives(
 
 # ─── main ─────────────────────────────────────────────────────────────────────
 
-if __name__ == '__main__':
+def main():
     args    = parse_args()
     sub     = args.subject
     sub_str = str(sub).zfill(2)
@@ -477,3 +477,7 @@ if __name__ == '__main__':
          raw_iclabel_branch, sub_str, args.deriv_root, 'preprocessed-iclabel'
      )
      print(f"  Done (ICLabel)  : {out_iclabel}")
+
+
+if __name__ == "__main__":
+    main()

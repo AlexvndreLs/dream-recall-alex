@@ -53,7 +53,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from pyriemann.classification import TSClassifier as TSclassifier
 
-from config import (
+from .config import (
     CH_NAMES,
     CLASSIFICATION_GROUPS,
     FEATURE_KEYS,
@@ -62,7 +62,7 @@ from config import (
     SUBJECT_LABELS,
     SUBJECT_LIST_ORDERED,
 )
-from utils import load_atomic
+from .utils import load_atomic
 
 PERM_SEED_OFFSET = 100_003
 REF_KEY          = "cov"
@@ -655,7 +655,7 @@ def build_summary_csv(save_path: Path) -> None:
 
 # ─── main ─────────────────────────────────────────────────────────────────────
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
     t0   = time()
 
@@ -690,3 +690,7 @@ if __name__ == "__main__":
     build_summary_csv(args.save_path)
     m, s = divmod(int(time() - t0), 60)
     print(f"\ntotal : {m}m{s:02d}s")
+
+
+if __name__ == "__main__":
+    main()

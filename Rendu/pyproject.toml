@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dream-recall-alex"
+version = "0.1.0"
+description = "Classification High/Low dream recallers à partir d'EEG de sommeil (réplication et extension du chapitre 1 de la thèse d'A. Dehgan)"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Alexandre Louis", email = "alexandre.louis@umontreal.ca" },
+]
+
+# Versions épinglées à l'identique de l'environnement `mne_env` (Fir /
+# Alliance Canada). L'épinglage strict est délibéré : les résultats publiés
+# dépendent du comportement exact de specparam/pyriemann/MNE, et des
+# changements de version ont déjà invalidé des analyses par le passé.
+#
+# specparam n'existe que sous forme de release candidate (le rename de FOOOF
+# n'a jamais publié de 2.x stable) -> installation avec le flag --pre :
+#   pip install --pre -e .
+dependencies = [
+    "mne==1.12.1",
+    "mne-bids==0.18.0",
+    "mne-icalabel==0.9.0",
+    "pyriemann==0.11",
+    "specparam==2.0.0rc7",
+    "antropy==0.2.2",
+    "python-picard==0.8.2",
+    "scikit-learn==1.8.0",
+    "scipy==1.17.0",
+    "numpy==2.4.2",
+    "pandas==3.0.0",
+    "joblib==1.5.3",
+    "h5py==3.16.0",
+    "tqdm==4.67.3",
+]
+
+[project.scripts]
+dream-bids = "dream_recall_alex.mat_eeg_to_bids:main"
+dream-preprocess = "dream_recall_alex.preprocess_subject:main"
+dream-features = "dream_recall_alex.feat_extract_umap_fooof:main"
+dream-classify = "dream_recall_alex.classify:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
