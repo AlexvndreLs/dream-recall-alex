@@ -173,3 +173,18 @@ FEATURE_KEYS = (
     + [f"cosp_{b}"    for b in FREQ_DICT]   # cospectrum, par bande
     + ["perm_entropy", "higuchi_fd", "spec_entropy"]  # complexité (antropy), par canal
 )
+
+# Features matricielles : matrices SPD (n_epochs, 19, 19) classifiées en espace
+# riemannien (TSclassifier). Le complément de FEATURE_KEYS est vectoriel et
+# classifié par LDA euclidien. Dérivé de FREQ_DICT pour rester cohérent avec
+# FEATURE_KEYS ; l'appartenance est déclarée ici plutôt que déduite du nom.
+MATRIX_KEYS = ["cov"] + [f"cosp_{b}" for b in FREQ_DICT]
+
+# Feature servant de référence pour compter les epochs par sujet/stade
+# (n_trials_min global). Toutes les features d'un même sujet/stade ont le même
+# nombre d'epochs ; 'cov' sert arbitrairement de compteur.
+REF_KEY = "cov"
+
+# Décalage appliqué aux graines des permutations pour qu'elles ne collisionnent
+# pas avec celles des bootstraps (cf _seed dans classify.py).
+PERM_SEED_OFFSET = 100_003

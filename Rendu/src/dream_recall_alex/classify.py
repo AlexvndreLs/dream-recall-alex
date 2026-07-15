@@ -57,17 +57,17 @@ from .config import (
     CH_NAMES,
     CLASSIFICATION_GROUPS,
     FEATURE_KEYS,
+    MATRIX_KEYS,
     N_EEG,
+    PERM_SEED_OFFSET,
+    REF_KEY,
     STATE_LIST,
     SUBJECT_LABELS,
     SUBJECT_LIST_ORDERED,
 )
 from .utils import load_atomic
 
-PERM_SEED_OFFSET = 100_003
-REF_KEY          = "cov"
-_STATES_BY_LEN   = sorted(STATE_LIST, key=len, reverse=True)
-MATRIX_KEYS      = ["cov", "cosp_delta", "cosp_theta", "cosp_alpha", "cosp_sigma", "cosp_beta"]
+_STATES_BY_LEN = sorted(STATE_LIST, key=len, reverse=True)
 
 
 # ─── CLI ──────────────────────────────────────────────────────────────────────
@@ -97,8 +97,13 @@ def parse_args() -> argparse.Namespace:
 # ─── helpers ──────────────────────────────────────────────────────────────────
 
 def is_matrix_feature(key: str) -> bool:
-    return key == "cov" or key.startswith("cosp_")
-# Détermine si la clé correspond à une feature matricielle (covariance ou cross-spectre) ou vectorielle.
+    """Vrai si `key` désigne une feature matricielle (matrice SPD).
+
+    L'appartenance est déclarée dans config.MATRIX_KEYS plutôt que déduite du
+    nom : un nom commençant par `cosp_` ne garantit pas que la feature soit
+    une matrice.
+    """
+    return key in MATRIX_KEYS
 
 def _seed(key: str, state: str, idx: int) -> int:
     h = md5(f"{key}_{state}_{idx}".encode()).digest()
