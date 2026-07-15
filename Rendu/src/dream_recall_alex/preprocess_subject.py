@@ -29,7 +29,7 @@ Pipeline (ordre important, cf justifications inline) :
   3c.    Sauvegarde ICA        [ICA]     pour inspection offline (inspect_ica.py)
      |
   4. Drop canaux aux           [commun]  ne garder que les 19 EEG
-  5. Référence nez conservée   [commun]  ref nez BrainAmp (identique Arthur, rang plein)
+  5. (pas de re-référencement)  [commun]  ref nez BrainAmp conservée (cf Note référence)
   6. Décimation 250Hz          [commun]  réduire volume, suffisant pour <=45Hz
   7. Save BrainVision          [commun]  un fichier par branche par sujet
 
@@ -46,9 +46,20 @@ est ponctuelle (quelques minutes) et non structurelle -> traitée en aval
 par AutoReject au niveau epoch (rejet ou réparation de la fenêtre 30s
 concernée), pas au niveau canal.
 
-Note référence : la référence nez d'origine est conservée (identique Arthur)
-d'origine. Cela rend cov/cosp non comparables à ceux d'Arthur (référence nez).
-A documenter lors de la comparaison avec ses résultats.
+Note référence : aucun re-référencement n'est appliqué. La référence
+d'enregistrement (nez, BrainAmp, EEGReference = 'tip of the nose') est
+conservée telle quelle, identique à Arthur -> cov/cosp directement comparables
+à ses résultats.
+
+La CAR (common average reference) avait été utilisée dans une version
+précédente et a été retirée : elle introduit un projecteur qui réduit le rang
+de la matrice de covariance à N-1 = 18 (MNE documente ce comportement :
+"rank 58 computed from 59 data channels with 1 projector"). Une matrice de
+rang 18 sur 19 est semi-définie positive, pas SPD stricte -> le log-map
+riemannien diverge (ValueError: Matrices must be positive definite, confirmé
+empiriquement sur nos données). La référence nez garantit un rang plein 19/19
+sans shrinkage ni régularisation. Sur des montages à faible nombre de
+dérivations, la CAR est de toute façon peu recommandée.
 
 Note sujets 21/22 : ces sujets sont preprocessés normalement ici.
 Leur exclusion de l'analyse HR/LR se fait en aval dans classify.py
@@ -105,7 +116,7 @@ def load_raw(bids_path: Path, sub_str: str) -> mne.io.BaseRaw:
     return raw
 
 
-def apply_notch(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
+def apply_notch(raw: mne.io.BaseRaw) -> None:
     """1. Retire le bruit de ligne 50Hz (+ harmonique 100Hz) par notch filter.
 
     LINE_FREQ=50 et son harmonique 100Hz. Le notch s'applique avant la
@@ -121,10 +132,9 @@ def apply_notch(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
         phase='zero',
         verbose=False,
     )
-    return raw
 
 
-def apply_highpass_final(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
+def apply_highpass_final(raw: mne.io.BaseRaw) -> None:
     """2. Filtre passe-haut 0.1Hz appliqué aux données finales.
 
     Matche le HP hardware d'origine (sidecar BIDS : 'Highpass RC filter'
@@ -133,7 +143,6 @@ def apply_highpass_final(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
     Commun aux deux branches -> fait une seule fois, avant le fork.
     """
     raw.filter(l_freq=HP_FREQ_FINAL, h_freq=None, verbose=False)
-    return raw
 
 
 def make_ica_fit_copy(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
@@ -302,47 +311,20 @@ def save_ica(
     return ica_path
 
 
-def drop_aux_channels(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
+def drop_aux_channels(raw: mne.io.BaseRaw) -> None:
     """4. Retire EOG_L/EOG_R/EMG_chin/misc* -> 19 canaux EEG uniquement.
 
     Commun aux deux branches. Ces canaux ont servi à guider l'ICA dans la
     branche ICA ; dans la branche noICA ils n'ont servi à rien. Dans les
     deux cas ils ne font pas partie des features ni de l'input réseau.
 
-    Drop fait AVANT average reference : la moyenne ne doit porter que
-    sur les 19 EEG, pas sur les canaux auxiliaires.
+    Aucun re-référencement n'est appliqué en aval (cf Note référence en
+    en-tête) : les 19 EEG conservent la référence nez d'enregistrement.
     """
     raw.pick(CH_NAMES[:N_EEG])
-    return raw
 
 
-def apply_average_reference(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
-    """5. Référence d'enregistrement (nez) conservée, identique à Arthur.
-
-    Annulation de la CAR :
-    La CAR (average reference) avait été utilisée précédemment mais introduit
-    un projecteur qui réduit le rang de la matrice de covariance à N-1 = 18
-    (MNE documente ce comportement explicitement : "rank 58 computed from 59
-    data channels with 1 projector"). Une matrice de rang 18 sur 19 est
-    semi-définie positive (SPD au sens large), pas SPD stricte. Or le
-    classifieur Riemannien pose comme condition d'entrée des matrices
-    SPD STRICTES, le log-map Riemannien diverge sur une matrice singulière
-    (ValueError: Matrices must be positive definite, confirmé empiriquement
-    sur nos données).
-
-    La référence nez physique d'enregistrement (BrainAmp,
-    EEGReference = 'tip of the nose') est conservée :
-      - rang plein 19/19 garanti
-      - aucun shrinkage ou régularisation nécessaire => au final si un tout petit peu
-      - directement comparable à Arthur qui utilise la même référence
-
-    En plus sur des eeg avec peu de derivation CAR pas tant conseillé que ca enft.
-    """
-    # no-op : la référence nez d'origine est conservée telle quelle.
-    return raw
-
-
-def apply_decimation(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
+def apply_decimation(raw: mne.io.BaseRaw) -> None:
     """6. Décimation optionnelle 1000 -> SFREQ_TARGET Hz, pilotée par DECIMATE (config.py).
 
     DECIMATE=False (défaut actuel, 03/07/2026) : réplication exacte thèse Arthur
@@ -362,7 +344,6 @@ def apply_decimation(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
         f"apply_decimation: sfreq={raw.info['sfreq']} != attendu {expected_sfreq} "
         f"(DECIMATE={DECIMATE}) -> incohérence config.py, à corriger avant de continuer."
     )
-    return raw
 
 
 def save_bids_derivatives(
@@ -409,8 +390,8 @@ def main():
 
     # ── tronc commun (étapes 1-2) ────────────────────────────────────────────
     raw = load_raw(args.bids_path, sub_str)
-    raw = apply_notch(raw)             # 1. notch 50Hz (+100Hz)
-    raw = apply_highpass_final(raw)    # 2. HP 0.1Hz
+    apply_notch(raw)                   # 1. notch 50Hz (+100Hz)
+    apply_highpass_final(raw)          # 2. HP 0.1Hz
 
     # ── fork : copie indépendante par branche ────────────────────────────────
     raw_ica_branch     = raw.copy()
@@ -440,9 +421,8 @@ def main():
                  round(float(np.abs(np.atleast_2d(_eog_sc))[:, _i].max()) if _i < np.atleast_2d(_eog_sc).shape[1] else float('nan'), 6),
                  int(_i in _eog_idx),
              ])
-     raw_ica_branch      = drop_aux_channels(raw_ica_branch)        # 4. drop aux
-     raw_ica_branch      = apply_average_reference(raw_ica_branch)  # 5. avg ref
-     raw_ica_branch      = apply_decimation(raw_ica_branch)         # 6. no-op si DECIMATE=False
+     drop_aux_channels(raw_ica_branch)                              # 4. drop aux
+     apply_decimation(raw_ica_branch)                               # 6. no-op si DECIMATE=False
      out_ica = save_bids_derivatives(                               # 7. save
          raw_ica_branch, sub_str, args.deriv_root, 'preprocessed-ica'
      )
@@ -451,9 +431,8 @@ def main():
     # ── branche noICA (étapes 4-7 uniquement) -> ablation DL ────────────────
     if 'noica' in args.branches:
      print("  -- branche noICA --")
-     raw_noica_branch = drop_aux_channels(raw_noica_branch)         # 4. drop aux
-     raw_noica_branch = apply_average_reference(raw_noica_branch)   # 5. avg ref
-     raw_noica_branch = apply_decimation(raw_noica_branch)          # 6. no-op si DECIMATE=False
+     drop_aux_channels(raw_noica_branch)                            # 4. drop aux
+     apply_decimation(raw_noica_branch)                             # 6. no-op si DECIMATE=False
      out_noica = save_bids_derivatives(                             # 7. save
          raw_noica_branch, sub_str, args.deriv_root, 'preprocessed-noica'
      )
@@ -470,9 +449,8 @@ def main():
      )
      icl_path = save_ica(ica_icl, sub_str, args.deriv_root, suffix='-iclabel')  # 3c'
      print(f"  ICA sauvegardé  : {icl_path}")
-     raw_iclabel_branch = drop_aux_channels(raw_iclabel_branch)            # 4. drop aux
-     raw_iclabel_branch = apply_average_reference(raw_iclabel_branch)      # 5. avg ref
-     raw_iclabel_branch = apply_decimation(raw_iclabel_branch)             # 6. no-op si DECIMATE=False
+     drop_aux_channels(raw_iclabel_branch)                                 # 4. drop aux
+     apply_decimation(raw_iclabel_branch)                                  # 6. no-op si DECIMATE=False
      out_iclabel = save_bids_derivatives(                                  # 7. save
          raw_iclabel_branch, sub_str, args.deriv_root, 'preprocessed-iclabel'
      )
