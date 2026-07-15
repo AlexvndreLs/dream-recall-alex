@@ -7,8 +7,13 @@ Deux modes selon le type de feature :
 - Matrice (cov, cosp_*) : TSclassifier(LDA()) en espace Riemannien,
   StratifiedLeave2GroupsOut (LPGO P=2 stratifié HR/LR, §1.2.7 thèse).
 - Vecteur (psd_*, psd_osc_*, aperiodic) : LDA Euclidien par électrode.
-  --normalize active StandardScaler fit sur train uniquement (off par
-  défaut pour rester cohérent avec Arthur).
+
+Pas de standardisation des features. La classification vectorielle est
+univariée (un LDA par électrode, sur une seule colonne) et LDA est invariant
+par transformation affine : centrer-réduire l'unique feature ne déplace pas la
+frontière de décision. Vérifié empiriquement (branche noica, 51 combos
+feature × stade) : delta accuracy = 0.0000 exactement. Arthur ne normalise pas
+non plus (zscore=False dans son utils.py).
 
 n_trials_min global calculé depuis 'cov' avant les jobs (comparabilité
 garantie entre tous les états/features). Vérification d'intégrité optionnelle.
@@ -49,8 +54,6 @@ from sklearn.base import clone
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import LeavePGroupsOut
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
 from pyriemann.classification import TSClassifier as TSclassifier
 
 from .config import (
@@ -86,9 +89,6 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--state",             type=str,  default=None,
                    help="Stade unique (ex: S2, SWS, NREM, REM). "
                         "Si absent, tous les stades sont classifiés.")
-    p.add_argument("--normalize",         action="store_true", default=False) # que pour les vecteurs 
-    # cov/cosp_* sont des matrices SPD (symétriques définies positives) qui vivent sur une variété riemannienne,
-    # pas dans un espace euclidien. TSclassifier (Tangent Space) fait déjà sa propre normalisation intrinsèque
     p.add_argument("--skip-check",        action="store_true", default=False)
     p.add_argument("--overwrite",         action="store_true", default=False)
     return p.parse_args()
@@ -487,10 +487,7 @@ def _save(path: Path, **arrays) -> None:
 # ─── classification ───────────────────────────────────────────────────────────
 
 def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
-                    overwrite, normalize, n_jobs=1, checkpoint_every=50):
-    if normalize:
-        warnings.warn(f"--normalize ignoré pour la feature matricielle '{key}'.")
-
+                    overwrite, n_jobs=1, checkpoint_every=50):
     out = _result_path(save_path, key, state)
     if out.exists() and not overwrite:
         return np.load(out, allow_pickle=True)
@@ -519,7 +516,6 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
         acc_scores = acc_scores,
         n_trials   = int(n_trials),
         n_subjects = int(len(data)),
-        normalized = False,
     )
     if n_perm > 0:
         perm = _run_perms_parallel(
@@ -539,7 +535,7 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
 # Exécute les boucles parallèles de bootstraps et de permutations, calcule les p-values, puis archive le dictionnaire compressé final.
 
 def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
-                    overwrite, normalize, n_jobs=1, checkpoint_every=50):
+                    overwrite, n_jobs=1, checkpoint_every=50):
     # checkpoint_every=50 par défaut
     out = _result_path(save_path, key, state)
     if out.exists() and not overwrite:
@@ -556,8 +552,7 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
         return None
 
     n_elec = data[0].shape[1]
-    clf    = (Pipeline([("scaler", StandardScaler()), ("lda", LDA(solver="svd"))])
-              if normalize else LDA(solver="svd"))
+    clf    = LDA(solver="svd")
     cv     = StratifiedLeave2GroupsOut()
 
     # _run_bootstraps_parallel + worker_fn=_one_bootstrap_vector, même mécanisme que classify_matrix.
@@ -573,7 +568,6 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
         n_trials   = int(n_trials),
         n_subjects = int(len(data)),
         ch_names   = np.array(CH_NAMES[:N_EEG]),
-        normalized = normalize,
     )
     if n_perm > 0:
         perm_accs = _run_perms_parallel(
@@ -588,20 +582,19 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
     _save(out, **result)
     _clear_checkpoints(out)
     return result
-# Prépare un pipeline de mise à l'échelle (StandardScaler) sans fuite de données et isole les canaux EEG pour une analyse univariée.
 # Évalue séquentiellement la capacité de décodage de chaque électrode à travers les itérations de bootstraps.
 # Construit la distribution nulle par permutation et applique une correction de la statistique maximale (FWER) contre les faux positifs.
 
 # ─── dispatcher ───────────────────────────────────────────────────────────────
 
 def classify_one(save_path, key, state, n_trials, n_bootstraps, n_perm,
-                 overwrite, normalize, n_jobs=1, checkpoint_every=50):
+                 overwrite, n_jobs=1, checkpoint_every=50):
     print(f"  {key} x {state}")
     try:
         fn = classify_matrix if is_matrix_feature(key) else classify_vector
         return key, state, fn(
             save_path, key, state, n_trials, n_bootstraps, n_perm,
-            overwrite, normalize, n_jobs, checkpoint_every
+            overwrite, n_jobs, checkpoint_every
         )
     except Exception:
         print(f"  ERROR {key} {state}\n{traceback.format_exc()}")
@@ -631,13 +624,12 @@ def build_summary_csv(save_path: Path) -> None:
         acc_mean   = d["acc_mean"]
         acc_std    = d["acc_std"]
         n_trials   = int(d["n_trials"])
-        normalized = bool(d["normalized"]) if "normalized" in d else False
         pval_scalar = float(d["pval"]) if "pval" in d else np.nan
 
         if acc_mean.ndim == 0:
             rows.append(dict(key=key, state=state, electrode="all",
                              acc_mean=float(acc_mean), acc_std=float(acc_std),
-                             n_trials=n_trials, normalized=normalized,
+                             n_trials=n_trials,
                              pval=pval_scalar,
                              pval_maxstat=float(d["pval_maxstat"]) if "pval_maxstat" in d else np.nan))
         else:
@@ -647,7 +639,7 @@ def build_summary_csv(save_path: Path) -> None:
             for ch, am, astd, pv, pv_ms in zip(ch_names, acc_mean, acc_std, pvals, pvals_maxstat):
                 rows.append(dict(key=key, state=state, electrode=ch,
                                  acc_mean=float(am), acc_std=float(astd),
-                                 n_trials=n_trials, normalized=normalized,
+                                 n_trials=n_trials,
                                  pval=float(pv), pval_maxstat=float(pv_ms)))
 
     if rows:
@@ -666,7 +658,7 @@ def main():
 
     print("=== vérification intégrité + n_trials_min global ===")
     n_trials = compute_global_n_trials(args.save_path, skip_check=args.skip_check)
-    print(f"n_trials_min = {n_trials}  |  normalize = {args.normalize}")
+    print(f"n_trials_min = {n_trials}")
 
     # Filtrage par --key et --state si fournis (mode combo unique pour array SLURM)
     keys   = [args.key]   if args.key   else FEATURE_KEYS
@@ -682,7 +674,7 @@ def main():
     for key, state in combos:
         res = classify_one(
             args.save_path, key, state, n_trials,
-            args.n_bootstraps, args.n_perm, args.overwrite, args.normalize,
+            args.n_bootstraps, args.n_perm, args.overwrite,
             n_jobs=args.n_jobs, checkpoint_every=args.checkpoint_every
         )
         results.append(res)
