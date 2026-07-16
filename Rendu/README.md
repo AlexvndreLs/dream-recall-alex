@@ -1,62 +1,64 @@
 # dream-recall-alex
 
-Classification of High vs Low dream recallers (HR/LR) from overnight sleep EEG.
-Replication and extension of chapter 1 of A. Dehgan's thesis
+Classification High vs Low dream recallers (HR/LR) à partir d'EEG de sommeil.
+Réplication et extension du chapitre 1 de la thèse d'A. Dehgan
 ([arthurdehgan/sleep](https://github.com/arthurdehgan/sleep)).
 
 ## Installation
 
-Requires Python >= 3.11.
+Python >= 3.11 requis.
 
 ```bash
 pip install --pre -e .
 ```
 
-The `--pre` flag is required: `specparam` (the FOOOF successor) only publishes
-release candidates, so `specparam==2.0.0rc7` is not installable without it.
+Le flag `--pre` est nécessaire : `specparam` (successeur de FOOOF) ne publie
+que des release candidates, donc `specparam==2.0.0rc7` n'est pas installable
+sans lui.
 
-Dependency versions are pinned exactly to match the `mne_env` environment used
-on the cluster. Results depend on the precise behaviour of specparam, pyriemann
-and MNE.
+Les versions des dépendances sont épinglées à l'identique de l'environnement
+`mne_env` utilisé sur le cluster. Les résultats dépendent du comportement
+exact de specparam, pyriemann et MNE.
 
 ## Pipeline
 
-Four stages, run in order. Each one reads what the previous one wrote.
+Quatre étapes, à exécuter dans l'ordre. Chacune lit ce que la précédente a
+écrit.
 
-### 1. Raw MATLAB to BIDS
+### 1. MATLAB brut vers BIDS
 
 ```bash
-dream-bids 5 --data-path /path/to/sleep_raw_data \
-             --bids-path /path/to/dream_bids
+dream-bids 5 --data-path /chemin/vers/sleep_raw_data \
+             --bids-path /chemin/vers/dream_bids
 ```
 
-Reads `.mat` recordings and their hypnograms, writes a BIDS dataset
-(25 channels, 1000 Hz, nose reference).
+Lit les enregistrements `.mat` et leurs hypnogrammes, écrit un dataset BIDS
+(25 canaux, 1000 Hz, référence nez).
 
-### 2. Preprocessing
+### 2. Prétraitement
 
 ```bash
-dream-preprocess 5 --bids-path /path/to/dream_bids \
-                   --deriv-root /path/to/dream_bids/derivatives \
+dream-preprocess 5 --bids-path /chemin/vers/dream_bids \
+                   --deriv-root /chemin/vers/dream_bids/derivatives \
                    --branches noica ica iclabel
 ```
 
-Writes one BIDS derivative per branch under `derivatives/preprocessed-<branch>/`.
+Écrit un derivative BIDS par branche sous `derivatives/preprocessed-<branche>/`.
 
-### 3. Feature extraction
+### 3. Extraction des features
 
 ```bash
-dream-features --deriv-path /path/to/derivatives/preprocessed-noica \
-               --save-path  /path/to/dream_features \
+dream-features --deriv-path /chemin/vers/derivatives/preprocessed-noica \
+               --save-path  /chemin/vers/dream_features \
                --n-jobs     $SLURM_CPUS_PER_TASK
 ```
 
-Writes cached `.npz` arrays per subject, feature and sleep stage.
+Écrit des `.npz` par sujet, feature et stade de sommeil.
 
 ### 4. Classification
 
 ```bash
-dream-classify --save-path /path/to/dream_features \
+dream-classify --save-path /chemin/vers/dream_features \
                --n-jobs    $SLURM_CPUS_PER_TASK \
                --n-perm    1000 \
                --key       cov \
@@ -64,20 +66,21 @@ dream-classify --save-path /path/to/dream_features \
                --checkpoint-every 50
 ```
 
-Omitting `--key` or `--state` runs every feature or every stage.
+Sans `--key` ni `--state`, toutes les features ou tous les stades sont
+traités.
 
-Each command accepts `--help`. Modules can also be run directly, e.g.
-`python -m dream_recall_alex.classify`.
+Chaque commande accepte `--help`. Les modules peuvent aussi être lancés
+directement : `python -m dream_recall_alex.classify`.
 
-## Repository layout
+## Structure du dépôt
 
 ```
 src/dream_recall_alex/
-    config.py                    channels, subject labels, sleep stages, bands
-    utils.py                     shared low-level helpers
-    mat_eeg_to_bids.py           stage 1
-    preprocess_subject.py        stage 2
-    feat_extract_umap_fooof.py   stage 3
-    classify.py                  stage 4
-archive/                         Arthur's original pipeline, kept for reference
+    config.py                    canaux, labels sujets, stades, bandes
+    utils.py                     primitives bas niveau partagées
+    mat_eeg_to_bids.py           étape 1
+    preprocess_subject.py        étape 2
+    feat_extract_umap_fooof.py   étape 3
+    classify.py                  étape 4
+archive/                         pipeline original d'Arthur, conservé pour référence
 ```
