@@ -72,16 +72,23 @@ def parse_args() -> argparse.Namespace:
 #produits par preprocess_subject.py
 
 def _vhdr(deriv_path: Path, sub_id: str) -> Path:
+    """Chemin du .vhdr prétraité d'un sujet."""
     return (deriv_path / f"sub-{sub_id}" / "eeg"
             / f"sub-{sub_id}_task-sleep_proc-clean_eeg.vhdr")
 
 
 def _events(deriv_path: Path, sub_id: str) -> Path:
+    """Chemin du _events.tsv prétraité d'un sujet."""
     return (deriv_path / f"sub-{sub_id}" / "eeg"
             / f"sub-{sub_id}_task-sleep_proc-clean_events.tsv")
 
 
 def _choose_scorer(sub_id: str) -> str:
+    """Scoreur d'hypnogramme à utiliser pour ce sujet.
+
+    'per' par défaut ; 'jbe' pour les sujets dont le scoring per est
+    inutilisable (PER_BLACKLIST). Lève si aucun des deux n'est disponible.
+    """
     if sub_id not in PER_BLACKLIST_STR:
         return "per"
     if sub_id in JBE_SUBJECTS_STR:
@@ -386,17 +393,22 @@ def compute_all_features(data: np.ndarray) -> dict[str, np.ndarray]:
 def process_subject(
     deriv_path: Path, save_path: Path, sub_id: str, overwrite: bool = False
 ) -> None:
+    """Extrait et cache toutes les features d'un sujet, par stade atomique.
+
+    Charge le derivative prétraité, le découpe en epochs par stade, calcule les
+    features et les écrit sous save-path/<feature>/. Les sujets absents du
+    derivative sont sautés, de même que les stades dont tous les .npz existent
+    déjà : la reprise après un crash cluster ne recalcule rien.
+    """
     if not _vhdr(deriv_path, sub_id).exists():
         print(f"sub-{sub_id}: derivative not found, skipping")
         return
-    #Verifie que le fichier preprocessé existe sur disque
 
     try:
         atomic_epochs = load_epochs_by_atomic_stage(deriv_path, sub_id)
     except Exception:
         print(f"sub-{sub_id}: ERROR loading\n{traceback.format_exc()}")
         return
-    #charge le raw et decoupe en epochs
 
     for stage, data in atomic_epochs.items():
         print(f"  sub-{sub_id} {stage}: {data.shape[0]} epochs")

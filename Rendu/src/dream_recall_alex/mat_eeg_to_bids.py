@@ -38,6 +38,13 @@ def parse_args():
 
 
 def load_mat(path, sub):
+    """Charge le .mat HDF5 et le transpose en (canaux, temps).
+
+    MATLAB stocke en (temps, canaux), MNE attend l'inverse. La lecture se fait
+    par blocs d'un million d'échantillons et la conversion en float32 est
+    immédiate : une nuit de 8 h à 1000 Hz sur 25 canaux ne tient pas
+    confortablement en mémoire en float64.
+    """
     with h5py.File(path, 'r') as f:
         data = f['m_data']
         n_samples = data.shape[0]
@@ -57,6 +64,12 @@ def load_mat(path, sub):
 
 
 def load_hypno_annotations(path, prefix, sub):
+    """Construit les annotations MNE à partir d'un fichier d'hypnogramme.
+
+    Le fichier contient un stade par ligne, à raison d'une valeur par seconde.
+    HYPNO_FIXES corrige les sujets dont l'hypnogramme démarre décalé par
+    rapport au signal, en préfixant les secondes manquantes.
+    """
     with open(path) as f:
         stages = [int(line.strip()) for line in f if line.strip()]
     # retire les espaces/sauts de ligne + ignore les lignes vides +
