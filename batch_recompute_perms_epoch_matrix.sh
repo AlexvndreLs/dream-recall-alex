@@ -11,6 +11,8 @@
 #SBATCH --mail-user=alexandre.louis@umontreal.ca
 #SBATCH --mail-type=END,FAIL
 
+set -euo pipefail
+
 # ==========================================================================
 # Schema EPOCH (rreplique Arthur, utils.py:103) - features MATRICIELLES.
 # Reutilise les bootstraps deja calcules par le run --perm-scheme subject

@@ -11,6 +11,8 @@
 #SBATCH --mail-user=alexandre.louis@umontreal.ca
 #SBATCH --mail-type=END,FAIL
 
+set -euo pipefail
+
 # ==========================================================================
 # Schema EPOCH (replique Arthur, utils.py:103) - features VECTORIELLES.
 # Meme principe que batch_recompute_perms_epoch_matrix.sh : reutilise les

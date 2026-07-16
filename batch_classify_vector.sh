@@ -11,6 +11,8 @@
 #SBATCH --mail-user=alexandre.louis@umontreal.ca
 #SBATCH --mail-type=END,FAIL
 
+set -euo pipefail
+
 # Batch par combo vectoriel (psd_*/psd_osc_*/aperiodic/higuchi_fd/perm_entropy/spec_entropy x 4 stades).
 # --time provisoire, a corriger apres mesure reelle (jamais chronometre cette feature avant).
 

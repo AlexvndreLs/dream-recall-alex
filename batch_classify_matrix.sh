@@ -11,6 +11,8 @@
 #SBATCH --mail-user=alexandre.louis@umontreal.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
 
+set -euo pipefail
+
 # Batch par combo matriciel (cov/cosp_* × 4 stades × 3 branches).
 # 1 job = 1 (key, state) = 1 feature × 1 stade.
 # Checkpoint toutes les 50 itérations -> reprise après timeout sans repartir de 0.
