@@ -73,35 +73,6 @@ def load_raw(bids_path: Path, sub_str: str) -> mne.io.BaseRaw:
     return raw
 
 
-def apply_notch(raw: mne.io.BaseRaw) -> None:
-    """1. Retire le bruit de ligne 50Hz (+ harmonique 100Hz) par notch filter.
-
-    LINE_FREQ=50 et son harmonique 100Hz. Le notch s'applique avant la
-    décimation (raw encore à 1000Hz) . EOG/EMG portent aussi la raie secteur et sont
-    filtrés ici, puis droppés à l'étape 4 -> évite de polluer la détection ICA
-    des composantes oculaires qui suit.
-
-    Commun aux deux branches -> fait une seule fois, avant le fork.
-    """
-    raw.notch_filter(
-        [LINE_FREQ, 2 * LINE_FREQ],                 # 50 et 100 Hz
-        filter_length='auto',
-        phase='zero',
-        verbose=False,
-    )
-
-
-def apply_highpass_final(raw: mne.io.BaseRaw) -> None:
-    """2. Filtre passe-haut 0.1Hz appliqué aux données finales.
-
-    Matche le HP hardware d'origine (sidecar BIDS : 'Highpass RC filter'
-    0.1Hz) -> ne retire quasiment rien de plus que le hardware.
-
-    Commun aux deux branches -> fait une seule fois, avant le fork.
-    """
-    raw.filter(l_freq=HP_FREQ_FINAL, h_freq=None, verbose=False)
-
-
 def make_ica_fit_copy(raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
     """3a. Copie HP 1Hz pour le fit ICA uniquement (branche ICA).
 
@@ -347,8 +318,20 @@ def main():
 
     # ── tronc commun (étapes 1-2) ────────────────────────────────────────────
     raw = load_raw(args.bids_path, sub_str)
-    apply_notch(raw)                   # 1. notch 50Hz (+100Hz)
-    apply_highpass_final(raw)          # 2. HP 0.1Hz
+
+    # 1. Notch sur le bruit de ligne 50Hz et son harmonique 100Hz. Appliqué
+    # avant la décimation, et aux EOG/EMG aussi : ils portent la raie secteur
+    # et serviront à la détection ICA avant d'être droppés à l'étape 4.
+    raw.notch_filter(
+        [LINE_FREQ, 2 * LINE_FREQ],                 # 50 et 100 Hz
+        filter_length='auto',
+        phase='zero',
+        verbose=False,
+    )
+
+    # 2. Passe-haut 0.1Hz, qui matche le HP hardware d'origine (sidecar BIDS :
+    # 'Highpass RC filter' 0.1Hz) -> ne retire quasiment rien de plus.
+    raw.filter(l_freq=HP_FREQ_FINAL, h_freq=None, verbose=False)
 
     # ── fork : copie indépendante par branche ────────────────────────────────
     raw_ica_branch     = raw.copy()
