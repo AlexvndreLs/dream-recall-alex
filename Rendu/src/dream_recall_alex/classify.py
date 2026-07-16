@@ -106,17 +106,30 @@ def is_matrix_feature(key: str) -> bool:
     return key in MATRIX_KEYS
 
 def _seed(key: str, state: str, idx: int) -> int:
+    """Graine déterministe dérivée d'un hachage MD5 des `parts`.
+
+    hash() de Python n'est pas déterministe entre deux exécutions (dépend de
+    PYTHONHASHSEED), ce qui casserait la reproductibilité des tirages.
+    """
     h = md5(f"{key}_{state}_{idx}".encode()).digest()
     return int.from_bytes(h[:4], "big")
-# Génère une graine aléatoire entière et déterministe par hachage MD5 pour garantir la reproductibilité cross-platform.
 
 def load_subject(save_path: Path, key: str, sub_id: str, state: str) -> np.ndarray | None:
+    """Charge et concatène les stades atomiques composant `state` pour un sujet.
+
+    Les stades composites (SWS = S3+S4, NREM = S2+S3+S4) sont reconstruits ici
+    à partir des .npz atomiques écrits par feat_extract.
+    """
     stages = CLASSIFICATION_GROUPS[state]
     parts  = [a for s in stages if (a := load_atomic(save_path, key, sub_id, s)) is not None]
     return np.concatenate(parts, axis=0) if parts else None
-# Charge et concatène les données atomiques de toutes les phases de sommeil associées à un stade pour un sujet donné.
 
 def load_all(save_path: Path, key: str, state: str) -> tuple[list, np.ndarray]:
+    """Charge la feature `key` au stade `state` pour tous les sujets.
+
+    Retourne (data, labels) : une liste d'arrays par sujet et le vecteur des
+    labels HR/LR correspondants. Les sujets sans données sont ignorés.
+    """
     data, labels = [], []
     for sub_id, label in zip(SUBJECT_LIST_ORDERED, SUBJECT_LABELS):
         arr = load_subject(save_path, key, sub_id, state)
@@ -124,11 +137,21 @@ def load_all(save_path: Path, key: str, state: str) -> tuple[list, np.ndarray]:
             data.append(arr)
             labels.append(label)
     return data, np.array(labels)
-# Compile l'ensemble des matrices/vecteurs de caractéristiques et les étiquettes de groupe associées pour tous les sujets.
 
 # ─── intégrité + n_trials_min ─────────────────────────────────────────────────
 
 def compute_global_n_trials(save_path: Path, skip_check: bool = False) -> int:
+    """Nombre d'epochs à tirer par sujet, commun à toutes les features et stades.
+
+    Compte les epochs disponibles par sujet et par stade sur la feature de
+    référence (REF_KEY = 'cov'), et retourne le minimum global. Ce minimum est
+    le plus grand nombre d'epochs que l'on puisse tirer chez tous les sujets
+    sans remise, d'où le nom n_trials_min, qui est en pratique un maximum
+    utilisable.
+
+    skip_check=False vérifie au passage que toutes les features ont le même
+    nombre d'epochs que REF_KEY pour chaque sujet/stade.
+    """
     ref_counts: dict[tuple[str, str], int] = {}
     for state in STATE_LIST:
         for sub_id in SUBJECT_LIST_ORDERED:
@@ -161,16 +184,18 @@ def compute_global_n_trials(save_path: Path, skip_check: bool = False) -> int:
             )
 
     return int(min(ref_counts.values()))
-# Compte le nombre d'époques disponibles par sujet et par stade pour la feature de référence (cov).
-# Vérifie la cohérence des données en s'assurant qu'aucune feature ne présente de données manquantes ou asymétriques.
-# Retourne le nombre minimal global d'époques (n_trials_min) pour permettre un sous-tirage équilibré entre tous les sujets.
-# Attention min parmi le nombre d'epoch mais c'est notre max du coup 
 
 # ─── bootstrap ────────────────────────────────────────────────────────────────
 
 def bootstrap_sample(
     data: list, labels: np.ndarray, n_trials: int, seed: int
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Tire n_trials epochs par sujet, sans remise, et concatène.
+
+    Équilibre la contribution des sujets : sans ce sous-tirage, un sujet à 300
+    epochs pèserait deux fois plus qu'un sujet à 150. Retourne (X, y, groups)
+    alignés par epoch, prêts pour la CV groupée.
+    """
     rng = np.random.RandomState(seed)
     Xs, ys, gs = [], [], []
     for g, (arr, lab) in enumerate(zip(data, labels)):
@@ -183,14 +208,10 @@ def bootstrap_sample(
         ys.extend([lab] * n_trials)
         gs.extend([g]   * n_trials)
     return np.concatenate(Xs), np.array(ys), np.array(gs)
-# Initialise un générateur aléatoire reproductible et des listes pour collecter les données échantillonnées.
-# Tire au hasard et sans remise un nombre fixe d'époques (n_trials) pour chaque sujet afin d'équilibrer l'ensemble.
-# Aligne les étiquettes (HR/LR) et les identifiants de sujets par époque, puis concatène le tout pour le classifieur.
 
 def permute_subject_labels(labels: np.ndarray, seed: int) -> np.ndarray:
     """Permute les labels HR/LR AU NIVEAU SUJET. Réf : Combrisson & Jerbi 2015."""
     return np.random.RandomState(seed).permutation(labels)
-# Mélange aléatoirement les étiquettes de diagnostic (HR/LR) directement au niveau des sujets pour les tests de permutations.
 
 # Permutation NIVEAU EPOCH, réplique EXACTEMENT utils.py:103
 # du repo arthurdehgan/sleep (fonction permutation_test). Utilisée uniquement
@@ -215,8 +236,6 @@ def permute_epoch_labels(
     """
     perm_index = np.random.RandomState(seed).permutation(len(y))
     return y[perm_index], groups[perm_index]
-# Applique un unique index de permutation aux labels ET aux groupes au niveau epoch (code exact d'Arthur).
-# Détruit la correspondance sujet<->epochs, produisant une distribution nulle étroite (p plus faibles).
 
 
 # ─── cross-validation ─────────────────────────────────────────────────────────
@@ -253,25 +272,32 @@ class StratifiedLeave2GroupsOut:
     # Calcule à l'avance le nombre total de splits (combinaisons) en multipliant le nombre de sujets HR par le nombre de sujets LR.
 
 def run_cv(clf, splits, X, y) -> float:
+    """Accuracy moyenne du classifieur sur tous les splits de la CV."""
     return float(np.mean([
         accuracy_score(y[te], clone(clf).fit(X[tr], y[tr]).predict(X[te]))
         for tr, te in splits
     ]))
-# Évalue le modèle par validation croisée en calculant la moyenne des scores d'exactitude (accuracy) obtenus sur l'ensemble des splits.
 
 # ─── bootstrap parallèle (1 bootstrap = 1 job) ────────────────────────────────
 
 def _one_bootstrap(clf, cv, data, labels, n_trials, key, state, i) -> float:
-    """Un seul bootstrap, appelé en parallèle par joblib."""
+    """Un seul bootstrap, appelé en parallèle par joblib.
+
+    Échantillonne n_trials epochs par sujet (graine déterministe propre à
+    l'itération), fige les 324 splits de CV (LPGO P=2) correspondant à ce
+    tirage, et retourne l'accuracy moyenne sur ces splits.
+    """
     X, y, groups = bootstrap_sample(data, labels, n_trials, _seed(key, state, i))
     splits = list(cv.split(X, y, groups))
     return run_cv(clf, splits, X, y)
-# Échantillonne un nombre fixe d'époques par sujet à l'aide d'une graine aléatoire déterministe propre à l'itération.
-# Génère et fige la liste des 324 splits de validation croisée (LPGO P=2) adaptés à ce tirage de données.
-# Exécute l'évaluation croisée complète (entraînement + test) et retourne le score d'accuracy moyen obtenu.
 
 def _one_perm(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> float:
-    """Une seule permutation, appelée en parallèle par joblib."""
+    """Une seule permutation, appelée en parallèle par joblib.
+
+    Permute les labels HR/LR au niveau sujet, échantillonne les epochs avec
+    ces faux labels (graine décalée de PERM_SEED_OFFSET pour ne pas
+    collisionner avec celles des bootstraps), et retourne le score nul.
+    """
     labels_perm = permute_subject_labels(
         labels, _seed('perm', state, PERM_SEED_OFFSET + n_perm + p)
     )
@@ -280,9 +306,6 @@ def _one_perm(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> float:
     )
     splits = list(cv.split(X, y, groups))
     return run_cv(clf, splits, X, y)
-# Permute aléatoirement les étiquettes HR/LR au niveau des sujets pour rompre l'association biologique avec le signal.
-# Effectue le sous-tirage des époques en leur associant ces faux labels à l'aide d'une graine isolée des bootstraps.
-# Évalue le modèle sur ces données falsifiées pour alimenter la distribution statistique de l'hypothèse nulle.
 
 # Equivalents vectoriels de _one_bootstrap/_one_perm ci-dessus, boucle
 # sur les n_elec électrodes en interne, retourne un vecteur au lieu d'un float.
@@ -291,18 +314,26 @@ def _one_perm(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> float:
 # Python séquentielle d'origine.
 
 def _one_bootstrap_vector(clf, cv, data, labels, n_trials, key, state, i) -> np.ndarray:
-    """Un seul bootstrap, appelé en parallèle par joblib (cas vectoriel)."""
+    """Un seul bootstrap, appelé en parallèle par joblib (cas vectoriel).
+
+    Même échantillonnage que _one_bootstrap, mais évalue chaque électrode
+    séparément (1 LDA par colonne, sur les mêmes splits) et retourne le
+    vecteur des n_elec scores.
+    """
     X, y, groups = bootstrap_sample(data, labels, n_trials, _seed(key, state, i))
     splits = list(cv.split(X, y, groups))
     n_elec = X.shape[1]
     return np.array([
         run_cv(clf, splits, X[:, e:e + 1], y) for e in range(n_elec)
     ])
-# Échantillonne un nombre fixe d'époques par sujet à l'aide d'une graine aléatoire déterministe propre à l'itération.
-# Évalue séquentiellement chaque électrode (1 LDA par colonne) sur les mêmes splits et retourne le vecteur des n_elec scores.
 
 def _one_perm_vector(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> np.ndarray:
-    """Une seule permutation, appelée en parallèle par joblib (cas vectoriel)."""
+    """Une seule permutation, appelée en parallèle par joblib (cas vectoriel).
+
+    Même schéma que _one_perm (permutation des labels au niveau sujet), mais
+    retourne le vecteur des n_elec scores nuls — un par électrode, ce qui
+    alimente la correction max-stat.
+    """
     labels_perm = permute_subject_labels(
         labels, _seed('perm', state, PERM_SEED_OFFSET + n_perm + p)
     )
@@ -314,8 +345,6 @@ def _one_perm_vector(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> 
     return np.array([
         run_cv(clf, splits, X[:, e:e + 1], y) for e in range(n_elec)
     ])
-# Permute les labels HR/LR au niveau sujet puis ré-échantillonne les époques avec ces faux labels, comme _one_perm.
-# Évalue séquentiellement chaque électrode sur les données falsifiées et retourne le vecteur de n_elec scores nuls.
 
 # Workers de permutation NIVEAU EPOCH (schéma Arthur). Utilisés
 # uniquement par recompute_perms_epoch_arthur.py (script séparé), le bootstrap
@@ -335,8 +364,6 @@ def _one_perm_epoch(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> f
     )
     splits = list(cv.split(X, y, groups))
     return run_cv(clf, splits, X, y)
-# Sous-tire les époques avec les VRAIS labels, puis permute y+groups au niveau epoch (ordre inverse du schéma subject).
-# Évalue la CV sur ces données mélangées et retourne le score nul (distribution resserrée -> p bas).
 
 def _one_perm_epoch_vector(clf, cv, data, labels, n_trials, key, state, p, n_perm) -> np.ndarray:
     """Une permutation niveau epoch (vecteur), réplique Arthur (utils.py:103)."""
@@ -351,14 +378,12 @@ def _one_perm_epoch_vector(clf, cv, data, labels, n_trials, key, state, p, n_per
     return np.array([
         run_cv(clf, splits, X[:, e:e + 1], y) for e in range(n_elec)
     ])
-# Version électrode-par-électrode du worker epoch : bootstrap réel, permutation y+groups niveau epoch, 1 LDA/colonne.
-# Retourne le vecteur de n_elec scores nuls pour la correction max-stat sur électrodes.
 
 # ─── checkpoint helpers ───────────────────────────────────────────────────────
 
 def _ckpt_path(result_path: Path, prefix: str) -> Path:
+    """Chemin du checkpoint temporaire (prefix = bootstrap | perm)."""
     return result_path.parent / (result_path.stem + f"_{prefix}_ckpt.npz")
-# Génère le chemin absolu du fichier de checkpoint temporaire (.npz).
 
 def _load_checkpoint(result_path: Path, prefix: str) -> np.ndarray | None:
     """Charge un checkpoint partiel (bootstraps ou perms déjà calculés)."""
@@ -366,20 +391,19 @@ def _load_checkpoint(result_path: Path, prefix: str) -> np.ndarray | None:
     if p.exists():
         return np.load(p)["data"]
     return None
-# Charge le tableau de scores NumPy si un fichier de checkpoint existe, sinon renvoie None.
 
 def _save_checkpoint(result_path: Path, prefix: str, data: np.ndarray) -> None:
+    """Écrit un checkpoint compressé, en créant le dossier parent si besoin."""
     p = _ckpt_path(result_path, prefix)
     p.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(p, data=data)
-# Crée le dossier parent si nécessaire et sauvegarde l'état des calculs au format compressé.
 
 def _clear_checkpoints(result_path: Path) -> None:
+    """Supprime les checkpoints bootstrap et perm après sauvegarde finale."""
     for prefix in ["bootstrap", "perm"]:
         p = _ckpt_path(result_path, prefix)
         if p.exists():
             p.unlink()
-# Supprime physiquement les fichiers temporaires de bootstrap et de permutation du disque.
 
 # ─── bootstrap + perm loops avec checkpoint ───────────────────────────────────
 
@@ -390,9 +414,12 @@ def _run_bootstraps_parallel(
     clf, cv, data, labels, n_trials, n_bootstraps, key, state,
     n_jobs, checkpoint_every, result_path, worker_fn=_one_bootstrap, prefer="threads"
 ) -> np.ndarray:
-    """1000 bootstraps parallèles avec sauvegarde progressive.
+    """n_bootstraps bootstraps parallèles avec sauvegarde progressive.
 
-    Reprend depuis le checkpoint si disponible (reprise après timeout).
+    Reprend depuis le checkpoint si disponible (reprise après timeout) :
+    l'index de départ est déduit du nombre de bootstraps déjà calculés.
+    Les itérations restantes sont découpées en blocs distribués sur n_jobs
+    workers joblib ; le checkpoint est réécrit à la fin de chaque bloc.
     checkpoint_every=0 désactive le checkpoint.
     """
     # Reprise depuis checkpoint
@@ -428,16 +455,18 @@ def _run_bootstraps_parallel(
         accs.extend(new_accs)
 
     return np.array(accs)
-# Vérifie l'existence d'un checkpoint partiel pour déterminer l'index de reprise et éviter de recalculer les bootstraps déjà faits.
-# Découpe les bootstraps restants en blocs (chunks) exécutés en parallèle par joblib selon le nombre de cœurs alloués.
-# Fusionne les résultats à chaque fin de bloc, exporte une sauvegarde compressée sur le disque et logue la progression.
 
 # Même ajout de worker_fn que _run_bootstraps_parallel ci-dessus.
 def _run_perms_parallel(
     clf, cv, data, labels, n_trials, n_perm, key, state,
     n_jobs, checkpoint_every, result_path, worker_fn=_one_perm, prefer="threads"
 ) -> np.ndarray:
-    """1000 permutations parallèles avec sauvegarde progressive."""
+    """n_perm permutations parallèles avec sauvegarde progressive.
+
+    Même mécanique que _run_bootstraps_parallel : reprise depuis checkpoint,
+    découpage en blocs sur n_jobs workers, réécriture du checkpoint à chaque
+    bloc pour survivre aux limites de temps SLURM.
+    """
     done = _load_checkpoint(result_path, "perm")
     start = len(done) if done is not None else 0
     perms = list(done) if done is not None else []
@@ -468,26 +497,28 @@ def _run_perms_parallel(
         perms.extend(new_perms)
 
     return np.array(perms)
-# Gère la reprise sur panne pour les permutations en chargeant l'historique des calculs interrompus depuis le disque.
-# Distribue le calcul des permutations par blocs successifs sur l'ensemble des workers joblib configurés.
-# Met à jour progressivement le fichier de checkpoint des permutations pour sécuriser les données face aux limites de temps SLURM.
 
 # ─── cache helpers ────────────────────────────────────────────────────────────
 
 def _result_path(save_path: Path, key: str, state: str) -> Path:
+    """Chemin du .npz de résultats finaux pour un couple (feature, stade)."""
     return save_path / "results" / f"{key}_{state}.npz"
-# Construit le chemin normalisé du fichier de résultats finaux (.npz) selon la feature et le stade de sommeil.
 
 def _save(path: Path, **arrays) -> None:
+    """Écrit `arrays` dans un .npz compressé, en créant le dossier parent."""
     path.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(path, **arrays)
-# Assure la création sécurisée des dossiers parents sur le disque s'ils sont manquants pour éviter tout crash.
-# Archive et compresse efficacement l'ensemble des tableaux NumPy dans un fichier .npz unique.
 
 # ─── classification ───────────────────────────────────────────────────────────
 
 def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
                     overwrite, n_jobs=1, checkpoint_every=50):
+    """Classification riemannienne d'une feature matricielle (TSclassifier + LDA).
+
+    Bootstraps et permutations parallélisés avec checkpoint. Pas de correction
+    max-stat : un seul score global par couple (feature, stade), contrairement
+    à classify_vector qui produit un score par électrode.
+    """
     out = _result_path(save_path, key, state)
     if out.exists() and not overwrite:
         return np.load(out, allow_pickle=True)
@@ -530,12 +561,16 @@ def classify_matrix(save_path, key, state, n_trials, n_bootstraps, n_perm,
     _clear_checkpoints(out)  # nettoie les checkpoints après sauvegarde finale
     return result
 
-# Bloque la normalisation incompatible avec la géométrie riemannienne et gère le cache pour éviter les recalculs inutiles.
-# Instancie le pipeline neuroscientifique (Tangent Space Mapping + LDA) et le validateur croisé stratifié (LPGO P=2).
-# Exécute les boucles parallèles de bootstraps et de permutations, calcule les p-values, puis archive le dictionnaire compressé final.
 
 def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
                     overwrite, n_jobs=1, checkpoint_every=50):
+    """Classification LDA euclidienne d'une feature vectorielle, par électrode.
+
+    Un LDA univarié par électrode, sur les mêmes splits. Produit un vecteur de
+    n_elec accuracies et, si n_perm > 0, un vecteur de p-values par électrode.
+    Même mécanique de bootstraps et permutations parallélisés que
+    classify_matrix.
+    """
     # checkpoint_every=50 par défaut
     out = _result_path(save_path, key, state)
     if out.exists() and not overwrite:
@@ -582,13 +617,16 @@ def classify_vector(save_path, key, state, n_trials, n_bootstraps, n_perm,
     _save(out, **result)
     _clear_checkpoints(out)
     return result
-# Évalue séquentiellement la capacité de décodage de chaque électrode à travers les itérations de bootstraps.
-# Construit la distribution nulle par permutation et applique une correction de la statistique maximale (FWER) contre les faux positifs.
 
 # ─── dispatcher ───────────────────────────────────────────────────────────────
 
 def classify_one(save_path, key, state, n_trials, n_bootstraps, n_perm,
                  overwrite, n_jobs=1, checkpoint_every=50):
+    """Route (key, state) vers classify_matrix ou classify_vector.
+
+    Les exceptions sont interceptées et le traceback loggé plutôt que propagé :
+    un combo qui plante ne doit pas faire tomber le reste du batch SLURM.
+    """
     print(f"  {key} x {state}")
     try:
         fn = classify_matrix if is_matrix_feature(key) else classify_vector
@@ -599,14 +637,16 @@ def classify_one(save_path, key, state, n_trials, n_bootstraps, n_perm,
     except Exception:
         print(f"  ERROR {key} {state}\n{traceback.format_exc()}")
         return key, state, None
-# Affiche le couple en cours et ouvre un bloc "try/except" pour immuniser le script contre les crashs bloquants.
-# Identifie dynamiquement la nature géométrique de la feature pour router le calcul vers le bon pipeline (matrice ou vecteur).
-# Intercepte les exceptions en encapsulant le traceback complet dans les logs SLURM, puis renvoie None pour préserver la suite du batch.
 
 
 # ─── résumé CSV ───────────────────────────────────────────────────────────────
 
 def build_summary_csv(save_path: Path) -> None:
+    """Agrège les .npz de results/ en un CSV unique.
+
+    Les features matricielles donnent une ligne (electrode='all'), les
+    vectorielles une ligne par électrode. Les checkpoints sont ignorés.
+    """
     rows, results_dir = [], save_path / "results"
     if not results_dir.exists():
         return
@@ -646,9 +686,6 @@ def build_summary_csv(save_path: Path) -> None:
         out = results_dir / "classification_summary.csv"
         pd.DataFrame(rows).to_csv(out, index=False)
         print(f"CSV : {out}")
-# Scanne récursivement le dossier results/ pour identifier et parser les fichiers de résultats .npz finaux (hors checkpoints).
-# Discrimine les structures matricielles (une seule ligne globale 'all') des structures vectorielles univariées (une ligne par canal EEG).
-# Compile et exporte l'ensemble des métriques de performance et de p-values dans un unique tableur CSV Pandas consolidé.
 
 # ─── main ─────────────────────────────────────────────────────────────────────
 
