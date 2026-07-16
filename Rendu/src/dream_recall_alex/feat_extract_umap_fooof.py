@@ -1,52 +1,27 @@
-"""Extract spectral, connectivity, and complexity features from preprocessed EEG.
+"""Extraction des features spectrales, de connectivité et de complexité.
 
-Lit depuis derivatives/preprocessed-ica/ (sortie de preprocess_subject).
-Remplace compute_psd.py, compute_cov.py, compute_cosp.py du repo Arthur.
+Remplace compute_psd.py, compute_cov.py et compute_cosp.py du repo d'Arthur.
+Lit un derivative preprocessed-<branche>/, écrit un .npz par sujet, feature et
+stade atomique sous save-path/<feature>/.
 
-Architecture :
+Chaque enregistrement est segmenté une seule fois en epochs de 30 s groupés par
+stade atomique (S1, S2, S3, S4, REM), lus depuis _events.tsv. Les features sont
+calculées une fois par groupe et cachées. Les états composites (S2, SWS, NREM,
+REM) sont obtenus par concaténation des .npz atomiques, sans relecture ni
+recalcul (cf CLASSIFICATION_GROUPS dans config.py).
 
-Chaque enregistrement est segmenté UNE SEULE FOIS en epochs non-chevauchants
-de 30s groupés par stade atomique (S1, S2, S3, S4, REM), lus depuis
-_events.tsv. Les features (PSD brute, PSD oscillatoire FOOOF, exposant
-aperiodic, covariance temporelle, cospectrum, entropie/complexité) sont
-calculées une fois par groupe atomique et cachées sur disque.
-
-Les états de classification (S2, SWS, REM, NREM) sont obtenus par
-concaténation des tableaux atomiques cachés, sans relecture des données
-brutes ni recalcul (cf CLASSIFICATION_GROUPS dans config.py).
+Le paramétrage (overlap de Welch, mode FOOOF, normalisation des psd_osc,
+estimateur de covariance, choix des mesures de complexité) est justifié dans le
+README (section Choix méthodologiques).
 
 La visualisation UMAP est séparée dans visualize_umap.py, qui lit les mêmes
 .npz atomiques.
 
-Notes :
-
-- Données en entrée : derivatives/preprocessed-ica/, 19 canaux EEG, 1000Hz
-  (DECIMATE=False dans config.py), référence nez conservée (pas de CAR),
-  ICA appliqué. SFreq et référence identiques à Arthur désormais ; seule l'ICA
-  reste une différence méthodologique assumée (branche noica = référence directe
-  Arthur, sans ICA, pour comparaison).
-- Covariances() utilise l'estimateur SCM par défaut. On n'utilise pas de shrinkage 
-  statistique avancé (OAS/LW), cohérent avec le pipeline d'Arthur.
-  Une régularisation numérique (diagonal loading de 1e-10) est appliquée manuellement 
-  juste après pour garantir la stricte positivité de la matrice.
-- Fichiers combinés .npz avec dtype=object (n_epochs variable par sujet) :
-  charger avec np.load(path, allow_pickle=True).
-- FOOOF (Donoghue et al. 2020, specparam) pour la séparation aperiodic/oscillatoire.
-- Entropie/complexité via antropy (R. Vallat, co-auteur du dataset chapitre 1
-  de la thèse, https://github.com/raphaelvallat/antropy) : permutation entropy,
-  spectral entropy, Higuchi fractal dimension. Format scalaire (n_epochs, 19),
-  identique à aperiodic -> classées en mode vecteur. À comparer systématiquement
-  à l'exposant aperiodic seul (une mesure de complexité peut n'être qu'une
-  remesure de la pente 1/f, cf Aamodt et al. 2022).
-  LZC volontairement non implémentée (trop corrélée à la pente spectrale).
-
-Usage :
-    python feat_extract.py \\
-        --deriv-path /path/to/derivatives/preprocessed-ica \\
-        --save-path  /path/to/dream_features \\
-        --n-jobs     $SLURM_CPUS_PER_TASK \\
-        --overwrite  # optionnel : écrase les .npz existants
-
+Pièges :
+- .npz avec dtype=object (n_epochs variable par sujet) : charger avec
+  np.load(path, allow_pickle=True).
+- pyriemann 0.11 refuse un overlap de 0.0 exactement, d'où le plancher 1e-6
+  dans compute_cosp.
 """
 
 import argparse

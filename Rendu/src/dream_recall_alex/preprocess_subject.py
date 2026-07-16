@@ -1,71 +1,28 @@
-"""
-Preprocessing offline des données EEG sommeil (dataset Ruby/Eichenlaub, CRNL Lyon)
-avant extraction de features (feat_extract_umap_fooof.py) et entraînement réseau DL.
+"""Prétraitement des enregistrements EEG de sommeil.
 
-Ce script produit DEUX sorties BIDS derivatives par sujet :
+Lit le BIDS produit par mat_eeg_to_bids (25 canaux, 1000 Hz, référence nez) et
+écrit un derivative par branche sous derivatives/preprocessed-<branche>/.
 
-  - derivatives/preprocessed-ica/   : pipeline complet AVEC ICA
-                                       -> destiné à feat_extract (PSD/cov/cosp)
-                                          et classifieur LDA/Riemannian
-  - derivatives/preprocessed-noica/ : pipeline identique SANS l'étape ICA
-                                       -> destiné au réseau DL, pour permettre
-                                          une ablation empirique ICA vs no-ICA
-                                          sur la tâche HR/LR (cf discussion :
-                                          l'argument "ICA détruit le signal
-                                          EOG = signature REM" est valide en
-                                          général, mais sa pertinence pour
-                                          dream recall spécifiquement n'est
-                                          pas établie -> on laisse les deux
-                                          branches trancher empiriquement)
+Trois branches : noica, ica, iclabel. L'objet ICA de chaque branche est sauvé
+dans derivatives/ica/ pour inspection offline (inspect_ica.py).
 
-Pipeline (ordre important, cf justifications inline) :
+Étapes, dans l'ordre :
 
-  1. Notch 50/100Hz           [commun]  retirer bruit de ligne secteur
-  2. HP filter 0.1Hz           [commun]  retirer dérive DC, préserver delta
-     |
-     |-- branche ICA :
-  3a.    Copie HP 1Hz          [ICA]     stabiliser le fit ICA (MNE trick)
-  3b.    ICA fit + apply       [ICA]     retirer composantes EOG/EMG
-  3c.    Sauvegarde ICA        [ICA]     pour inspection offline (inspect_ica.py)
-     |
-  4. Drop canaux aux           [commun]  ne garder que les 19 EEG
-  5. (pas de re-référencement)  [commun]  ref nez BrainAmp conservée (cf Note référence)
-  6. Décimation 250Hz          [commun]  réduire volume, suffisant pour <=45Hz
-  7. Save BrainVision          [commun]  un fichier par branche par sujet
+  1. Notch 50/100 Hz                     [commun]
+  2. Passe-haut 0.1 Hz                   [commun]
+     |-- 3a. Copie filtrée à 1 Hz        [ica, iclabel]
+     |   3b. ICA fit + apply             [ica, iclabel]
+     |   3c. Sauvegarde de l'ICA         [ica, iclabel]
+  4. Drop des canaux auxiliaires         [commun]  ne garde que les 19 EEG
+  5. Décimation                          [commun]  no-op tant que DECIMATE=False
+  6. Sauvegarde BrainVision              [commun]  un fichier par branche
 
-Ce script prend en entrée le BIDS produit par mat_eeg_to_bids.py (25 canaux,
-1000 Hz, raw, référence nez).
+Le choix des branches, de la référence d'enregistrement et des fréquences de
+coupure est justifié dans le README (section Choix méthodologiques).
 
-Usage (1 job SLURM par sujet) :
-    python preprocess_subject.py 5 --bids-path /path/to/dream_bids \\
-                                       --deriv-root /path/to/dream_bids/derivatives
-
-Note bad channels : pas de détection/rejet de canaux entiers dans ce script.
-La saturation sur les 9 sujets flaggés (s5,s6,s17,s19,s20,s26,s27,s28,s37)
-est ponctuelle (quelques minutes) et non structurelle -> traitée en aval
-par AutoReject au niveau epoch (rejet ou réparation de la fenêtre 30s
-concernée), pas au niveau canal.
-
-Note référence : aucun re-référencement n'est appliqué. La référence
-d'enregistrement (nez, BrainAmp, EEGReference = 'tip of the nose') est
-conservée telle quelle, identique à Arthur -> cov/cosp directement comparables
-à ses résultats.
-
-La CAR (common average reference) avait été utilisée dans une version
-précédente et a été retirée : elle introduit un projecteur qui réduit le rang
-de la matrice de covariance à N-1 = 18 (MNE documente ce comportement :
-"rank 58 computed from 59 data channels with 1 projector"). Une matrice de
-rang 18 sur 19 est semi-définie positive, pas SPD stricte -> le log-map
-riemannien diverge (ValueError: Matrices must be positive definite, confirmé
-empiriquement sur nos données). La référence nez garantit un rang plein 19/19
-sans shrinkage ni régularisation. Sur des montages à faible nombre de
-dérivations, la CAR est de toute façon peu recommandée.
-
-Note sujets 21/22 : ces sujets sont preprocessés normalement ici.
-Leur exclusion de l'analyse HR/LR se fait en aval dans classify.py
-(EXCLUDED_SUBJECTS dans config.py). Les données preprocessées sont
-produites car elles pourront servir pour d'autres analyses (ex: réseau DL
-en mode non-supervisé) ou si la raison de l'exclusion est clarifiée.
+Note sujets 21/22 : prétraités normalement, exclus en aval par classify.py
+(EXCLUDED_SUBJECTS dans config.py). Les données peuvent servir à d'autres
+analyses.
 """
 
 import argparse

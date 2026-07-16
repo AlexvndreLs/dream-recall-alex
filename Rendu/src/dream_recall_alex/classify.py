@@ -1,42 +1,24 @@
 """Classification HR vs LR sur les features de sommeil.
 
-Remplace classif_cov.py, classif_cosp.py, classif_psd.py du repo Arthur.
-Lit les .npz atomiques produits par feat_extract.py.
+Remplace classif_cov.py, classif_cosp.py et classif_psd.py du repo d'Arthur.
+Lit les .npz atomiques produits par feat_extract, écrit un .npz de résultats par
+couple (feature, stade) sous save-path/results/, plus un CSV de synthèse.
 
-Deux modes selon le type de feature :
-- Matrice (cov, cosp_*) : TSclassifier(LDA()) en espace Riemannien,
-  StratifiedLeave2GroupsOut (LPGO P=2 stratifié HR/LR, §1.2.7 thèse).
-- Vecteur (psd_*, psd_osc_*, aperiodic) : LDA Euclidien par électrode.
+Deux modes selon la géométrie de la feature (cf config.MATRIX_KEYS) : les
+matrices passent par TSclassifier(LDA()) en espace tangent riemannien, les
+vecteurs par un LDA euclidien, une électrode à la fois.
 
-Pas de standardisation des features. La classification vectorielle est
-univariée (un LDA par électrode, sur une seule colonne) et LDA est invariant
-par transformation affine : centrer-réduire l'unique feature ne déplace pas la
-frontière de décision. Vérifié empiriquement (branche noica, 51 combos
-feature × stade) : delta accuracy = 0.0000 exactement. Arthur ne normalise pas
-non plus (zscore=False dans son utils.py).
+n_trials_min est calculé une fois avant les jobs, sur la feature de référence,
+ce qui garantit la comparabilité entre tous les états et toutes les features.
 
-n_trials_min global calculé depuis 'cov' avant les jobs (comparabilité
-garantie entre tous les états/features). Vérification d'intégrité optionnelle.
+Le schéma de permutation, la validation croisée et l'absence de standardisation
+sont justifiés dans le README (section Choix méthodologiques).
 
-Reproductibilité : _seed() via hashlib.md5 (déterministe cross-platform,
-contrairement à hash() Python dont le résultat dépend de PYTHONHASHSEED).
+Reproductibilité : _seed() via hashlib.md5, déterministe entre exécutions,
+contrairement à hash() dont le résultat dépend de PYTHONHASHSEED.
 
-Checkpoint progressif (--checkpoint-every N) : sauvegarde les bootstraps
-toutes les N itérations -> reprise après timeout sans repartir de zéro.
-Disponible pour les features matricielles ET vectorielles (MODIF : avant,
-seule classify_matrix en bénéficiait, voir _run_bootstraps_parallel).
-
-Parallélisation (--n-jobs) : un seul combo (key, state) à la fois reçoit
-tout n_jobs, pour matrices ET vecteurs.
-
-Usage :
-    python classify.py \\
-        --save-path /path/to/dream_features \\
-        --n-jobs    $SLURM_CPUS_PER_TASK \\
-        --n-perm    1000 \\
-        --key       cov \\
-        --state     S2 \\
-        --checkpoint-every 50
+Checkpoint progressif (--checkpoint-every N) : sauvegarde tous les N bootstraps,
+permet la reprise après timeout SLURM.
 """
 
 import argparse
