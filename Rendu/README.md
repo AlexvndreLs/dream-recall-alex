@@ -72,6 +72,27 @@ traités.
 Chaque commande accepte `--help`. Les modules peuvent aussi être lancés
 directement : `python -m dream_recall_alex.classify`.
 
+### 5. Reproduction des perms d'arthur (optionnel pour mon pipeline)
+
+Ces scripts consomment les sorties de l'étape 4. Ils ne font pas partie de la
+chaîne de traitement : les résultats existent sans eux.
+
+**Schéma de permutation d'Arthur.**
+
+```bash
+python scripts/replicate_arthur_ffx.py \
+    --save-path /chemin/vers/dream_features \
+    --n-jobs    $SLURM_CPUS_PER_TASK \
+    --n-perm    1000 \
+    --key       cov \
+    --state     S2
+```
+
+Recalcule la distribution nulle avec le schéma de permutation epoch, en
+réutilisant les bootstraps de l'étape 4. Écrit
+`results/{key}_{state}_epochperm.npz` sans toucher au résultat existant. Voir
+« Statistiques » pour la justification.
+
 ## Choix méthodologiques
 
 Cette section documente les décisions qui ne se lisent pas dans le code. Le
@@ -96,15 +117,12 @@ Trois branches sont produites en parallèle, chacune dans son propre derivative
 BIDS : `noica`, `ica`, `iclabel`.
 
 - **`noica`** est la référence directe à Arthur, qui n'applique pas d'ICA.
-- **`ica`** et **`iclabel`** permettent de trancher empiriquement plutôt que
-  par argument : l'objection « l'ICA détruit le signal EOG, or c'est une
-  signature du REM » est valide en général, mais sa pertinence pour le rappel
-  de rêve n'est pas établie.
+- **`ica`** et **`iclabel`** sont des tentatives d'ameliorer la data avant le la donner au classifier.
 
 
 **Pas de décimation.** `DECIMATE=False`, tout reste à 1000 Hz, ce qui reproduit
 Arthur exactement. Un pipeline antérieur à 250 Hz s'écartait de la référence et
-a été abandonné.
+a été abandonné car aucune utilité réelle. Mais la decimation est conservé pour servir au pipeline de CNN d'anirudh.
 
 **Pas de re-référencement.** La référence d'enregistrement (nez) est conservée.
 La CAR a été utilisée puis retirée : elle introduit un projecteur qui réduit le
@@ -116,7 +134,7 @@ sans shrinkage.
 
 **Filtrage.** Notch 50/100 Hz, puis passe-haut à 0.1 Hz, qui correspond au
 filtre matériel déclaré dans le sidecar BIDS. L'ICA est ajustée sur une copie
-filtrée à 1 Hz (elle converge mal à 0.1 Hz) puis appliquée aux données à
+filtrée à 1 Hz (elle converge mal à 0.1 Hz => reco mne ) puis appliquée aux données à
 0.1 Hz.
 
 ### Features
@@ -128,9 +146,10 @@ relecture ni recalcul.
 **Overlap des fenêtres de Welch.** 50 % pour la PSD (`OVERLAP=500` sur des
 fenêtres de 1000), 75 % pour le cospectre. La variance de l'estimateur de Welch
 décroît en 1/K où K est le nombre de fenêtres moyennées ; à durée d'epoch fixe,
-50 % de recouvrement double environ K. Le gain mesuré est réel mais marginal
-(`cosp_sigma/S2` : 69.18 % avec overlap contre 68.21 % sans) : l'overlap
-stabilise l'estimation, il ne fabrique pas de signal.
+50 % de recouvrement double environ K. Le gain mesuré est réel mais faible
+(par exemple `cosp_sigma/S2` : 69.18 % avec overlap contre 68.21 % sans et petite 
+ameliroation de la pvalue subject) : l'overlap stabilise l'estimation,
+il ne fabrique pas de signal. Pas de leakage.
 
 **FOOOF en mode `fixed`, pas `knee`.** Validé empiriquement sur environ 139 000
 spectres : ΔR² = −0.0004 et Δnpeaks = +0.17, très en deçà des seuils retenus
@@ -177,12 +196,28 @@ whitening riemannien joue déjà ce rôle. Arthur ne standardise pas non plus.
 ### Statistiques
 
 **Permutations au niveau sujet.** C'est la principale divergence avec le code
-de référence. Arthur permute les labels au niveau des epochs (`utils.py:103`),
-ce qui teste une hypothèse nulle portant sur l'échantillon d'epochs. Nous
+de référence. Arthur permute les labels au niveau des epochs (`utils.py:103`) :
+le même index de permutation est appliqué à `y` et à `groups`, si bien que
+chaque sujet permuté devient un paquet aléatoire d'epochs des deux classes.
+L'hypothèse nulle testée porte alors sur l'échantillon d'epochs, pas sur la
+population de sujets, et la distribution nulle s'en trouve resserrée. Nous
 permutons au niveau des sujets, ce qui teste la généralisation à la population
-(Combrisson et al. 2022, NeuroImage). Les deux schémas sont implémentés
-(`permute_subject_labels` et `permute_epoch_labels`) et rapportés côte à côte
-plutôt que d'affirmer l'écart sans le mesurer.
+(Combrisson et al. 2022, NeuroImage).
+
+Les deux schémas sont implémentés et rapportés côte à côte plutôt que
+d'affirmer l'écart sans le mesurer. Le schéma sujet est celui du pipeline
+principal (`classify.py`, `permute_subject_labels`) ; le schéma epoch est
+obtenu par `scripts/replicate_arthur_ffx.py`, qui réutilise les bootstraps déjà
+calculés, ceux-ci ne dépendent pas du schéma de permutation, et ne recalcule
+que la distribution nulle. Les sorties coexistent dans `results/` :
+
+| Fichier | Schéma |
+|---|---|
+| `{feature}_{stade}.npz` | sujet (pipeline principal) |
+| `{feature}_{stade}_epochperm.npz` | epoch (réplication Arthur) |
+
+Écart mesuré : le schéma epoch déflate les p-values d'un facteur ~80 en médiane
+par rapport au schéma sujet.
 
 **Trois niveaux de correction** pour les comparaisons multiples, rapportés dans
 `pvalue_summary_table.csv` :
@@ -216,12 +251,14 @@ plusieurs mesures.
 ## Structure du dépôt
 
 ```
-src/dream_recall_alex/
+src/dream_recall_alex/           le package : le pipeline
     config.py                    canaux, labels sujets, stades, bandes
     utils.py                     primitives bas niveau partagées
     mat_eeg_to_bids.py           étape 1
     preprocess_subject.py        étape 2
     feat_extract_umap_fooof.py   étape 3
     classify.py                  étape 4
+scripts/                         analyses et figures, consomment le package
+    replicate_arthur_ffx.py      schéma de permutation d'Arthur (contrôle FFX)
 archive/                         pipeline original d'Arthur, conservé pour référence
 ```

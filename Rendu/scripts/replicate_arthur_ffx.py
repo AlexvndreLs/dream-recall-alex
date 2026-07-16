@@ -1,23 +1,22 @@
-"""Calcule les permutations SCHEMA EPOCH (réplique EXACTE d'Arthur, utils.py:103
-du repo arthurdehgan/sleep), en réutilisant les bootstraps déjà calculés par
-classify.py (schéma subject) — aucun recalcul des 1000 bootstraps.
+"""Permutations niveau EPOCH — réplique le schéma d'Arthur (utils.py:103 du
+repo arthurdehgan/sleep).
 
-Contrairement à recompute_perms_synchronized.py (qui corrige un bug de seed et
-ÉCRASE le résultat en place), ce script n'écrase JAMAIS le résultat subject :
-il écrit dans un fichier séparé, même dossier results/, suffixe _epochperm
-(cf Option 3 : rapporter les deux schémas côte à côte).
+Recalcule uniquement les distributions nulles, en réutilisant les 1000
+bootstraps déjà produits par classify.py : ceux-ci sont indépendants du schéma
+de permutation. Écrit dans un fichier séparé (suffixe _epochperm) et ne touche
+jamais au résultat existant.
 
-  results/cov_S2.npz            <- schéma subject (inchangé, jamais touché)
-  results/cov_S2_epochperm.npz  <- schéma epoch (ce script), copie de l'ancien
-                                    + perm_accs/pval recalculés avec _one_perm_epoch
+Fonctionne pour les features matricielles et vectorielles ; is_matrix_feature
+sélectionne le worker approprié.
 
-Pré-requis : results/{key}_{state}.npz doit déjà exister (run --perm-scheme
-subject terminé, cf classify.py). Fonctionne pour features matricielles ET
-vectorielles (is_matrix_feature détermine le worker à utiliser).
+Pré-requis : results/{key}_{state}.npz doit exister (run classify.py terminé).
+
+Voir README, section « Schémas de permutation », pour la justification
+méthodologique et la convention de nommage des sorties.
 
 Usage :
-    python recompute_perms_epoch_arthur.py \\
-        --save-path /home/alouis/scratch/dream_features_noica_1000hz \\
+    python replicate_arthur_ffx.py \\
+        --save-path /scratch/alouis/dream_features_noica_1000hz_overlap \\
         --n-jobs $SLURM_CPUS_PER_TASK \\
         --n-perm 1000 \\
         --key cov --state S2
