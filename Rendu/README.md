@@ -160,13 +160,13 @@ la notion de power spectrum ratio de FOOOF (Donoghue et al. 2020). La
 soustraction en espace log a été rejetée : elle produit des valeurs dans un
 espace incomparable aux features `psd_*`.
 
-**Covariances par SCM**, sans shrinkage OAS ou Ledoit-Wolf, cohérent avec
+**Covariances par SCM**, (sans shrinkage OAS ou Ledoit-Wolf), cohérent avec
 Arthur. Une régularisation numérique (diagonal loading 1e-10) garantit la
 positivité stricte.
 
 **Complexité via antropy** (permutation entropy, spectral entropy, Higuchi
 fractal dimension). LZC volontairement non implémentée, trop corrélée à la
-pente spectrale. Ces mesures sont à comparer systématiquement à l'exposant
+pente spectrale donc repetitif. Ces mesures sont à comparer systématiquement à l'exposant
 aperiodic seul : une mesure de complexité peut n'être qu'une remesure de la
 pente 1/f (Aamodt et al. 2022).
 

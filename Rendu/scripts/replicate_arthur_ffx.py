@@ -1,4 +1,4 @@
-"""Permutations niveau EPOCH — réplique le schéma d'Arthur (utils.py:103 du
+"""Permutations niveau EPOCH, réplique le schéma d'Arthur (utils.py:103 du
 repo arthurdehgan/sleep).
 
 Recalcule uniquement les distributions nulles, en réutilisant les 1000
@@ -13,13 +13,6 @@ Pré-requis : results/{key}_{state}.npz doit exister (run classify.py terminé).
 
 Voir README, section « Schémas de permutation », pour la justification
 méthodologique et la convention de nommage des sorties.
-
-Usage :
-    python replicate_arthur_ffx.py \\
-        --save-path /scratch/alouis/dream_features_noica_1000hz_overlap \\
-        --n-jobs $SLURM_CPUS_PER_TASK \\
-        --n-perm 1000 \\
-        --key cov --state S2
 """
 import argparse
 from pathlib import Path
@@ -38,8 +31,6 @@ def _epochperm_path(save_path: Path, key: str, state: str) -> Path:
     """Même dossier results/ que _result_path (classify.py), suffixe _epochperm
     pour ne JAMAIS écraser le résultat schéma subject déjà calculé."""
     return save_path / "results" / f"{key}_{state}_epochperm.npz"
-# Construit le chemin du fichier de sortie schéma epoch, distinct du fichier subject dans le même dossier results/.
-
 
 def parse_args():
     p = argparse.ArgumentParser()
@@ -70,7 +61,7 @@ if __name__ == "__main__":
     n_trials   = int(old["n_trials"])
     is_matrix  = is_matrix_feature(args.key)
 
-    print(f"=== schéma EPOCH (Arthur, utils.py:103) : {args.key} × {args.state} ===")
+    print(f"=== schéma EPOCH (Arthur, utils.py:103) : {args.key} x {args.state} ===")
     print(f"acc_scores réutilisés depuis {src.name} (pas de recalcul bootstrap)")
 
     data, labels = load_all(args.save_path, args.key, args.state)
@@ -103,7 +94,7 @@ if __name__ == "__main__":
         result["pval"] = float((np.sum(perm >= acc_mean) + 1) / (args.n_perm + 1))
     else:
         result["pvals"] = (np.sum(perm >= acc_mean[None, :], axis=0) + 1) / (args.n_perm + 1)
-    # Même formule de p-value que classify.py : (count + 1)/(n_perm + 1), Phipson & Smyth 2010.
+    # Même formule de p-value que classify.py : (count + 1)/(n_perm + 1)
 
     _save(dst, **result)
     _clear_checkpoints(dst)
