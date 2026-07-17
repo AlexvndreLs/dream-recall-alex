@@ -172,7 +172,7 @@ def main() -> None:
                 vlim=(vmin, vmax), mask=mask,
                 mask_params=dict(marker="o", markerfacecolor="w",
                                  markeredgecolor="k", markersize=4),
-                contours=0, extrapolate="head", sphere=0.095,
+                contours=0,
             )
             if r == 0:
                 ax.set_title(state, fontsize=11)
