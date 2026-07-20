@@ -153,20 +153,26 @@ def main() -> None:
             if g == 0:
                 bars.append(b)
 
-            # Seuil de permutation : trait pointillé sur la largeur de la barre.
+            # Seuil de permutation : trait pointillé sur la largeur de la barre,
+            # calculé par combo comme chez Arthur (visu_barplot_cosp.py).
             t = thresholds[g][i]
             if not np.isnan(t):
                 ax.plot([x - WIDTH / 2, x + WIDTH / 2], [t, t], "k--", lw=1)
+                # Étoile au-dessus de la barre d'erreur si l'accuracy dépasse le
+                # seuil (significatif au niveau alpha).
+                if val > t:
+                    ax.text(x, val + stds[g][i] + 0.5, "*", ha="center",
+                            va="bottom", fontsize=14, fontweight="bold")
 
     ax.set_ylabel(Y_LABEL)
     ax.set_ylim(MINMAX)
-    ax.set_title(f"{GRAPH_TITLE} — perm. {args.perm_scheme}, p < {args.alpha}")
+    ax.set_title(f"{GRAPH_TITLE}, perm. {args.perm_scheme}, p < {args.alpha}")
     ax.set_xticks([g * group_width + (n_keys - 1) / 2 for g in range(len(STATE_LIST))])
     ax.set_xticklabels(STATE_LIST)
     ax.axhline(50, color="gray", lw=0.8, alpha=0.5)  # niveau de chance
 
     if bars:
-        ax.legend(bars, legend_labels, frameon=False, fontsize=9)
+        ax.legend(bars, legend_labels, frameon=False, fontsize=9, loc="upper right", bbox_to_anchor=(1.0, 1.0))
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     out = args.out_dir / f"barplot_riemann_{args.perm_scheme}_p{args.alpha}.png"

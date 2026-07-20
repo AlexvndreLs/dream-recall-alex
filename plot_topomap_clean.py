@@ -66,16 +66,41 @@ def parse_args() -> argparse.Namespace:
                         "local = restreint au nuage de capteurs, mais produit un "
                         "contour hexagonal disgracieux avec un montage 19 électrodes. "
                         "box = défaut MNE, déborde largement hors du scalp.")
+    p.add_argument("--coord-file", type=Path, default=None,
+                   help="Fichier de coordonnées cartésiennes 3D (x y z par "
+                        "électrode, ordre de CH_NAMES), pour le montage exact "
+                        "d'Arthur (coord_cart_new.txt). Sans lui : standard_1020.")
+    p.add_argument("--sphere", type=float, default=0.11,
+                   help="Rayon du contour de tête (m). Plus grand que le rayon "
+                        "des électrodes (~0.095), il empêche la couleur de "
+                        "déborder. Essayer 0.11 avec le montage d'Arthur.")
     return p.parse_args()
 
 
-def make_info() -> mne.Info:
+def make_info(coord_file: Path | None = None) -> mne.Info:
     """Info MNE portant les 19 électrodes EEG, pour le tracé topographique.
 
-    CH_NAMES est en nomenclature ancienne (T3/T4) alors que standard_1020 utilise
-    la moderne (T7/T8) : la correspondance est explicitée plutôt que laissée à un
-    appariement partiel silencieux.
+    Si coord_file est fourni : positions lues depuis ce fichier (coordonnées
+    cartésiennes 3D, ordre de CH_NAMES) = montage exact d'Arthur. Le fichier
+    d'Arthur utilise x=avant, y=gauche, z=haut ; MNE "head" attend x=droite,
+    y=avant, z=haut. On permute donc x_mne=-y_arthur, y_mne=x_arthur, sinon la
+    carte est pivotée de 90 degrés (erreur silencieuse).
+
+    Sinon : montage standard_1020 avec correspondance ancienne->moderne (T3->T7).
     """
+    if coord_file is not None:
+        coords = np.loadtxt(coord_file)
+        if coords.shape != (N_EEG, 3):
+            raise ValueError(f"{coord_file}: attendu ({N_EEG}, 3), lu {coords.shape}")
+        ch_names = list(CH_NAMES[:N_EEG])
+        xa, ya, za = coords[:, 0], coords[:, 1], coords[:, 2]
+        coords_mne = np.column_stack([-ya, xa, za])
+        pos = {ch: coords_mne[i] * 0.095 for i, ch in enumerate(ch_names)}
+        montage = mne.channels.make_dig_montage(ch_pos=pos, coord_frame="head")
+        info = mne.create_info(ch_names, sfreq=1.0, ch_types="eeg")
+        info.set_montage(montage)
+        return info
+
     old_to_new = {"T3": "T7", "T4": "T8", "T5": "P7", "T6": "P8"}
     ch_names = [old_to_new.get(ch, ch) for ch in CH_NAMES[:N_EEG]]
     info = mne.create_info(ch_names, sfreq=1.0, ch_types="eeg")
@@ -87,7 +112,7 @@ def make_info() -> mne.Info:
 def main() -> None:
     args = parse_args()
     keys = FAMILY_KEYS[args.family]
-    info = make_info()
+    info = make_info(args.coord_file)
 
     print(f"=== topomaps {args.family} (subject, max-stat pooled, p < {args.alpha}) ===")
 
@@ -142,9 +167,9 @@ def main() -> None:
             im, _ = mne.viz.plot_topomap(
                 acc, info, axes=ax, show=False, cmap="viridis",
                 vlim=(vmin, vmax), mask=mask,
-                mask_params=dict(marker="*", markerfacecolor="w",
-                                 markeredgecolor="w", markersize=9),
-                contours=0, extrapolate=args.extrapolate,
+                mask_params=dict(marker="*", markerfacecolor="white",
+                                 markeredgecolor="white", markersize=7),
+                contours=0, extrapolate=args.extrapolate, sphere=args.sphere,
             )
             if r == 0:
                 ax.set_title(state, fontsize=12)

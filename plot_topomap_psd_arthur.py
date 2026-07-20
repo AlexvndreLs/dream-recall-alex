@@ -14,12 +14,11 @@ Les électrodes significatives sont marquées d'un point blanc. Le seuil est
 issu de la distribution nulle par permutation, schéma EPOCH par défaut
 (réplication d'Arthur, cf replicate_arthur_ffx.py).
 
-Note sur la correction des comparaisons multiples : --correction maxstat
-reproduit Arthur (visu_topomap.py, MAXSTAT_ELEC = True) : la loi nulle est le
-maximum des scores de permutation sur les 19 électrodes, et chaque accuracy est
-comparée à cette loi nulle du max, ce qui contrôle le FWER sur la carte.
---correction none donne la p brute par électrode, sans correction : ce n'est PAS
-ce que fait la thèse, c'est fourni comme point de comparaison plus permissif.
+Note sur la correction des comparaisons multiples : --correction none reproduit
+Arthur (p brute par électrode) ; --correction maxstat applique une correction
+FWER sur les 19 électrodes d'une même carte, en comparant chaque accuracy au
+maximum de la loi nulle sur les électrodes. La seconde est plus conservatrice
+et n'est PAS ce que fait la thèse.
 
 Usage :
     python plot_topomap_psd.py \
@@ -42,6 +41,12 @@ from config_v3 import CH_NAMES, FREQ_DICT, N_EEG, STATE_LIST
 
 RESOLUTION = 300
 
+# Ordre d'affichage des stades comme dans la Fig. 4 d'Arthur : S2, SWS, NREM,
+# REM (les NREM groupés puis REM). STATE_LIST de config_v3 suit un autre ordre
+# (S2, SWS, REM, NREM) sans logique d'affichage ; on réordonne ici, en ne
+# gardant que les stades effectivement présents dans STATE_LIST.
+STATES_DISPLAY = [s for s in ["S2", "SWS", "NREM", "REM"] if s in STATE_LIST]
+
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
@@ -58,15 +63,26 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--perm-scheme", choices=["epoch", "subject"], default="epoch",
                    help="epoch = réplication Arthur (*_epochperm.npz), "
                         "subject = schéma corrigé (*.npz).")
-    p.add_argument("--correction", choices=["none", "maxstat"], default="maxstat",
-                   help="maxstat = correction FWER sur les 19 électrodes "
-                        "(Arthur, MAXSTAT_ELEC=True), none = p brute par "
-                        "électrode, non corrigée.")
+    p.add_argument("--correction", choices=["none", "maxstat"], default="none",
+                   help="none = p brute par électrode (Arthur), maxstat = "
+                        "correction FWER sur les 19 électrodes.")
     p.add_argument("--vmin", type=float, default=None,
                    help="Borne basse de l'échelle de couleur (%%). "
                         "Par défaut : min des données.")
     p.add_argument("--vmax", type=float, default=None,
                    help="Borne haute de l'échelle de couleur (%%).")
+    p.add_argument("--coord-file", type=Path, default=None,
+                   help="Fichier de coordonnées cartésiennes 3D (une ligne x y z "
+                        "par électrode, dans l'ordre de CH_NAMES), pour reproduire "
+                        "exactement le montage d'Arthur (coord_cart_new.txt). "
+                        "Sans lui : montage MNE standard_1020, positions légèrement "
+                        "différentes au bord.")
+    p.add_argument("--sphere", type=float, default=None,
+                   help="Rayon du contour de tête tracé (m). Plus grand que le "
+                        "rayon des électrodes de bord, il les fait rentrer dans "
+                        "le cercle et empêche la couleur de déborder. Défaut : "
+                        "auto (MNE), qui laisse déborder. Essayer 0.11 avec le "
+                        "montage d'Arthur (électrodes à ~0.095).")
     return p.parse_args()
 
 
@@ -76,17 +92,43 @@ def result_path(save_path: Path, key: str, state: str, scheme: str) -> Path:
     return save_path / "results" / f"{key}_{state}{suffix}.npz"
 
 
-def make_info() -> mne.Info:
+def make_info(coord_file: Path | None = None) -> mne.Info:
     """Info MNE portant les 19 électrodes EEG, pour le tracé topographique.
 
-    Les positions viennent du montage standard_1020. Les noms de CH_NAMES sont
-    en nomenclature ancienne (T3/T4) alors que le montage MNE utilise la
-    nomenclature moderne (T7/T8) : la correspondance est explicitée ici plutôt
-    que laissée au hasard d'un appariement partiel silencieux.
+    Si coord_file est fourni : positions lues depuis ce fichier (coordonnées
+    cartésiennes 3D x y z, une ligne par électrode dans l'ordre de CH_NAMES).
+    C'est le montage exact d'Arthur (coord_cart_new.txt), qui place les
+    électrodes de bord (Fp1/Fp2/O1/O2) au même endroit que sa Fig. 4 et évite
+    que les étoiles mordent le tracé du crâne.
+
+    Sinon : montage MNE standard_1020, avec correspondance ancienne->moderne
+    (T3->T7 etc.). Positions proches mais légèrement différentes au bord.
     """
+    if coord_file is not None:
+        coords = np.loadtxt(coord_file)
+        if coords.shape != (N_EEG, 3):
+            raise ValueError(
+                f"{coord_file} : attendu ({N_EEG}, 3), lu {coords.shape}. "
+                f"Le fichier doit avoir une ligne x y z par électrode."
+            )
+        ch_names = list(CH_NAMES[:N_EEG])
+        # Conversion de repère. Le fichier d'Arthur utilise x=avant (Fp:+x,
+        # O:-x), y=gauche (C3:+y, C4:-y), z=haut. MNE "head" attend x=droite,
+        # y=avant, z=haut. On permute donc : x_mne = -y_arthur, y_mne = x_arthur.
+        # Sans cette conversion la carte est pivotée de 90 degrés, erreur
+        # silencieuse (la topographie reste plausible mais fausse).
+        xa, ya, za = coords[:, 0], coords[:, 1], coords[:, 2]
+        coords_mne = np.column_stack([-ya, xa, za])
+        # Mise à l'échelle d'une tête réelle (~0.095 m de rayon) : les
+        # coordonnées d'Arthur sont sur la sphère unité.
+        pos = {ch: coords_mne[i] * 0.095 for i, ch in enumerate(ch_names)}
+        montage = mne.channels.make_dig_montage(ch_pos=pos, coord_frame="head")
+        info = mne.create_info(ch_names, sfreq=1.0, ch_types="eeg")
+        info.set_montage(montage)
+        return info
+
     old_to_new = {"T3": "T7", "T4": "T8", "T5": "P7", "T6": "P8"}
     ch_names = [old_to_new.get(ch, ch) for ch in CH_NAMES[:N_EEG]]
-
     info = mne.create_info(ch_names, sfreq=1.0, ch_types="eeg")
     montage = mne.channels.make_standard_montage("standard_1020")
     info.set_montage(montage, match_case=False)
@@ -98,11 +140,10 @@ def significance_mask(d, acc_mean: np.ndarray, alpha: float,
     """Masque booléen des électrodes significatives.
 
     correction='none'    : p-value par électrode, telle que stockée dans le
-                           .npz, comparée à alpha. Non corrigée.
+                           .npz, comparée à alpha. C'est le choix d'Arthur.
     correction='maxstat' : chaque accuracy est comparée au quantile (1-alpha)
                            de la distribution du MAXIMUM sur les 19 électrodes.
-                           Contrôle le FWER sur la carte. C'est le choix
-                           d'Arthur (visu_topomap.py, MAXSTAT_ELEC = True).
+                           Contrôle le FWER sur la carte, plus conservateur.
     """
     if correction == "none":
         if "pvals" not in d:
@@ -121,7 +162,7 @@ def significance_mask(d, acc_mean: np.ndarray, alpha: float,
 
 def main() -> None:
     args = parse_args()
-    info = make_info()
+    info = make_info(args.coord_file)
     bands = list(FREQ_DICT)
 
     print(f"=== topomaps {args.feature_family} "
@@ -131,7 +172,7 @@ def main() -> None:
     # à toute la grille pour que les cartes soient comparables entre elles.
     data = {}
     for band in bands:
-        for state in STATE_LIST:
+        for state in STATES_DISPLAY:
             key = f"{args.feature_family}_{band}"
             path = result_path(args.save_path, key, state, args.perm_scheme)
             if not path.exists():
@@ -155,13 +196,13 @@ def main() -> None:
     vmin = args.vmin if args.vmin is not None else float(all_acc.min())
     vmax = args.vmax if args.vmax is not None else float(all_acc.max())
 
-    fig, axes = plt.subplots(len(bands), len(STATE_LIST),
-                             figsize=(2.2 * len(STATE_LIST), 2.2 * len(bands)))
+    fig, axes = plt.subplots(len(bands), len(STATES_DISPLAY),
+                             figsize=(2.2 * len(STATES_DISPLAY), 2.2 * len(bands)))
     axes = np.atleast_2d(axes)
 
     im = None
     for r, band in enumerate(bands):
-        for c, state in enumerate(STATE_LIST):
+        for c, state in enumerate(STATES_DISPLAY):
             ax = axes[r, c]
             if (band, state) not in data:
                 ax.axis("off")
@@ -170,9 +211,9 @@ def main() -> None:
             im, _ = mne.viz.plot_topomap(
                 acc, info, axes=ax, show=False, cmap="viridis",
                 vlim=(vmin, vmax), mask=mask,
-                mask_params=dict(marker="o", markerfacecolor="w",
-                                 markeredgecolor="k", markersize=4),
-                contours=0,
+                mask_params=dict(marker="*", markerfacecolor="white",
+                                 markeredgecolor="white", markersize=7),
+                contours=0, sphere=args.sphere,
             )
             if r == 0:
                 ax.set_title(state, fontsize=11)
@@ -186,7 +227,7 @@ def main() -> None:
         cbar.set_label("Decoding accuracy (%)")
 
     fig.suptitle(
-        f"{args.feature_family} — accuracy par électrode "
+        f"{args.feature_family}, accuracy par électrode "
         f"(perm. {args.perm_scheme}, p < {args.alpha}, corr. {args.correction})",
         fontsize=12,
     )
