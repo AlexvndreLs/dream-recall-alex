@@ -99,7 +99,7 @@ def main() -> None:
         ax.plot(n, cummean, color=key_color(key), lw=1.5)
         ax.axhline(cummean[-1], color="k", ls="--", lw=0.8)
 
-        title = f"{band_label(key)} — {state}"
+        title = f"{band_label(key)}, {state}"
         if ch:
             title += f" ({ch})"
         ax.set_title(title, fontsize=10)
@@ -119,7 +119,7 @@ def main() -> None:
     axes[0].legend(frameon=False, fontsize=8, loc="upper left")
 
     fig.suptitle(
-        "Convergence du bootstrap (diagnostic) — la moyenne cumulée converge "
+        "Convergence du bootstrap (diagnostic), la moyenne cumulée converge "
         "en 1/√n par construction ;\nc'est l'amplitude résiduelle qui indique si "
         "1000 tirages suffisent à départager deux features.",
         fontsize=10,

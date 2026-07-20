@@ -7,7 +7,7 @@ pas la même fiabilité qu'une feature bien concentrée, à moyenne égale.
 
 Violons plutôt qu'histogrammes empilés : à 24 combos, des histogrammes seraient
 illisibles, et la comparaison entre features est l'objet même de la figure. Pour
-un diagnostic sur UNE feature, l'histogramme reste plus lisible — c'est ce que
+un diagnostic sur UNE feature, l'histogramme reste plus lisible, c'est ce que
 fait plot_perm_null.py, qui superpose la nulle.
 
 Attention à ne pas confondre avec plot_perm_null.py : ici la distribution est
@@ -53,7 +53,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     keys = FAMILY_KEYS[args.family]
-    print(f"=== dispersion bootstrap — famille {args.family} ===")
+    print(f"=== dispersion bootstrap, famille {args.family} ===")
 
     fig, axes = plt.subplots(1, len(STATES_ORDERED),
                              figsize=(3.4 * len(STATES_ORDERED), 4.5),
@@ -103,7 +103,7 @@ def main() -> None:
     axes[0].set_ylabel("Accuracy sur chaque bootstrap (%)")
 
     fig.suptitle(
-        f"Dispersion des 1000 bootstraps — famille {args.family}\n"
+        f"Dispersion des 1000 bootstraps, famille {args.family}\n"
         f"distribution des accuracies RÉELLES (variabilité du sous-échantillonnage), "
         f"à ne pas confondre avec la loi nulle par permutation",
         fontsize=11,

@@ -156,7 +156,7 @@ def main() -> None:
 
     ax.set_ylabel(Y_LABEL)
     ax.set_title(
-        f"Riemannian classifications — permutation sujet (RFX), "
+        f"Riemannian classifications, permutation sujet (RFX), "
         f"max-stat pooled sur {n_keys} features, p < {args.alpha}"
     )
     ax.set_xticks([g * group_width + (n_keys - 1) / 2 for g in range(len(STATES_ORDERED))])
@@ -166,7 +166,8 @@ def main() -> None:
 
     if handles:
         ax.legend(handles, [band_label(k) for k in MATRIX_KEYS],
-                  frameon=False, fontsize=9, ncol=2)
+                  frameon=False, fontsize=9, ncol=2,
+                  loc="upper right", bbox_to_anchor=(1.0, 1.0))
 
     # Légende du trait et de l'étoile : sans ça, le lecteur ne peut pas savoir
     # que les deux disent la même chose ni sur quoi porte la correction.

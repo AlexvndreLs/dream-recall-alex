@@ -100,7 +100,7 @@ def draw_one(ax, d, key: str, state: str, threshold: float | None,
     # p-value non corrigée telle que stockée par classify.py
     pval = float(d["pval"]) if "pval" in d.files else None
 
-    title = f"{band_label(key)} — {state}"
+    title = f"{band_label(key)}, {state}"
     if ch is not None:
         title += f" ({ch})"
     ax.set_title(title, fontsize=9 if compact else 12)
@@ -121,7 +121,7 @@ def draw_one(ax, d, key: str, state: str, threshold: float | None,
 
 def mode_grid(args) -> None:
     keys = FAMILY_KEYS[args.family]
-    print(f"=== nulles de permutation — famille {args.family} (subject) ===")
+    print(f"=== nulles de permutation, famille {args.family} (subject) ===")
 
     fig, axes = plt.subplots(len(keys), len(STATES_ORDERED),
                              figsize=(3.0 * len(STATES_ORDERED), 1.9 * len(keys)),
@@ -147,7 +147,7 @@ def mode_grid(args) -> None:
                 ax.set_xlabel("Accuracy (%)", fontsize=8)
 
     fig.suptitle(
-        f"Distributions nulles par permutation sujet (RFX) — famille {args.family}\n"
+        f"Distributions nulles par permutation sujet (RFX), famille {args.family}\n"
         f"gris : 1000 permutations   |   trait plein : accuracy réelle   |   "
         f"- - - : seuil max-stat pooled p < {args.alpha}",
         fontsize=11,
@@ -173,7 +173,7 @@ def mode_zoom(args) -> None:
         feat, state = tok.split("/", 1)
         pairs.append((feat.strip(), state.strip()))
 
-    print(f"=== nulles de permutation — zoom sur {len(pairs)} combos (subject) ===")
+    print(f"=== nulles de permutation, zoom sur {len(pairs)} combos (subject) ===")
 
     fig, axes = plt.subplots(1, len(pairs), figsize=(5.0 * len(pairs), 3.6))
     axes = np.atleast_1d(axes)

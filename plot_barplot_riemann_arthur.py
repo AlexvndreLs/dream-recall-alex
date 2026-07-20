@@ -172,7 +172,7 @@ def main() -> None:
     ax.axhline(50, color="gray", lw=0.8, alpha=0.5)  # niveau de chance
 
     if bars:
-        ax.legend(bars, legend_labels, frameon=False, fontsize=9, loc="upper right", bbox_to_anchor=(1.0, 1.0))
+        ax.legend(bars, legend_labels, frameon=False, fontsize=9)
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     out = args.out_dir / f"barplot_riemann_{args.perm_scheme}_p{args.alpha}.png"

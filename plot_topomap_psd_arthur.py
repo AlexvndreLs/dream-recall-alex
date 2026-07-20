@@ -77,7 +77,7 @@ def parse_args() -> argparse.Namespace:
                         "exactement le montage d'Arthur (coord_cart_new.txt). "
                         "Sans lui : montage MNE standard_1020, positions légèrement "
                         "différentes au bord.")
-    p.add_argument("--sphere", type=float, default=None,
+    p.add_argument("--sphere", type=float, default=0.11,
                    help="Rayon du contour de tête tracé (m). Plus grand que le "
                         "rayon des électrodes de bord, il les fait rentrer dans "
                         "le cercle et empêche la couleur de déborder. Défaut : "

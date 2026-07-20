@@ -1,6 +1,6 @@
 """Profil accuracy vs bande de fréquence, une courbe par stade.
 
-Répond à "quelle bande porte le signal, et est-ce le même selon le stade ?" —
+Répond à "quelle bande porte le signal, et est-ce le même selon le stade ?" ,
 question que le barplot répond mal (24 barres à comparer de l'oeil) et que la
 topomap ne pose pas (elle répond "où", pas "quelle fréquence").
 
@@ -143,7 +143,7 @@ def main() -> None:
               transform=ax_v.transAxes, ha="center", fontsize=8, color="0.4")
 
     fig.suptitle(
-        f"Profil fréquentiel du décodage HR vs LR — permutation sujet (RFX)\n"
+        f"Profil fréquentiel du décodage HR vs LR, permutation sujet (RFX)\n"
         f"···· seuil max-stat pooled par stade   |   * : p < {args.alpha} corrigé",
         fontsize=11,
     )
