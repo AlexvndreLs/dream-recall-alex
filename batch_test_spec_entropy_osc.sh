@@ -13,15 +13,19 @@ set -euo pipefail
 
 export PYTHONUNBUFFERED=1
 export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export MKL_NUM_THREADS=1
 
-module load StdEnv/2023 || true
-source ~/venvs/mne_env/bin/activate 2>/dev/null || source activate mne_env
+# --- activation venv (Fir), identique aux scripts qui tournent ---
+source /home/alouis/mne_env/bin/activate
+export PATH=/home/alouis/mne_env/bin:$PATH
+# ----------------------------------------------------------------
 
 # Adapter DERIV et SAVE au scratch reel. DERIV = branche noica (reference Arthur directe).
-DERIV=/scratch/alouis/dream_bids/derivatives/preprocessed-noica
+DERIV=/home/alouis/scratch/dream_bids/derivatives/preprocessed-noica
 SAVE=/scratch/alouis/dream_features_noica_1000hz_overlap
 
-python test_spec_entropy_osc.py \
+/home/alouis/mne_env/bin/python test_spec_entropy_osc.py \
     --deriv-path "$DERIV" \
     --save-path  "$SAVE" \
     --n-jobs     "$SLURM_CPUS_PER_TASK" \
