@@ -115,24 +115,25 @@ def main():
                 continue
             stats = roi_data[roi]
             combo_rates = stats["combo_rates"]   # dict combo(tuple) -> rate
-            # separe combinaisons au-dessus du seuil (colorees) et le reste (gris)
+            # Chaque COMBINAISON = une part (comme Arthur, image reelle Fig.5). Les
+            # combinaisons > seuil ET connues sont colorees + labellisees ; TOUTES les
+            # autres restent des parts SEPAREES grises (d'ou les multiples subdivisions
+            # grises visibles chez Arthur). On NE fusionne PAS le gris.
             sizes, colors, labels = [], [], []
-            grey_total = 0.0
-            # trie par rate decroissant
+            # trie par rate decroissant pour un rendu propre
             for combo, rate in sorted(combo_rates.items(), key=lambda x: -x[1]):
                 ck = combo_key(combo)
+                sizes.append(rate)
                 if rate >= args.sr_threshold and ck in COMBO_COLORS:
-                    sizes.append(rate)
                     colors.append(COMBO_COLORS[ck])
                     labels.append(combo_label(ck))
                     used_combos.add(ck)
                 else:
-                    grey_total += rate
-            if grey_total > 0:
-                sizes.append(grey_total); colors.append(GREY); labels.append("")
+                    colors.append(GREY)
+                    labels.append("")            # gris, pas de label, mais part separee
             ax.pie(sizes, colors=colors, labels=labels, startangle=90,
                    textprops={"fontsize": 8},
-                   wedgeprops={"edgecolor": "white", "linewidth": 0.4})
+                   wedgeprops={"edgecolor": "#999999", "linewidth": 0.3})
             # accuracy + couleur barre = combinaison dominante coloree (ou grise)
             acc = float(stats["holdout_acc"]) * 100
             accs.append(acc)

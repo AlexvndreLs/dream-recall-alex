@@ -27,12 +27,25 @@ Fidelite au code d'Arthur
 - z-score : ttest.py d'Arthur charge des fichiers "zscore_psd", MAIS aucun script du
   repo public ne genere ce z-score (compute_psd.py et compute_psd_bins.py sauvent la
   PSD BRUTE, sans z-score ni log ; le generateur zscore_psd n'a jamais ete commite).
-  Le z-score est donc irrecuperable. Ce n'est pas bloquant : le t de Welch est
-  INVARIANT au rescaling par electrode, donc PSD brute et z-score global par
-  electrode donnent des t-values IDENTIQUES. DEFAUT = PSD brute (--zscore none), qui
-  repart directement des features extraites sans transformation inventee. L'option
-  --zscore global existe pour tracabilite (equivalente). Le z-score PAR SUJET a ete
-  teste et ECARTE : il annule les differences de moyenne entre groupes (t=0).
+  La seule reference z-score de son code (prepare_data dans utils.py) z-score PAR
+  SUJET (zscore(prep_submat) sur les epochs de chaque sujet).
+
+  *** RESULTAT MAJEUR (teste empiriquement, test_zscore_subject_ttest.py) ***
+  Le z-score PAR SUJET fait tomber la significativite a 0/19 sur TOUTES les bandes (y
+  compris sigma qui passe de 18/19 a 0/19). Raison : recentrer chaque sujet sur
+  moyenne 0 par electrode EFFACE la difference de moyenne inter-groupes, qui est
+  precisement ce que le t-test HR vs LR mesure. C'est ce qui explique qu'Arthur n'ait
+  AUCUNE etoile dans la colonne t-values de sa Fig.3 (verifie sur sa figure : etoiles
+  uniquement en decoding, jamais en t-values). Autrement dit, son z-score par sujet
+  MASQUE l'effet sigma reel. Notre DEFAUT (PSD brute, --zscore none) revele cet effet
+  (sigma 18/19). C'est un argument methodologique en faveur de la version corrigee, au
+  meme titre que FFX vs RFX. NB : on ne peut pas prouver a 100% que son zscore_psd ==
+  prepare_data (generateur non public), mais la concordance (0 etoile chez lui, 0 avec
+  z-score par sujet chez nous) rend l'explication tres solide.
+
+  Ce n'est pas bloquant pour le calcul : le t de Welch est INVARIANT au rescaling par
+  electrode, donc PSD brute et z-score GLOBAL par electrode donnent des t IDENTIQUES.
+  DEFAUT = PSD brute (--zscore none). Le z-score PAR SUJET est ECARTE (il masque l'effet).
 - t-statistique : scipy.stats.ttest_ind(HR_epochs, LR_epochs, equal_var=False), Welch.
 - permutation : NIVEAU EPOCH. On concatene toutes les epochs HR + LR, on re-split
   selon des sous-ensembles d'indices d'epochs (perm_test + _combinations d'Arthur).
@@ -139,7 +152,7 @@ def parse_args():
                    help="'epoch' (DEFAUT) = FFX, replique Arthur (toutes epochs "
                         "empilees, permutation niveau epoch). 'subject' = RFX correct "
                         "(1 valeur/sujet, permutation niveau sujet).")
-    p.add_argument("--zscore", choices=["none", "global"], default="none",
+    p.add_argument("--zscore", choices=["none", "global", "subject"], default="none",
                    help="'none' (DEFAUT) = PSD brute, telle qu'extraite. Aucun z-score "
                         "n'existe dans le code PSD public d'Arthur (le fichier "
                         "'zscore_psd' de ttest.py est genere par un script non commite). "
@@ -203,19 +216,41 @@ def zscore_global_per_electrode(epochs_list):
     return [(arr - mu) / sd for arr in epochs_list]
 
 
-def build_conditions(per_band_epochs, labels, level, do_zscore):
+def zscore_per_subject(epochs_list):
+    """z-score PAR SUJET, par electrode (sur les epochs de chaque sujet).
+
+    REPRODUIT LE zscore_psd D'ARTHUR (d'apres prepare_data, utils.py : zscore par
+    sous-matrice sujet). ATTENTION : ce z-score ANNULE les differences de moyenne
+    inter-groupes (chaque sujet recentre sur 0) -> le ttest HR vs LR tombe a t~0,
+    AUCUNE electrode significative. C'est ce qui explique l'absence d'etoiles chez
+    Arthur. A n'utiliser QUE pour reproduire sa Fig.3 non significative.
+    """
+    out = []
+    for arr in epochs_list:
+        mu = arr.mean(axis=0, keepdims=True)
+        sd = arr.std(axis=0, ddof=0, keepdims=True)
+        sd = np.where(sd == 0, 1.0, sd)
+        out.append((arr - mu) / sd)
+    return out
+
+
+def build_conditions(per_band_epochs, labels, level, zscore_mode):
     """cond1 (HR), cond2 (LR) par bande.
 
     level='epoch'   : toutes epochs empilees -> (n_epochs_tot, 19) (FFX).
     level='subject' : moyenne par sujet      -> (n_sujets, 19) (RFX).
+    zscore_mode : 'none' (brut), 'global' (par elec sur pool, equivalent none pour t),
+                  'subject' (par sujet, REPRODUIT ARTHUR -> non significatif).
     """
     conds = {}
     hr_mask = labels == 1
     lr_mask = labels == 0
     for b in BANDS:
         subs = per_band_epochs[b]
-        if do_zscore:
+        if zscore_mode == "global":
             subs = zscore_global_per_electrode(subs)
+        elif zscore_mode == "subject":
+            subs = zscore_per_subject(subs)
         hr = [subs[i] for i in range(len(subs)) if hr_mask[i]]
         lr = [subs[i] for i in range(len(subs)) if lr_mask[i]]
         if level == "epoch":
@@ -275,14 +310,13 @@ def main():
     per_band_epochs, labels = load_subject_epochs(args.save_path, args.state, drop_ids)
     n_hr = int((labels == 1).sum())
     n_lr = int((labels == 0).sum())
-    do_zscore = args.zscore == "global"
     print(f"[{args.state}] sujets : {len(labels)} (HR={n_hr}, LR={n_lr}) | "
           f"level={args.level} | zscore={args.zscore} | "
           f"drop={sorted(drop_ids) or 'aucun'}")
     if n_hr < 2 or n_lr < 2:
         raise RuntimeError("Pas assez de sujets par groupe.")
 
-    conds = build_conditions(per_band_epochs, labels, args.level, do_zscore)
+    conds = build_conditions(per_band_epochs, labels, args.level, args.zscore)
     if args.level == "epoch":
         n1 = conds[BANDS[0]][0].shape[0]
         n2 = conds[BANDS[0]][1].shape[0]
