@@ -221,7 +221,7 @@ def fit_fooof(
 
     fg = SpectralGroupModel(aperiodic_mode="fixed", verbose=False)
     fg.fit(freqs, flat_psds, freq_range=FOOOF_FREQ_RANGE, n_jobs=1)
-    #parallelisme est géré en amont => n_jobs =1
+    # parallelisme est géré en amont => n_jobs =1
     # freq_range redondant (freqs déjà tronqué par psd_array_welch à FOOOF_FREQ_RANGE)
     # conservé à titre défensif pour documenter l'intention
 

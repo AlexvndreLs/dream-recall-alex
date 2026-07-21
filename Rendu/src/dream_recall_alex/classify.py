@@ -701,7 +701,7 @@ def main():
     print("\n=== résumé (features matricielles) ===")
     for key, state, res in sorted(results, key=lambda r: (r[1], r[0])):
         if res is not None and is_matrix_feature(key):
-            print(f"  {key:20s} × {state:6s} : {float(res['acc_mean'])*100:.2f}%")
+            print(f"  {key:20s} x {state:6s} : {float(res['acc_mean'])*100:.2f}%")
 
     build_summary_csv(args.save_path)
     m, s = divmod(int(time() - t0), 60)
