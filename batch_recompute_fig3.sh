@@ -34,7 +34,10 @@ export MKL_NUM_THREADS=1
 STATE=S2
 SAVE_PATH=/scratch/alouis/dream_features_noica_1000hz
 DERIV_PATH=/scratch/alouis/dream_bids/derivatives/preprocessed-noica
-OUT_DIR=/scratch/alouis/dream_features_noica_1000hz_corrected
+# Dossier DEDIE au recompute Fig.3 : on n'ecrit PAS directement dans _corrected/ (qui
+# contient deja 32 fichiers maxstat valides) pour ne rien melanger ni risquer d'ecraser.
+OUT_DIR=/scratch/alouis/dream_features_noica_1000hz_corrected/fig3_recompute
+mkdir -p "$OUT_DIR"
 
 echo "=== 1/2 : PSD spectrum (panneau gauche) ==="
 python recompute_psd_spectrum_fig3.py \
@@ -44,13 +47,20 @@ python recompute_psd_spectrum_fig3.py \
     --n-jobs     "$SLURM_CPUS_PER_TASK"
 
 echo "=== 2/2 : T-values maxstat (panneau milieu) ==="
+# REPLIQUE ARTHUR (FFX) : --level epoch (toutes epochs empilees, permutation niveau
+# epoch). C'est ce que fait ttest.py d'Arthur. La version RFX correcte (--level
+# subject) donne ~0 electrode sig en S2 : lancer separement si on veut le contraste.
+# --zscore none = PSD brute (aucun z-score dans le code public d'Arthur ; equivalent
+# au z-score global pour le t de Welch).
 # --maxstat-scope electrodes = code Arthur (max sur 19 elec par bande).
-# Ajouter --maxstat-scope both pour la variante texte-these (pool elec x bandes).
+# --drop-subjects vide par defaut ; passer 10 pour coller a Arthur (artefact FC2).
 python recompute_ttest_fig3.py \
     --save-path "$SAVE_PATH" \
     --out-dir   "$OUT_DIR" \
     --state     "$STATE" \
-    --n-perm    10000 \
+    --n-perm    9999 \
+    --level     epoch \
+    --zscore    none \
     --maxstat-scope electrodes \
     --n-jobs    "$SLURM_CPUS_PER_TASK"
 

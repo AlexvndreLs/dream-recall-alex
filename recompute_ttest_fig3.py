@@ -1,60 +1,62 @@
-"""Recompute Fig. 3 (thèse Arthur, chap. 1) : PSD / T-values corrigées / LDA en S2.
+"""Recompute Fig. 3 (these Arthur, chap. 1) : panneau T-values corrigees, en S2.
 
-Réplique la statistique de groupe d'Arthur (ttest_perm_indep.py + maxstat_pval.py du
-repo arthurdehgan/sleep) pour produire les données des trois panneaux de la Fig. 3 :
+REPLIQUE EXACTE d'Arthur (ttest.py + ttest_perm_indep.py du repo arthurdehgan/sleep).
 
-Ce script produit UNIQUEMENT le panneau T-values (colonne du milieu de la Fig. 3) :
-pseudo-t two-sided unpaired, permutation AU NIVEAU SUJET, correction maximum
-statistics, par bande de fréquence sur 19 électrodes.
--> réplique ttest_perm_unpaired(..., two_tailed=True, correction="maxstat") d'Arthur.
-
+Ce script produit UNIQUEMENT le panneau T-values (colonne du milieu de la Fig. 3).
 Les deux autres panneaux sont produits ailleurs :
-  - PSD moyen HR vs LR (gauche)   : recompute_psd_spectrum_fig3.py
-  - LDA accuracy par électrode (droite) : classif single-feature existants +
-    plot_topomap_psd_arthur.py
+  - PSD moyen HR vs LR (gauche)         : recompute_psd_spectrum_fig3.py
+  - LDA accuracy par electrode (droite) : classif single-feature + plot_topomap_psd_arthur.py
 
-Fidélité au code d'Arthur (repo public, ttest_perm_indep.py)
-------------------------------------------------------------
-- t-statistique : scipy.stats.ttest_ind(cond1, cond2, equal_var=False)  (Welch)
-- permutation   : on concatène cond1+cond2 (n_sujets_HR + n_sujets_LR lignes), on
-  re-split selon un index de permutation (échange de labels AU NIVEAU SUJET). C'est
-  déjà le schéma RFX correct (Combrisson & Jerbi 2015) : Arthur permute les sujets
-  ici, PAS les epochs (contrairement à son classif LDA). Cf perm_test() d'Arthur.
-- maxstat       : pour two-sided, on prend |t|, puis max sur l'axe des comparaisons
-  de la distribution de permutation ; la p de chaque comparaison est
-  sum(|t_obs| <= max_perm)/n_perm. Cf compute_pvalues(correction="maxstat").
-- p-value       : (convention d'Arthur, sans +1 au numérateur ; on garde à
-  l'identique pour réplique exacte, le +1 est disponible via --add-one).
+======================= NIVEAU EPOCH (FFX), PAS NIVEAU SUJET ====================
+Le ttest d'Arthur (ttest.py) empile TOUTES les epochs de tous les sujets d'un
+groupe en un seul vecteur, puis teste HR-epochs vs LR-epochs. Le bloc qui
+moyennerait par sujet est COMMENTE dans son code :
+    HR = np.concatenate([psd.flatten() for psd in HR])   # <- toutes epochs
+    # for i in range(len(HR)): HR[i] = HR[i].mean()       # <- COMMENTE
 
-Périmètre du maxstat (p<0.001)
-------------------------------
---maxstat-scope electrodes : max sur les 19 électrodes, séparément par bande. C'est
-                             le schéma LITTERAL du code d'Arthur (ttest_perm_unpaired
-                             appelé une fois par bande). DÉFAUT.
---maxstat-scope both       : pool électrodes × bandes (19×5=95), correction unique.
-                             Correspond au TEXTE de la thèse p52 ("corrected across
-                             electrodes AND frequency bands"), pas à son code publié.
+Consequence : n = milliers d'epochs (pas 18 sujets), les t explosent, presque
+tout devient significatif. C'est le biais FFX (fixed-effects) que le reste du
+projet DREAM corrige. La version RFX (1 valeur/sujet, permutation niveau sujet)
+donne ~0 electrode sig en S2 : c'est le resultat statistiquement correct, mais ce
+script vise la REPLIQUE d'Arthur -> FFX par defaut. Utiliser --level subject pour
+la version RFX correcte (comparaison).
+================================================================================
 
-Entrées  : {save_path}/psd_{band}/psd_{band}_s{XX}_S2.npz  (clé "data", shape
-           (n_epochs, 19)), features Hann déjà extraites (feat_extract_umap_fooof_v4).
-Sorties  : {out_dir}/fig3_ttest_S2.npz  (t-values (5,19), p corrigées (5,19), meta).
-           Le panneau PSD (courbe continue) est produit à part par
-           recompute_psd_spectrum_fig3.py.
+Fidelite au code d'Arthur
+-------------------------
+- z-score : ttest.py d'Arthur charge des fichiers "zscore_psd", MAIS aucun script du
+  repo public ne genere ce z-score (compute_psd.py et compute_psd_bins.py sauvent la
+  PSD BRUTE, sans z-score ni log ; le generateur zscore_psd n'a jamais ete commite).
+  Le z-score est donc irrecuperable. Ce n'est pas bloquant : le t de Welch est
+  INVARIANT au rescaling par electrode, donc PSD brute et z-score global par
+  electrode donnent des t-values IDENTIQUES. DEFAUT = PSD brute (--zscore none), qui
+  repart directement des features extraites sans transformation inventee. L'option
+  --zscore global existe pour tracabilite (equivalente). Le z-score PAR SUJET a ete
+  teste et ECARTE : il annule les differences de moyenne entre groupes (t=0).
+- t-statistique : scipy.stats.ttest_ind(HR_epochs, LR_epochs, equal_var=False), Welch.
+- permutation : NIVEAU EPOCH. On concatene toutes les epochs HR + LR, on re-split
+  selon des sous-ensembles d'indices d'epochs (perm_test + _combinations d'Arthur).
+- maxstat : |t| si two_tailed, puis max sur les 19 electrodes de la distribution de
+  permutation. Arthur appelle le ttest une fois par (stade, bande) -> maxstat sur 19
+  electrodes seulement (pas sur les bandes). C'est le defaut.
+- p-value : sum(|t_obs| <= max_perm)/n_perm, sans +1 (convention d'Arthur).
+- exclusions : Arthur exclut le sujet 10 (artefact FC2) et n'a que 17 HR. Reproduit
+  via --drop-subjects (defaut : aucun ; passer "10" pour coller a Arthur).
 
-Ce script NE fait AUCUN plot (séparation calcul/visu, convention du repo). Le plot
-consommera le .npz.
+Entrees : {save_path}/psd_{band}/psd_{band}_s{XX}_S2.npz (cle "data", (n_epochs, 19)).
+Sorties : {out_dir}/fig3_ttest_{state}.npz (t-values (5,19), p corrigees (5,19), meta).
+
+Ne fait AUCUN plot (separation calcul/visu). Le plot consommera le .npz.
 
 Usage
 -----
-    python recompute_ttest_fig3.py \\
-        --save-path /scratch/alouis/dream_features_noica_1000hz \\
-        --out-dir   /scratch/alouis/dream_features_noica_1000hz_corrected \\
-        --state     S2 \\
-        --n-perm    10000 \\
-        --maxstat-scope electrodes \\
+    python recompute_ttest_fig3.py \
+        --save-path /scratch/alouis/dream_features_noica_1000hz \
+        --out-dir   /scratch/alouis/dream_features_noica_1000hz_corrected/fig3_recompute \
+        --state     S2 --n-perm 9999 --level epoch --zscore none \
         --n-jobs    $SLURM_CPUS_PER_TASK
 
-Author: recompute pour Alex (réplique Arthur chap.1)
+Author: recompute pour Alex (replique Arthur chap.1, FFX)
 """
 
 import argparse
@@ -77,133 +79,137 @@ from utils import load_atomic
 BANDS = list(FREQ_DICT)  # ['delta','theta','alpha','sigma','beta']
 
 
-# ─── CLI ──────────────────────────────────────────────────────────────────────
-
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--save-path", type=Path, required=True)
     p.add_argument("--out-dir",   type=Path, required=True)
     p.add_argument("--state",     type=str, default="S2")
-    p.add_argument("--n-perm",    type=int, default=10000)
+    p.add_argument("--n-perm",    type=int, default=9999,
+                   help="9999 = valeur d'Arthur (ttest.py).")
     p.add_argument("--n-jobs",    type=int, default=1)
-    # DEFAUT = 'electrodes' : c'est ce que fait le CODE d'Arthur (ttest_perm_indep.py
-    # appelle ttest_perm_unpaired une fois PAR BANDE -> maxstat sur les 19 elec seules).
-    # 'both' (pool elec x bandes = 95) correspond au TEXTE de la these p52 ("corrected
-    # across electrodes AND frequency bands"), qui n'est PAS ce que fait son code publie.
-    # On suit le code par defaut ; 'both' dispo si on veut coller au texte.
+    p.add_argument("--level", choices=["epoch", "subject"], default="epoch",
+                   help="'epoch' (DEFAUT) = FFX, replique Arthur (toutes epochs "
+                        "empilees, permutation niveau epoch). 'subject' = RFX correct "
+                        "(1 valeur/sujet, permutation niveau sujet).")
+    p.add_argument("--zscore", choices=["none", "global"], default="none",
+                   help="'none' (DEFAUT) = PSD brute, telle qu'extraite. Aucun z-score "
+                        "n'existe dans le code PSD public d'Arthur (le fichier "
+                        "'zscore_psd' de ttest.py est genere par un script non commite). "
+                        "'global' = z-score par electrode sur le pool complet : "
+                        "NUMERIQUEMENT EQUIVALENT a 'none' pour le t (Welch invariant au "
+                        "rescaling par colonne), fourni pour tracabilite. Le z-score PAR "
+                        "SUJET a ete ecarte : il annule les differences de moyenne entre "
+                        "groupes (t=0), verifie empiriquement.")
     p.add_argument("--maxstat-scope", choices=["electrodes", "both"],
                    default="electrodes",
-                   help="'electrodes' (DEFAUT) = max sur 19 elec par bande, LITTERAL "
-                        "code Arthur. 'both' = pool elec x bandes (95), texte these p52 "
-                        "(pas dans son code).")
-    p.add_argument("--add-one", action="store_true", default=False,
-                   help="p = (sum+1)/(n_perm+1) au lieu de sum/n_perm (convention +1).")
-    p.add_argument("--seed", type=int, default=0,
-                   help="Graine du generateur de permutations (reproductibilite).")
+                   help="'electrodes' (DEFAUT) = max sur 19 elec par bande (code "
+                        "Arthur). 'both' = pool elec x bandes (texte these p52).")
+    p.add_argument("--drop-subjects", type=str, default="",
+                   help="IDs sujets a exclure, separes par virgule (ex '10' pour "
+                        "coller a Arthur qui retire le sujet 10 / artefact FC2).")
+    p.add_argument("--seed", type=int, default=0)
     p.add_argument("--overwrite", action="store_true", default=False)
     return p.parse_args()
 
 
-# ─── chargement : une valeur PSD par (sujet, bande, electrode) au niveau SUJET ──
+def load_subject_epochs(save_path, state, drop_ids):
+    """per_band[band] = liste (un array (n_epochs,19) par sujet) + labels.
 
-def load_subject_band_means(save_path: Path, state: str):
-    """Retourne X[band] de shape (n_sujets, 19) : PSD moyenne sur epochs par sujet.
-
-    Le t-test de groupe d'Arthur est AU NIVEAU SUJET : chaque sujet est UNE
-    observation, valant la moyenne de sa PSD (bande, electrode) sur ses epochs du
-    stade. On aligne sur SUBJECT_LIST_ORDERED / SUBJECT_LABELS (0=LR, 1=HR).
+    On garde TOUTES les epochs (pas de moyenne) : c'est ce qui permet le FFX.
     """
     stages = CLASSIFICATION_GROUPS[state]
     per_band = {b: [] for b in BANDS}
     labels = []
     for sub_id, label in zip(SUBJECT_LIST_ORDERED, SUBJECT_LABELS):
+        if sub_id in drop_ids:
+            continue
         ok = True
-        means = {}
+        per_sub = {}
         for b in BANDS:
             parts = [a for s in stages
                      if (a := load_atomic(save_path, f"psd_{b}", sub_id, s)) is not None]
             if not parts:
                 ok = False
                 break
-            arr = np.concatenate(parts, axis=0)          # (n_epochs, 19)
-            means[b] = arr.mean(axis=0)                   # (19,) moyenne sur epochs
+            per_sub[b] = np.concatenate(parts, axis=0)   # (n_epochs, 19)
         if ok:
             for b in BANDS:
-                per_band[b].append(means[b])
+                per_band[b].append(per_sub[b])
             labels.append(label)
-    labels = np.array(labels)
-    X = {b: np.asarray(per_band[b]) for b in BANDS}       # (n_sujets, 19)
-    return X, labels
+    return per_band, np.array(labels)
 
 
-# ─── t-stat + permutations (réplique ttest_perm_indep.py d'Arthur) ────────────
+def zscore_global_per_electrode(epochs_list):
+    """z-score PAR ELECTRODE sur le POOL complet (toutes epochs, tous sujets).
 
-def _ttest_perm(full_mat, index, equal_var=False):
-    """t-stats pour un split de permutation (echange de labels niveau sujet).
-
-    Reproduit _ttest_perm + _generate_conds d'Arthur : on prend les lignes 'index'
-    comme cond1, le complement comme cond2, puis ttest_ind Welch, on garde t.
+    Normalise l'echelle (PSD ~1e-12) sans effacer les differences inter-groupes :
+    on calcule mu/sd par colonne electrode sur l'ensemble empile, PUIS on applique
+    a chaque sujet. NUMERIQUEMENT EQUIVALENT a pas de z-score pour le t de Welch
+    (invariant au rescaling par colonne). A ne PAS confondre avec un z-score par
+    sujet, qui lui annule l'effet de groupe (verifie : t=0).
     """
+    pool = np.concatenate(epochs_list, axis=0)           # (n_epochs_tot, 19)
+    mu = pool.mean(axis=0, keepdims=True)
+    sd = pool.std(axis=0, ddof=0, keepdims=True)
+    sd = np.where(sd == 0, 1.0, sd)                       # garde-fou division par 0
+    return [(arr - mu) / sd for arr in epochs_list]
+
+
+def build_conditions(per_band_epochs, labels, level, do_zscore):
+    """cond1 (HR), cond2 (LR) par bande.
+
+    level='epoch'   : toutes epochs empilees -> (n_epochs_tot, 19) (FFX).
+    level='subject' : moyenne par sujet      -> (n_sujets, 19) (RFX).
+    """
+    conds = {}
+    hr_mask = labels == 1
+    lr_mask = labels == 0
+    for b in BANDS:
+        subs = per_band_epochs[b]
+        if do_zscore:
+            subs = zscore_global_per_electrode(subs)
+        hr = [subs[i] for i in range(len(subs)) if hr_mask[i]]
+        lr = [subs[i] for i in range(len(subs)) if lr_mask[i]]
+        if level == "epoch":
+            cond1 = np.concatenate(hr, axis=0)
+            cond2 = np.concatenate(lr, axis=0)
+        else:
+            cond1 = np.stack([s.mean(axis=0) for s in hr])
+            cond2 = np.stack([s.mean(axis=0) for s in lr])
+        conds[b] = (cond1, cond2)
+    return conds
+
+
+def _ttest_perm(full_mat, index):
     n = len(full_mat)
     index = list(index)
     comp = list(set(range(n)) - set(index))
     perm = np.vstack((full_mat[index], full_mat[comp]))
     c1, c2 = perm[: len(index)], perm[len(index):]
-    return ttest_ind(c1, c2, equal_var=equal_var)[0]      # (n_features,)
+    return ttest_ind(c1, c2, equal_var=False)[0]
 
 
-def _random_perm_indices(n_samples, n_cond1, n_perm, seed):
-    """n_perm tirages aleatoires de n_cond1 indices parmi n_samples (sans le split
-    identite). Echange de labels au niveau sujet. Arthur enumere des combinaisons ;
-    ici tirage aleatoire (n_perm=10000 >> exact impossible avec 36 sujets)."""
+def _perm_indices(n_samples, n_cond1, n_perm, seed):
+    """n_perm sous-ensembles aleatoires de n_cond1 indices parmi n_samples.
+
+    Enumeration exhaustive impossible au niveau epoch -> echantillonnage aleatoire,
+    comportement d'Arthur des que n_perm < n_comb (cas systematique ici)."""
     rng = np.random.RandomState(seed)
-    out = []
-    for _ in range(n_perm):
-        out.append(rng.choice(n_samples, size=n_cond1, replace=False))
-    return out
+    return [rng.choice(n_samples, size=n_cond1, replace=False) for _ in range(n_perm)]
 
 
-def ttest_maxstat(cond1, cond2, n_perm, two_tailed, scope_pool, seed, add_one, n_jobs):
-    """pseudo-t two-sided + maxstat.
-
-    cond1, cond2 : (n_sub_c1, n_feat), (n_sub_c2, n_feat).
-    scope_pool   : si True, le max de permutation est pris sur TOUTES les features
-                   passees (pool electrodes x bandes) ; sinon max intra-appel (19 elec).
-    Retourne (tval, pval_corr, perm_max_distribution).
-    """
-    tval = ttest_ind(cond1, cond2, equal_var=False)[0]    # (n_feat,)
+def ttest_maxstat(cond1, cond2, n_perm, two_tailed, seed, n_jobs):
+    tval = ttest_ind(cond1, cond2, equal_var=False)[0]
     full = np.vstack((cond1, cond2))
-    n = len(full)
-    idxs = _random_perm_indices(n, len(cond1), n_perm, seed)
-
-    perm_t = Parallel(n_jobs=n_jobs)(
-        delayed(_ttest_perm)(full, ix, False) for ix in idxs
-    )
-    perm_t = np.asarray(perm_t)                            # (n_perm, n_feat)
+    idxs = _perm_indices(len(full), len(cond1), n_perm, seed)
+    perm_t = Parallel(n_jobs=n_jobs)(delayed(_ttest_perm)(full, ix) for ix in idxs)
+    perm_t = np.asarray(perm_t)
     stat = np.abs(tval) if two_tailed else tval
     perm_stat = np.abs(perm_t) if two_tailed else perm_t
-
-    perm_max = perm_stat.max(axis=1)                       # (n_perm,) max sur features
-    scaling = n_perm
+    perm_max = perm_stat.max(axis=1)
     num = (perm_max[:, None] >= stat[None, :]).sum(axis=0).astype(float)
-    if add_one:
-        pval = (num + 1.0) / (scaling + 1.0)
-    else:
-        pval = num / scaling
-    return tval, pval, perm_max
+    return tval, num / n_perm
 
-
-# NOTE PANNEAU PSD (colonne gauche de la Fig. 3)
-# ------------------------------------------------
-# La courbe PSD continue (spectre Welch complet 1-45Hz, moyenne sur electrodes et
-# sujets, HR vs LR) N'EST PAS produite ici : les .npz de features ne stockent que la
-# moyenne par bande, pas le spectre continu. Elle est produite par le script dedie
-# recompute_psd_spectrum_fig3.py, qui reutilise compute_psd_spectrum() de
-# feat_extract_umap_fooof_v4.py (meme Welch/Hann/WINDOW). Ce script-ci ne fait QUE la
-# statistique (panneau T-values, colonne du milieu).
-
-
-# ─── main ─────────────────────────────────────────────────────────────────────
 
 def main():
     args = parse_args()
@@ -214,42 +220,37 @@ def main():
         print(f"{out} existe deja (--overwrite pour recalculer).")
         return
 
-    X, labels = load_subject_band_means(args.save_path, args.state)
+    drop_ids = {s.strip() for s in args.drop_subjects.split(",") if s.strip()}
+    per_band_epochs, labels = load_subject_epochs(args.save_path, args.state, drop_ids)
     n_hr = int((labels == 1).sum())
     n_lr = int((labels == 0).sum())
-    print(f"[{args.state}] sujets charges : {len(labels)}  (HR={n_hr}, LR={n_lr})")
+    do_zscore = args.zscore == "global"
+    print(f"[{args.state}] sujets : {len(labels)} (HR={n_hr}, LR={n_lr}) | "
+          f"level={args.level} | zscore={args.zscore} | "
+          f"drop={sorted(drop_ids) or 'aucun'}")
     if n_hr < 2 or n_lr < 2:
         raise RuntimeError("Pas assez de sujets par groupe.")
 
-    # cond1 = HR (label 1), cond2 = LR (label 0) -> t>0 signifie HR>LR
-    hr_idx = np.where(labels == 1)[0]
-    lr_idx = np.where(labels == 0)[0]
+    conds = build_conditions(per_band_epochs, labels, args.level, do_zscore)
+    if args.level == "epoch":
+        n1 = conds[BANDS[0]][0].shape[0]
+        n2 = conds[BANDS[0]][1].shape[0]
+        print(f"  niveau epoch : {n1} epochs HR vs {n2} epochs LR (n total={n1+n2})")
 
     tvals, pvals = {}, {}
     if args.maxstat_scope == "electrodes":
-        # littéral Arthur : 1 correction maxstat par bande, sur 19 électrodes
         for b in BANDS:
-            c1, c2 = X[b][hr_idx], X[b][lr_idx]
-            tv, pv, _ = ttest_maxstat(
-                c1, c2, args.n_perm, two_tailed=True, scope_pool=False,
-                seed=args.seed, add_one=args.add_one, n_jobs=args.n_jobs,
-            )
+            c1, c2 = conds[b]
+            tv, pv = ttest_maxstat(c1, c2, args.n_perm, True, args.seed, args.n_jobs)
             tvals[b], pvals[b] = tv, pv
     else:
-        # scope "both" : pool electrodes x bandes -> une seule distribution maxstat
-        # sur les 19*5=95 features. On empile les bandes en colonnes.
-        c1 = np.concatenate([X[b][hr_idx] for b in BANDS], axis=1)   # (n_hr, 95)
-        c2 = np.concatenate([X[b][lr_idx] for b in BANDS], axis=1)   # (n_lr, 95)
-        tv, pv, perm_max = ttest_maxstat(
-            c1, c2, args.n_perm, two_tailed=True, scope_pool=True,
-            seed=args.seed, add_one=args.add_one, n_jobs=args.n_jobs,
-        )
-        # re-decoupe en bandes de 19
+        c1 = np.concatenate([conds[b][0] for b in BANDS], axis=1)
+        c2 = np.concatenate([conds[b][1] for b in BANDS], axis=1)
+        tv, pv = ttest_maxstat(c1, c2, args.n_perm, True, args.seed, args.n_jobs)
         for i, b in enumerate(BANDS):
             tvals[b] = tv[i * N_EEG:(i + 1) * N_EEG]
             pvals[b] = pv[i * N_EEG:(i + 1) * N_EEG]
 
-    # nombre d'électrodes significatives par bande (p<0.001)
     print("\n=== T-values corrigees (maxstat, p<0.001) ===")
     for b in BANDS:
         nsig = int((pvals[b] < 0.001).sum())
@@ -260,15 +261,17 @@ def main():
     np.savez(
         out,
         bands=np.array(BANDS),
-        tvals=np.array([tvals[b] for b in BANDS]),        # (5, 19)
-        pvals=np.array([pvals[b] for b in BANDS]),        # (5, 19)
+        tvals=np.array([tvals[b] for b in BANDS]),
+        pvals=np.array([pvals[b] for b in BANDS]),
         labels=labels,
         n_hr=n_hr, n_lr=n_lr,
         state=args.state,
         n_perm=args.n_perm,
+        level=args.level,
+        zscore=args.zscore,
         maxstat_scope=args.maxstat_scope,
+        drop_subjects=sorted(drop_ids),
         two_tailed=True,
-        add_one=args.add_one,
     )
     print(f"\nSauvegarde : {out}")
     m, s = divmod(int(time() - t0), 60)
