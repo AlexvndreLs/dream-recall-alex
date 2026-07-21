@@ -35,6 +35,97 @@ Sorties : {in_dir}/fig5_roi_{state}.npz
           Par ROI : band_counts (5,), band_rates (5,), combo_rates (dict),
           holdout_acc, frac_sig, p_median. + meta.
 
+======================= ECARTS AVEC LE CODE D'ARTHUR (documentes) ==============
+Comparaison avec visu_piecharts_fselect.py + super_count d'Arthur. Ecarts :
+
+E1. MAPPING ELECTRODE -> ROI (ecart assume, source d'Arthur introuvable). Arthur
+    importe REGIONS de params.py, qui est GITIGNORE (jamais commite). Son decoupage
+    exact electrode->ROI est donc INCONNU. Le PDF de la these confirme les 5 NOMS de
+    ROI (Prefrontal, Fronto-Central, Temporal, Centro-Parietal, Occipital) mais PAS
+    quelles electrodes vont dans chaque ROI. On utilise un decoupage 10-20 standard
+    (identique a classify_multifeature.py). Defendable mais pas garanti identique a
+    Arthur. De plus Arthur avait 12 electrodes (montage demi-gauche : Fz, Cz, Pz,
+    Fp1, F3, FC1, C3, T3, CP1, P3, M1, O1), nous 19 (deux hemispheres). Consequences :
+    ses ROI temporal et occipital sont sur UNE electrode (T3, O1), les notres sur deux
+    (T3/T4, O1/O2) -> moyennes de ROI non comparables. M1 (mastoide) n'existe pas dans
+    nos 19 EEG (peut-etre dans misc1/2/3 mais identite NON confirmee, message Arthur en
+    attente, et aucune feature PSD extraite dessus). Une variante a 11 electrodes
+    (montage Arthur moins M1) est fournie dans aggregate_roi_fig5_arthur11.py pour
+    isoler l'effet du montage.
+
+E2. PIE CHARTS = super_count (fidele). Arthur compte, par electrode, le nombre de fois
+    ou chaque bande est selectionnee sur les splits (super_count = compteur simple),
+    puis SOMME par ROI (ligne 38 : sum des counts des electrodes du ROI). On replique
+    exactement (Counter + somme par ROI). Le pie n'est PAS base sur p-values/accuracies,
+    juste la frequence de selection. Identique.
+
+E3. SELECTION RATE DES COMBINAISONS (ajout, pas dans le code d'Arthur mais requis par
+    la legende Fig.5). La legende dit "feature sets exceeding a selection rate threshold
+    of 25%". visu_piecharts_fselect.py ne calcule que les counts de bandes ISOLEES, pas
+    des combinaisons. On ajoute combo_rates (taux de selection des sous-ensembles
+    complets) pour permettre au plot d'appliquer le seuil 25% sur les COMBINAISONS
+    comme le demande la legende. Extension necessaire, documentee.
+
+E4. P-VALUE PAR ROI (ecart : Arthur ne l'explicite pas). Arthur a une p-value par split
+    (permutations_EFS_fixed_elec.py) mais n'explicite pas une unique p-value par ROI
+    pour le seuil p<0.001 du barplot. On fournit DEUX vues (frac_sig = fraction de
+    splits p<0.001, p_median) pour laisser le plot/la note trancher. A clarifier avec
+    Arthur/Karim.
+
+E5. BARPLOT = accuracy holdout moyenne par ROI (fidele). Moyenne des test_scores des
+    electrodes du ROI. Conforme au "average decoding accuracy using a holdout set".
+================================================================================
+
+======= BILAN COMPARAISON A ARTHUR : CE QU'ON A TESTE ET OBTENU (S2) ===========
+Synthese des investigations menees pour comprendre les ecarts avec la Fig.5 d'Arthur
+(valeurs de sa these, page 59). Table de comparaison (accuracy holdout par ROI) :
+
+  ROI                Arthur   Nous-19elec   Nous-11elec(montage Arthur)   Bande
+  prefrontal          65%      62.6%         62.0%                        sigma
+  fronto-central      59.1%    55.7%         55.5%                        sigma
+  temporal            55.9%    49.3%         50.5%                        sigma
+  centro-parietal     52.0%    50.7%         51.0%                        sigma
+  occipital           69.1%    48.0%         44.5%                        delta
+
+SELECTION DE BANDES : repliquee sur 5/5 ROI (sigma partout sauf occipital=delta,
+identique a Arthur). La METHODE EFS est donc fidele : elle selectionne les memes
+bandes que lui dans chaque region.
+
+CE QU'ON A TESTE POUR EXPLIQUER LES ECARTS D'ACCURACY :
+
+1. SUJET 10 (outlier FC2, delta a 23.7x la mediane, artefact confirme). Arthur
+   l'exclut pour le ttest (Fig.3) mais le GARDE pour l'EFS (Fig.5) -> incoherence
+   d'Arthur, repliquee. TESTE sur Fig.3 : resultats STRICTEMENT identiques avec et
+   sans le sujet 10 (sigma 18/19 dans les deux cas). => le sujet 10 n'explique RIEN.
+
+2. MONTAGE 12 vs 19 electrodes. On a refait l'agregation ROI sur les 11 electrodes
+   d'Arthur (ses 12 moins M1, absent de nos donnees). Resultat : les accuracies
+   changent de <1.5 point et NE SE RAPPROCHENT PAS d'Arthur (col "Nous-11elec"
+   ci-dessus). => le montage n'explique PAS les ecarts. Hypothese refutee.
+
+3. MOYENNAGE OCCIPITAL O1+O2. En passant a O1 seul (11-elec), l'occipital EMPIRE
+   (48% -> 44.5%), il ne s'ameliore pas. => l'ecart occipital n'est pas un artefact
+   de moyennage.
+
+4. DELTA OCCIPITAL discriminant ? MESURE directe de la puissance delta O1/O2 par
+   groupe : ratio HR/LR = 0.87 (O1) et 0.94 (O2), soit quasi identiques. => le delta
+   occipital NE SEPARE PAS les groupes dans nos donnees. Notre 48% (ou 44.5%) est
+   donc CORRECT ; c'est le 69% d'Arthur qui reflete un signal delta occipital
+   discriminant que NOS donnees n'ont pas.
+
+CONCLUSION :
+- La methode est fidelement repliquee (bandes selectionnees identiques 5/5 ROI).
+- Les accuracies sont PROCHES d'Arthur sur 4/5 ROI (prefrontal, fronto-central,
+  centro-parietal, et temporal a ~5 points), ROBUSTES au montage et au sujet 10.
+- SEULE VRAIE DIVERGENCE : l'occipital (48/44.5% vs 69%). On a PROUVE que le delta
+  occipital ne discrimine pas dans nos donnees (ratio HR/LR ~1). L'ecart vient donc
+  des DONNEES d'Arthur (son delta occipital discrimine), pas de notre methode.
+- CAUSES NON TESTABLES (pas d'acces aux donnees d'Arthur) : son preprocessing (code
+  de nettoyage jamais publie ; son delta occipital est peut-etre artefacte, le notre
+  peut-etre mieux nettoye) et le nombre d'epochs (14/36 sujets ont plus d'epochs S2
+  que sa table de reference). Ces causes restent des hypotheses, non prouvables ici.
+================================================================================
+
 Usage
 -----
     python aggregate_roi_fig5.py \

@@ -41,6 +41,63 @@ Sorties : {out_dir}/efs_holdout_{state}.npz
           Par electrode : test_scores (324,), best_freqs (liste 324 x sous-ensemble),
           train_scores (324,), score (float). Empile les 19 electrodes.
 
+======================= ECARTS AVEC LE CODE D'ARTHUR (documentes) ==============
+Comparaison ligne par ligne avec EFS_fixed_elec.py d'Arthur. Ecarts :
+
+E1. PARALLELISATION (ecart de perf, resultat identique). Arthur : EFS(..., n_jobs=-1)
+    -> mlxtend parallelise en interne (threads). Nous : mlxtend n_jobs=1 + Parallel(
+    prefer="processes") au niveau des 324 splits externes. Raison : sur AMD EPYC, le
+    nested parallelism threads + GIL + contention BLAS ecroule les perfs ; processus +
+    BLAS mono-thread = ~5-6x plus rapide (cf optimisation classify_matrix). Resultat
+    NUMERIQUE identique (memes splits, meme EFS deterministe), seule la vitesse change.
+
+E2. min_features (non-ecart). Arthur : EFS(max_features=5) sans min_features (defaut
+    mlxtend = 1). Nous : min_features=1, max_features=5 explicite. IDENTIQUE en pratique
+    (teste les 31 sous-ensembles non vides des 5 bandes).
+
+E3. SANS SUBSAMPLING (aligne sur la version CORRIGEE d'Arthur). Le texte de la these
+    (p52) mentionne un subsampling a n_trials=61 epochs/sujet dans la version
+    INITIALE. La version CORRIGEE de la these le retire explicitement ("data without
+    subsampling, resulting in minimal changes to decoding accuracy scores and slight
+    adjustments to significance levels", p58). Nous suivons la version corrigee : on
+    garde TOUTES les epochs. (L'ancien classify_multifeature.py du repo, lui,
+    subsamplait -> ce script s'en distingue volontairement.)
+
+E4. SUJET 10 GARDE (fidele, mais incoherence d'Arthur). Arthur GARDE le sujet 10 dans
+    l'EFS (lil_labels = [0]*18+[1]*18, 36 sujets), alors qu'il l'EXCLUT dans le ttest
+    (Fig.3). Incoherence d'Arthur, reproduite ici : on garde 36 sujets pour la Fig.5.
+    NB : sujet 10 = outlier FC2 (delta 23.7x mediane), donc son maintien peut gonfler
+    l'accuracy fronto-centrale. A documenter dans la note.
+
+E5. EFS PAR ELECTRODE, ROI a la VISU (fidele). Arthur fait l'EFS par electrode puis
+    agrege par ROI au stade visu (visu_piecharts_fselect.py). Nous idem (agregation
+    dans aggregate_roi_fig5.py). A ne pas confondre avec classify_multifeature.py qui
+    faisait l'EFS PAR ROI (moyenne des electrodes) : ce script fait bien PAR ELECTRODE.
+
+E6. MONTAGE 12 vs 19 ELECTRODES (ecart de donnees, affecte les accuracies). Arthur a
+    12 electrodes (Fz, Cz, Pz, Fp1, F3, FC1, C3, T3, CP1, P3, M1, O1 : montage
+    demi-gauche gauche), nous 19 (deux hemispheres). L'EFS tourne sur nos 19, donc on
+    a des electrodes qu'Arthur n'avait pas (Fp2, F4, C4, T4, P4, O2, FC2, CP2). Ca ne
+    biaise pas l'EFS par electrode (chaque electrode est traitee independamment), mais
+    ca change l'AGREGATION par ROI (nos ROI ont plus d'electrodes). M1 (mastoide)
+    absent de nos donnees EEG (misc1/2/3 non identifies, pas de features). cf variante
+    aggregate_roi_fig5_arthur11.py (agregation sur les 11 electrodes d'Arthur moins M1).
+
+POINTS VERIFIES IDENTIQUES (non-ecarts, documentes pour transparence) :
+ - Groupes de la CV nichee : Arthur utilise create_groups qui RENUMEROTE les sujets du
+   train 0..33 ; nous gardons les indices originaux (0..35 en sautant les 2 sujets de
+   test). Fonctionnellement IDENTIQUE : le splitter leave-2-groups-out ne depend que de
+   l'unicite des groupes par sujet, pas de leur valeur.
+ - Reconstruction best_idx : Arthur fait .strip().capitalize() sur les noms de bandes
+   (ses .mat ont des espaces/casse variable) ; nos noms sont propres ('sigma' etc.),
+   donc pas besoin. Dependance implicite : les noms de bandes doivent matcher entre
+   script 1 (EFS) et script 2 (perms) -> garanti car les deux font BANDS=list(FREQ_DICT).
+ - Bandes alpha(8-13)/sigma(11-16) se CHEVAUCHENT (11-13 Hz). Decoupage d'Arthur,
+   fidele, mais les features alpha et sigma ne sont pas independantes sur 11-13 Hz.
+ - EFS.fit(x, y, groups) : Arthur passe groups en positionnel, nous en keyword. Idem.
+================================================================================
+================================================================================
+
 Usage
 -----
     python recompute_efs_holdout_fig5.py \

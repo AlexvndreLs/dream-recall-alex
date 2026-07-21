@@ -29,6 +29,21 @@ Difference de RNG (inevitable) : Arthur permute en serie avec un np.random globa
 non seede. Ici on parallelise (prefer='processes') avec un seed par split (seed+i),
 donc permutations REPRODUCTIBLES mais pas bit-identiques aux siennes. Le resultat
 statistique est equivalent (1000 permutations aleatoires des labels par split).
+
+IMPORTANT - ARTHUR A DEUX VERSIONS CONTRADICTOIRES DES PERMUTATIONS :
+  (a) EFS_fixed_elec.py (bloc PERM, jamais active car PERM=False) : pscores_cv=[]
+      REINITIALISE par split -> version PROPRE (p-value du split sur ses seuls 1000
+      pscores). C'est la "bonne" version, presente mais desactivee.
+  (b) permutations_EFS_fixed_elec.py (script SEPARE, REELLEMENT lance pour la Fig.5) :
+      pscores=[] hors boucle -> version CUMULATIVE buguee (decrite ci-dessus).
+  Le code REELLEMENT EXECUTE pour la Fig.5 est (b), le cumulatif bugue. On replique
+  donc (b) par defaut (--arthur-cumulative-pscores). Le flag
+  --no-arthur-cumulative-pscores donne (a), qui correspond aussi a ce qu'Arthur avait
+  code (mais desactive) dans EFS_fixed_elec.py. Les deux sont donc "du code d'Arthur".
+
+ECART PARALLELISATION : Arthur permute en serie (boucle for _ in range(N_PERM)). Nous
+parallelisons les splits (prefer='processes', mlxtend absent ici de toute facon car
+pas de re-EFS). Resultat statistique equivalent, plus rapide.
 ================================================================================
 
 N_PERM = 1000 par split (valeur d'Arthur). p minimum ~ 1/1001 = 0.001, pile au seuil
@@ -178,6 +193,9 @@ def main():
         y_feature = np.concatenate([[labels[j]] * len(subs[j]) for j in tr])
         x_classif = np.concatenate([subs[j] for j in te], axis=0)   # (n_ep_te, 5)
         y_classif = np.concatenate([[labels[j]] * len(subs[j]) for j in te])
+        # best_idx : Arthur fait FREQS.index(v.strip().capitalize()) (ses noms .mat ont
+        # espaces/casse variable). Nos best_freqs viennent du script 1 avec des noms
+        # propres ('sigma' etc.), donc index direct. Non-ecart (nettoyage inutile ici).
         best_idx = [BANDS.index(b) for b in best_freqs[i]]
         split_payloads.append((x_feature, y_feature, x_classif, y_classif, best_idx))
 

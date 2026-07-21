@@ -43,6 +43,54 @@ Fidelite au code d'Arthur
 - exclusions : Arthur exclut le sujet 10 (artefact FC2) et n'a que 17 HR. Reproduit
   via --drop-subjects (defaut : aucun ; passer "10" pour coller a Arthur).
 
+======================= ECARTS AVEC LE CODE D'ARTHUR (documentes) ==============
+Comparaison ligne par ligne avec ttest.py + ttest_perm_indep.py d'Arthur. Ecarts :
+
+E1. ECHANTILLONNAGE DES PERMUTATIONS (ecart reel, methodologiquement en notre faveur).
+    Arthur : itertools.combinations(range(n), n_cond1) tronque aux n_perm PREMIERES
+    combinaisons (_combinations, ligne 303-310). Deterministe mais BIAISE : les
+    premieres combinaisons lexicographiques gardent presque toutes les memes
+    echantillons ensemble (ex (0,1,2,...) puis (0,1,...,n-1,n+1)), donc ce n'est PAS
+    un echantillon uniforme de l'espace des permutations. Au niveau epoch (~10000
+    epochs) c'est encore plus biaise.
+    Nous : rng.choice(replace=False), tirage ALEATOIRE UNIFORME. Statistiquement
+    superieur (echantillonnage non biaise de la distribution nulle), mais differe de
+    son code. Impact a verifier empiriquement (sur un vrai effet fort comme sigma/S2,
+    les deux convergent car le t observe est loin dans les deux nulls).
+
+E2. perm_t[1:] (ecart mineur). Arthur retire la 1ere permutation (l'identite, qui
+    redonne le split original non permute ; ligne 180 : "return perm_t[1:]"). Nous ne
+    generons PAS l'identite (tirage aleatoire), donc rien a retirer. Ecart de 1 perm
+    sur 9999, impact negligeable sur le p. SOUS-DETAIL : chez Arthur, ce retrait
+    affecte aussi le DENOMINATEUR du p-value (scaling = len(perm_t) APRES le [1:], donc
+    scaling = n_perm - 1 = 9998). Nous divisons par n_perm exact (9999). Ecart de 1 sur
+    9999 au denominateur, negligeable.
+
+E3. EXCLUSION SUJET 10 (ecart reel, controle par --drop-subjects). Arthur exclut le
+    sujet 10 pour le ttest UNIQUEMENT (np.delete(X,9) + X[:17] -> 17 HR + 18 LR ;
+    ttest.py ligne 31-33). VERIFIE dans nos donnees : sujet 10 = outlier FC2 delta a
+    23.7x la mediane (artefact reel confirme). Pour repliquer Arthur : --drop-subjects
+    10. NB : Arthur GARDE le sujet 10 pour la Fig.5 (EFS) -> incoherence d'Arthur,
+    reproduite (cf recompute_efs_holdout_fig5.py).
+
+Points VERIFIES IDENTIQUES (pas des ecarts) : formule p sum(t_obs<=t_perm)/n_perm
+sans +1 ; maxstat = perm_t.max(axis=1) sur 19 elec par bande ; _generate_conds
+(vstack index/complement, re-split) ; two_tailed via abs() ; equal_var=False (Welch) ;
+niveau epoch (concatenation de toutes les epochs, moyenne par sujet commentee chez lui).
+
+E4. MONTAGE 12 vs 19 ELECTRODES (ecart de donnees). Arthur corrige le maxstat sur SES
+    12 electrodes (Fz,Cz,Pz,Fp1,F3,FC1,C3,T3,CP1,P3,M1,O1), nous sur nos 19. Le maxstat
+    etant un max sur les electrodes, corriger sur 19 est PLUS severe que sur 12 (plus
+    de comparaisons -> seuil plus haut). Donc a effet egal, on aura potentiellement
+    MOINS d'electrodes significatives qu'Arthur, uniquement a cause du nombre
+    d'electrodes dans la correction. M1 absent de nos donnees (misc non identifies).
+
+E5. BANDES : alpha (8-13) et sigma (11-16) SE CHEVAUCHENT (11-13 Hz communs). C'est le
+    decoupage d'Arthur (identique dans le PDF), donc fidele, mais a garder en tete :
+    les t-values alpha et sigma ne sont pas independantes sur 11-13 Hz. Non corrige
+    (fidelite a Arthur).
+================================================================================
+
 Entrees : {save_path}/psd_{band}/psd_{band}_s{XX}_S2.npz (cle "data", (n_epochs, 19)).
 Sorties : {out_dir}/fig3_ttest_{state}.npz (t-values (5,19), p corrigees (5,19), meta).
 
@@ -190,10 +238,13 @@ def _ttest_perm(full_mat, index):
 
 
 def _perm_indices(n_samples, n_cond1, n_perm, seed):
-    """n_perm sous-ensembles aleatoires de n_cond1 indices parmi n_samples.
+    """n_perm sous-ensembles ALEATOIRES de n_cond1 indices parmi n_samples.
 
-    Enumeration exhaustive impossible au niveau epoch -> echantillonnage aleatoire,
-    comportement d'Arthur des que n_perm < n_comb (cas systematique ici)."""
+    ECART E1 avec Arthur (cf en-tete) : Arthur utilise itertools.combinations tronque
+    aux n_perm premieres combinaisons (deterministe mais BIAISE). Nous faisons un
+    tirage aleatoire uniforme (rng.choice), statistiquement superieur mais different
+    de son code. L'enumeration exhaustive est de toute facon impossible au niveau
+    epoch (comb(~10000, ~5000) est astronomique)."""
     rng = np.random.RandomState(seed)
     return [rng.choice(n_samples, size=n_cond1, replace=False) for _ in range(n_perm)]
 

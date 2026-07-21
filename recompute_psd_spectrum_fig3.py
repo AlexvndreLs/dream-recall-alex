@@ -31,6 +31,42 @@ Sorties : {out_dir}/fig3_psd_spectrum_{state}.npz
 
 Ne fait AUCUN plot (separation calcul/visu). Le plot consommera le .npz.
 
+======================= ECARTS AVEC LE CODE D'ARTHUR (documentes) ==============
+Comparaison avec visu_gen_fig1.py + computePSD (utils.py) d'Arthur. Ecarts :
+
+E1. FENETRE WELCH (ecart assume, deja documente dans feat_extract). Arthur :
+    computePSD utilise window="hamming" (utils.py ligne 210). Nous : window="hann"
+    (feat_extract_umap_fooof_v4.compute_psd_spectrum, reutilise ici). Choix deja
+    tranche dans le pipeline : hann coherent avec le texte de la these, avec
+    pyriemann.CoSpectra (hann hardcode), et mieux adapte aux fenetres non-overlap sur
+    signal a forte dominante delta. Divergence texte(hann)/code(hamming) chez Arthur
+    lui-meme. Ecart mineur sur la forme du spectre.
+
+E2. TRANSFORMATION D'AFFICHAGE dB/log (laisse au PLOT, pas au calcul). La Fig.3 gauche
+    d'Arthur est en "dB/Hz" : il applique compute(val,k)=math.log(val/(k+1)) a chaque
+    valeur AVANT de tracer (visu_gen_fig1.py). NB : le "/(k+1)" avec k=index du sujet
+    est tres douteux (divise la PSD du sujet i par i+1, sans sens physiologique ;
+    probablement un hack d'etalement visuel des courbes, ou un bug). Nous sortons la
+    PSD LINEAIRE BRUTE + per_subject : la transformation (log/dB, et l'eventuel
+    etalement) est une decision de PLOT, appliquee a la visualisation, PAS au recompute.
+    A trancher au moment du plot (recommande : 10*log10, SANS le /(k+1) douteux).
+
+E3. COURBES INDIVIDUELLES (ecart mineur, gere par le plot). Arthur trace une courbe
+    par sujet (fines) + la moyenne de groupe (epaisse). Nous stockons per_subject
+    (n_sujets, n_freqs) ET la moyenne + SEM : le plot peut tracer les individus ou le
+    ruban SEM au choix. Aucune perte d'information.
+
+E4. EXCLUSION SUJET 10 : Arthur ne l'exclut PAS pour la Fig.1/PSD (seulement pour le
+    ttest). Nous non plus ici. Coherent. (Le sujet 10 est un outlier FC2, mais FC2 est
+    noye dans la moyenne sur 19 electrodes, impact limite sur la courbe PSD globale.)
+
+E5. MONTAGE 12 vs 19 ELECTRODES (ecart de donnees). La courbe PSD est moyennee sur les
+    electrodes : Arthur moyenne sur SES 12 (Fz,Cz,Pz,Fp1,F3,FC1,C3,T3,CP1,P3,M1,O1),
+    nous sur nos 19 (deux hemispheres). La forme moyenne du spectre peut donc differer
+    legerement (nous incluons Fp2,F4,C4,T4,P4,O2,FC2,CP2 qu'il n'a pas). M1 absent de
+    nos donnees (misc1/2/3 non identifies, pas de features).
+================================================================================
+
 Usage
 -----
     python recompute_psd_spectrum_fig3.py \\
