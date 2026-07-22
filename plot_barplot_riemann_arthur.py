@@ -34,6 +34,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from config_v3 import FREQ_DICT, STATE_LIST
+STATE_LIST = ["S2", "SWS", "NREM", "REM"]  # ordre figure : NREM avant REM
 
 # ─── paramètres figure (repris de visu_barplot_cosp.py d'Arthur) ─────────────
 
