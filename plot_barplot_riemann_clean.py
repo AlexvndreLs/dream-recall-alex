@@ -1,19 +1,26 @@
-"""Barplot des accuracies riemanniennes (covariance + cospectres), par stade.
+"""Barplots des accuracies riemanniennes (covariance + cospectres), par stade.
 
-Version "propre" : schéma de permutation SUBJECT (RFX, Combrisson et al. 2022),
-correction max-stat POOLED sur toute la famille matricielle (6 tests par stade).
-À distinguer de plot_barplot_riemann_arthur.py, qui réplique le chapitre 1 avec
-le schéma epoch et sans correction inter-features.
+Version "propre" : schema de permutation SUBJECT (RFX, Combrisson et al. 2022).
+Deux figures, une par niveau de correction :
 
-Deux marquages superposés, qui ne disent pas la même chose :
-  - le trait pointillé est le seuil corrigé, quantile (1-alpha) de la loi nulle
-    du MAXIMUM sur les 6 features de la famille. Une barre qui le dépasse est
-    significative après correction FWER.
-  - l'étoile marque les barres dont p_corrigé < alpha, lu depuis les .npz de
-    compute_maxstat_correction.py. Trait et étoile sont redondants par
-    construction : l'étoile rend la décision lisible sans mesurer à l'oeil.
+  raw    : p non corrigee de chaque feature seule (d["pval"]). Chaque feature a
+           sa propre loi nulle ; le seuil (trait par barre) est le quantile
+           (1-alpha) de perm_accs de cette feature. Aucune correction inter-features.
 
-Prérequis : compute_maxstat_correction.py doit avoir tourné en mode pooled sur
+  pooled : correction max-stat POOLED sur toute la famille matricielle (6 tests
+           par stade). Le trait est un seuil commun au groupe (quantile (1-alpha)
+           de la loi nulle du MAXIMUM sur les 6 features). Une barre qui le depasse
+           est significative apres correction FWER.
+
+Il n'y a PAS de niveau "max-stat electrodes (Arthur)" ici : une feature matricielle
+est un test unique (une matrice par stade), sans dimension electrode a corriger.
+Le pendant d'Arthur pour les matrices est le changement de schema (epoch), traite
+separement par plot_barplot_riemann_arthur.py.
+
+L'etoile marque p < alpha (raw : p brute ; pooled : p corrigee lue depuis les .npz
+de compute_maxstat_correction.py). Trait et etoile sont redondants par construction.
+
+Prerequis pour la figure pooled : compute_maxstat_correction.py en mode pooled sur
 la famille 'matrix' :
     python compute_maxstat_correction.py \
         --save-path   .../dream_features_noica_1000hz_overlap \
@@ -21,15 +28,13 @@ la famille 'matrix' :
         --family-name matrix \
         --keys cov cosp_delta cosp_theta cosp_alpha cosp_sigma cosp_beta
 
-Sans ces fichiers, la figure est tracée sans seuil ni étoile plutôt que
-d'échouer : les accuracies restent lisibles, seule la décision statistique
-manque.
+La figure raw ne depend que des results/*.npz (pval, perm_accs), pas du corrected.
 
 Usage :
     python plot_barplot_riemann_clean.py \
         --save-path      /scratch/alouis/dream_features_noica_1000hz_overlap \
         --corrected-path /scratch/alouis/dream_features_noica_1000hz_overlap_corrected \
-        --out-dir        /scratch/alouis/dream-recall-alex/plot_overlap \
+        --out-dir        /home/alouis/dream-recall-alex/plot_overlap \
         --alpha 0.05
 """
 
@@ -56,6 +61,11 @@ from plot_common import (
 WIDTH = 0.90
 Y_LABEL = "Decoding accuracy (%)"
 
+LEVELS = {
+    "raw":    "non corrige (p brute, feature seule)",
+    "pooled": "max-stat pooled sur la famille matricielle",
+}
+
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
@@ -64,58 +74,70 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--corrected-path", type=Path, required=True,
                    help="Dossier des .npz maxstat (compute_maxstat_correction.py).")
     p.add_argument("--out-dir", type=Path, required=True,
-                   help="Dossier de sortie de la figure.")
+                   help="Dossier de sortie des figures.")
     p.add_argument("--alpha", type=float, default=0.05,
-                   help="Seuil de significativité (max-stat pooled).")
+                   help="Seuil de significativite.")
     p.add_argument("--ymin", type=float, default=None,
-                   help="Borne basse de l'axe y (%%). Défaut : calculée sur les données.")
+                   help="Borne basse de l'axe y (%%). Defaut : calculee sur les donnees.")
     p.add_argument("--ymax", type=float, default=None,
                    help="Borne haute de l'axe y (%%).")
     return p.parse_args()
 
 
-def collect(save_path: Path, corrected_path: Path, alpha: float):
-    """Charge accuracies, écarts-types, seuils et décisions pour tous les combos.
+def collect(save_path: Path, corrected_path: Path, level: str, alpha: float):
+    """Charge accuracies, ecarts-types, decisions et seuils pour tous les combos.
 
-    Retourne (accs, stds, sigs, thresholds) où accs/stds/sigs sont indexés
-    [stade][feature] et thresholds [stade] (un seul seuil par stade, commun à
-    toute la famille : c'est le principe du pooling).
+    Retourne (accs, stds, sigs, bar_thr, group_thr) indexes [stade][feature],
+    sauf group_thr indexe [stade] (seuil commun, pooled seulement).
+
+      raw    : bar_thr[stade][feat] = quantile (1-alpha) de perm_accs de la feature.
+               group_thr = NaN (pas de seuil commun).
+      pooled : group_thr[stade] = quantile (1-alpha) de la nulle du max.
+               bar_thr = NaN (le trait est groupe, pas par barre).
     """
-    accs, stds, sigs, thresholds = [], [], [], []
+    accs, stds, sigs, bar_thr, group_thr = [], [], [], [], []
     for state in STATES_ORDERED:
-        pvals = load_maxstat(corrected_path, "matrix", state)
-        null_max = load_null_max(corrected_path, "matrix", state)
-        thresholds.append(
-            maxstat_threshold(null_max, alpha) * 100 if null_max is not None else np.nan
-        )
+        if level == "pooled":
+            pvals = load_maxstat(corrected_path, "matrix", state)
+            null_max = load_null_max(corrected_path, "matrix", state)
+            group_thr.append(
+                maxstat_threshold(null_max, alpha) * 100 if null_max is not None else np.nan
+            )
+        else:
+            pvals = None
+            group_thr.append(np.nan)
 
-        a_row, s_row, sig_row = [], [], []
+        a_row, s_row, sig_row, t_row = [], [], [], []
         for key in MATRIX_KEYS:
             d = load_result(save_path, key, state)
             if d is None:
                 print(f"  absent : {key}_{state}.npz")
-                a_row.append(np.nan)
-                s_row.append(np.nan)
-                sig_row.append(False)
+                a_row.append(np.nan); s_row.append(np.nan)
+                sig_row.append(False); t_row.append(np.nan)
                 continue
+
             a_row.append(float(d["acc_mean"]) * 100)
-            # acc_std est déjà la dispersion inter-bootstrap (chaque acc_scores
-            # est une accuracy moyennée sur les 324 splits par run_cv) : pas de
-            # regroupement supplémentaire à faire.
+            # acc_std est deja la dispersion inter-bootstrap.
             s_row.append(float(d["acc_std"]) * 100)
-            sig_row.append(pvals is not None and pvals.get(key, 1.0) < alpha)
 
-        accs.append(a_row)
-        stds.append(s_row)
-        sigs.append(sig_row)
-    return accs, stds, sigs, thresholds
+            if level == "raw":
+                p = float(d["pval"])
+                # seuil par barre : quantile (1-alpha) de la nulle de la feature
+                null = np.array(d["perm_accs"], dtype=float)
+                t_row.append(maxstat_threshold(null, alpha) * 100)
+            else:  # pooled
+                p = pvals.get(key, 1.0) if pvals is not None else 1.0
+                t_row.append(np.nan)
+
+            sig_row.append(p < alpha)
+
+        accs.append(a_row); stds.append(s_row); sigs.append(sig_row)
+        bar_thr.append(t_row)
+    return accs, stds, sigs, bar_thr, group_thr
 
 
-def main() -> None:
-    args = parse_args()
-    print(f"=== barplot riemannien (subject, max-stat pooled, p < {args.alpha}) ===")
-
-    accs, stds, sigs, thresholds = collect(args.save_path, args.corrected_path, args.alpha)
+def make_figure(save_path, corrected_path, out_dir, level, alpha, ymin, ymax):
+    accs, stds, sigs, bar_thr, group_thr = collect(save_path, corrected_path, level, alpha)
 
     fig, ax = plt.subplots(figsize=(11, 5))
     n_keys = len(MATRIX_KEYS)
@@ -136,28 +158,29 @@ def main() -> None:
 
             if sigs[g][i]:
                 n_sig_total += 1
-                # étoile posée au-dessus de la barre d'erreur, pas de la barre
                 ax.text(x, val + stds[g][i] + 0.4, "*", ha="center", va="bottom",
                         fontsize=15, fontweight="bold")
 
-        # Un seul trait par groupe : le seuil est commun à la famille entière.
-        t = thresholds[g]
-        if not np.isnan(t):
+            # raw : trait par barre (seuil propre a la feature)
+            if level == "raw" and not np.isnan(bar_thr[g][i]):
+                t = bar_thr[g][i]
+                ax.plot([x - WIDTH / 2, x + WIDTH / 2], [t, t], "k--", lw=1.2, zorder=3)
+
+        # pooled : un seul trait par groupe (seuil commun a la famille)
+        if level == "pooled" and not np.isnan(group_thr[g]):
             x0 = g * group_width - WIDTH / 2
             x1 = g * group_width + (n_keys - 1) + WIDTH / 2
-            ax.plot([x0, x1], [t, t], "k--", lw=1.2, zorder=3)
+            ax.plot([x0, x1], [group_thr[g], group_thr[g]], "k--", lw=1.2, zorder=3)
 
-    # Bornes : laisse respirer au-dessus des étoiles, coupe sous le niveau de
-    # chance seulement si les données descendent plus bas.
     finite = [v for row in accs for v in row if not np.isnan(v)]
-    ymin = args.ymin if args.ymin is not None else min(48, min(finite) - 3)
-    ymax = args.ymax if args.ymax is not None else max(finite) + 5
-    ax.set_ylim(ymin, ymax)
+    lo = ymin if ymin is not None else min(48, min(finite) - 3)
+    hi = ymax if ymax is not None else max(finite) + 5
+    ax.set_ylim(lo, hi)
 
     ax.set_ylabel(Y_LABEL)
     ax.set_title(
         f"Riemannian classifications, permutation sujet (RFX), "
-        f"max-stat pooled sur {n_keys} features, p < {args.alpha}"
+        f"{LEVELS[level]}, p < {alpha}"
     )
     ax.set_xticks([g * group_width + (n_keys - 1) / 2 for g in range(len(STATES_ORDERED))])
     ax.set_xticklabels(STATES_ORDERED)
@@ -169,20 +192,29 @@ def main() -> None:
                   frameon=False, fontsize=9, ncol=2,
                   loc="upper right", bbox_to_anchor=(1.0, 1.0))
 
-    # Légende du trait et de l'étoile : sans ça, le lecteur ne peut pas savoir
-    # que les deux disent la même chose ni sur quoi porte la correction.
-    ax.text(0.995, 0.02,
-            "- - -  seuil max-stat pooled   |   *  p < %.2g corrigé" % args.alpha,
-            transform=ax.transAxes, ha="right", va="bottom", fontsize=8,
-            color="0.3")
+    if level == "pooled":
+        note = "- - -  seuil max-stat pooled   |   *  p < %.2g corrige" % alpha
+    else:
+        note = "- - -  seuil par feature   |   *  p < %.2g non corrige" % alpha
+    ax.text(0.995, 0.02, note, transform=ax.transAxes, ha="right", va="bottom",
+            fontsize=8, color="0.3")
 
-    args.out_dir.mkdir(parents=True, exist_ok=True)
-    out = args.out_dir / f"barplot_riemann_subject_pooled_p{args.alpha}.png"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / f"barplot_riemann_subject_{level}_p{alpha}.png"
     fig.tight_layout()
     fig.savefig(out, dpi=RESOLUTION)
     plt.close(fig)
-    print(f"  {n_sig_total} barres significatives sur {n_keys * len(STATES_ORDERED)}")
-    print(f"Écrit : {out}")
+    print(f"  [{level}] {n_sig_total} barres significatives sur "
+          f"{n_keys * len(STATES_ORDERED)} -> {out}")
+    return out
+
+
+def main() -> None:
+    args = parse_args()
+    print(f"=== barplots riemanniens (subject/RFX, p < {args.alpha}) ===")
+    for level in ("raw", "pooled"):
+        make_figure(args.save_path, args.corrected_path, args.out_dir,
+                    level, args.alpha, args.ymin, args.ymax)
 
 
 if __name__ == "__main__":
