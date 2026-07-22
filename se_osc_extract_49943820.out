@@ -1,0 +1,269 @@
+=== extraction spec_entropy_osc (par sujet, stades atomiques) ===
+    n_jobs_extract=4 (bas : chaque worker charge un raw 1000Hz)
+  sub-01: sfreq=1000Hz window=1000
+  sub-02: sfreq=1000Hz window=1000
+  sub-04: sfreq=1000Hz window=1000
+  sub-02 S1: 84 epochs -> spec_entropy_osc_s02_S1.npz
+  sub-04 S1: 37 epochs -> spec_entropy_osc_s04_S1.npz
+  sub-01 S1: 167 epochs -> spec_entropy_osc_s01_S1.npz
+  sub-03: sfreq=1000Hz window=1000
+  sub-02 S2: 218 epochs -> spec_entropy_osc_s02_S2.npz
+  sub-02 S3: 34 epochs -> spec_entropy_osc_s02_S3.npz
+  sub-03 S1: 63 epochs -> spec_entropy_osc_s03_S1.npz
+  sub-01 S2: 260 epochs -> spec_entropy_osc_s01_S2.npz
+  sub-04 S2: 232 epochs -> spec_entropy_osc_s04_S2.npz
+  sub-01 S3: 35 epochs -> spec_entropy_osc_s01_S3.npz
+  sub-04 S3: 28 epochs -> spec_entropy_osc_s04_S3.npz
+  sub-02 S4: 105 epochs -> spec_entropy_osc_s02_S4.npz
+  sub-01 S4: 118 epochs -> spec_entropy_osc_s01_S4.npz
+  sub-01 REM: 70 epochs -> spec_entropy_osc_s01_REM.npz
+sub-01: extraction done
+  sub-02 REM: 134 epochs -> spec_entropy_osc_s02_REM.npz
+sub-02: extraction done
+  sub-04 S4: 179 epochs -> spec_entropy_osc_s04_S4.npz
+  sub-03 S2: 326 epochs -> spec_entropy_osc_s03_S2.npz
+  sub-03 S3: 39 epochs -> spec_entropy_osc_s03_S3.npz
+  sub-04 REM: 144 epochs -> spec_entropy_osc_s04_REM.npz
+sub-04: extraction done
+  sub-03 S4: 171 epochs -> spec_entropy_osc_s03_S4.npz
+  sub-06: sfreq=1000Hz window=1000
+  sub-06 S1: 49 epochs -> spec_entropy_osc_s06_S1.npz
+  sub-03 REM: 200 epochs -> spec_entropy_osc_s03_REM.npz
+sub-03: extraction done
+  sub-05: sfreq=1000Hz window=1000
+  sub-07: sfreq=1000Hz window=1000
+  sub-06 S2: 293 epochs -> spec_entropy_osc_s06_S2.npz
+  sub-08: sfreq=1000Hz window=1000
+  sub-05 S1: 60 epochs -> spec_entropy_osc_s05_S1.npz
+  sub-06 S3: 59 epochs -> spec_entropy_osc_s06_S3.npz
+  sub-07 S1: 64 epochs -> spec_entropy_osc_s07_S1.npz
+  sub-08 S1: 44 epochs -> spec_entropy_osc_s08_S1.npz
+  sub-06 S4: 188 epochs -> spec_entropy_osc_s06_S4.npz
+  sub-08 S2: 168 epochs -> spec_entropy_osc_s08_S2.npz
+  sub-08 S3: 34 epochs -> spec_entropy_osc_s08_S3.npz
+  sub-07 S2: 230 epochs -> spec_entropy_osc_s07_S2.npz
+  sub-07 S3: 35 epochs -> spec_entropy_osc_s07_S3.npz
+  sub-06 REM: 124 epochs -> spec_entropy_osc_s06_REM.npz
+sub-06: extraction done
+  sub-05 S2: 426 epochs -> spec_entropy_osc_s05_S2.npz
+  sub-05 S3: 36 epochs -> spec_entropy_osc_s05_S3.npz
+  sub-08 S4: 271 epochs -> spec_entropy_osc_s08_S4.npz
+  sub-07 S4: 186 epochs -> spec_entropy_osc_s07_S4.npz
+  sub-08 REM: 129 epochs -> spec_entropy_osc_s08_REM.npz
+sub-08: extraction done
+  sub-05 S4: 183 epochs -> spec_entropy_osc_s05_S4.npz
+  sub-07 REM: 147 epochs -> spec_entropy_osc_s07_REM.npz
+sub-07: extraction done
+  sub-09: sfreq=1000Hz window=1000
+  sub-10: sfreq=1000Hz window=1000
+  sub-05 REM: 197 epochs -> spec_entropy_osc_s05_REM.npz
+sub-05: extraction done
+  sub-10 S1: 60 epochs -> spec_entropy_osc_s10_S1.npz
+  sub-09 S1: 119 epochs -> spec_entropy_osc_s09_S1.npz
+  sub-10 S2: 320 epochs -> spec_entropy_osc_s10_S2.npz
+  sub-10 S3: 37 epochs -> spec_entropy_osc_s10_S3.npz
+  sub-10 S4: 153 epochs -> spec_entropy_osc_s10_S4.npz
+  sub-11: sfreq=1000Hz window=1000
+  sub-09 S2: 396 epochs -> spec_entropy_osc_s09_S2.npz
+  sub-11 S1: 114 epochs -> spec_entropy_osc_s11_S1.npz
+  sub-12: sfreq=1000Hz window=1000
+  sub-09 S3: 43 epochs -> spec_entropy_osc_s09_S3.npz
+  sub-10 REM: 177 epochs -> spec_entropy_osc_s10_REM.npz
+sub-10: extraction done
+  sub-09 S4: 85 epochs -> spec_entropy_osc_s09_S4.npz
+  sub-12 S1: 166 epochs -> spec_entropy_osc_s12_S1.npz
+  sub-13: sfreq=1000Hz window=1000
+  sub-09 REM: 214 epochs -> spec_entropy_osc_s09_REM.npz
+sub-09: extraction done
+  sub-13 S1: 93 epochs -> spec_entropy_osc_s13_S1.npz
+  sub-11 S2: 392 epochs -> spec_entropy_osc_s11_S2.npz
+  sub-11 S3: 80 epochs -> spec_entropy_osc_s11_S3.npz
+  sub-13 S2: 140 epochs -> spec_entropy_osc_s13_S2.npz
+  sub-13 S3: 36 epochs -> spec_entropy_osc_s13_S3.npz
+  sub-12 S2: 340 epochs -> spec_entropy_osc_s12_S2.npz
+  sub-12 S3: 42 epochs -> spec_entropy_osc_s12_S3.npz
+  sub-11 S4: 226 epochs -> spec_entropy_osc_s11_S4.npz
+  sub-14: sfreq=1000Hz window=1000
+  sub-14 S1: 46 epochs -> spec_entropy_osc_s14_S1.npz
+  sub-12 S4: 143 epochs -> spec_entropy_osc_s12_S4.npz
+  sub-13 S4: 298 epochs -> spec_entropy_osc_s13_S4.npz
+  sub-11 REM: 125 epochs -> spec_entropy_osc_s11_REM.npz
+sub-11: extraction done
+  sub-12 REM: 96 epochs -> spec_entropy_osc_s12_REM.npz
+sub-12: extraction done
+  sub-13 REM: 177 epochs -> spec_entropy_osc_s13_REM.npz
+sub-13: extraction done
+  sub-14 S2: 270 epochs -> spec_entropy_osc_s14_S2.npz
+  sub-14 S3: 24 epochs -> spec_entropy_osc_s14_S3.npz
+  sub-15: sfreq=1000Hz window=1000
+  sub-15 S1: 54 epochs -> spec_entropy_osc_s15_S1.npz
+  sub-14 S4: 185 epochs -> spec_entropy_osc_s14_S4.npz
+  sub-15 S2: 210 epochs -> spec_entropy_osc_s15_S2.npz
+  sub-14 REM: 182 epochs -> spec_entropy_osc_s14_REM.npz
+sub-14: extraction done
+  sub-15 S3: 54 epochs -> spec_entropy_osc_s15_S3.npz
+  sub-16: sfreq=1000Hz window=1000
+  sub-16 S1: 56 epochs -> spec_entropy_osc_s16_S1.npz
+  sub-17: sfreq=1000Hz window=1000
+  sub-15 S4: 239 epochs -> spec_entropy_osc_s15_S4.npz
+  sub-17 S1: 102 epochs -> spec_entropy_osc_s17_S1.npz
+  sub-18: sfreq=1000Hz window=1000
+  sub-18 S1: 31 epochs -> spec_entropy_osc_s18_S1.npz
+  sub-15 REM: 197 epochs -> spec_entropy_osc_s15_REM.npz
+sub-15: extraction done
+  sub-16 S2: 365 epochs -> spec_entropy_osc_s16_S2.npz
+  sub-16 S3: 38 epochs -> spec_entropy_osc_s16_S3.npz
+  sub-18 S2: 262 epochs -> spec_entropy_osc_s18_S2.npz
+  sub-17 S2: 308 epochs -> spec_entropy_osc_s17_S2.npz
+  sub-17 S3: 18 epochs -> spec_entropy_osc_s17_S3.npz
+  sub-19: sfreq=1000Hz window=1000
+  sub-19 S1: 19 epochs -> spec_entropy_osc_s19_S1.npz
+  sub-18 S3: 102 epochs -> spec_entropy_osc_s18_S3.npz
+  sub-16 S4: 146 epochs -> spec_entropy_osc_s16_S4.npz
+  sub-17 S4: 161 epochs -> spec_entropy_osc_s17_S4.npz
+  sub-19 S2: 191 epochs -> spec_entropy_osc_s19_S2.npz
+  sub-18 S4: 189 epochs -> spec_entropy_osc_s18_S4.npz
+  sub-19 S3: 77 epochs -> spec_entropy_osc_s19_S3.npz
+  sub-16 REM: 154 epochs -> spec_entropy_osc_s16_REM.npz
+sub-16: extraction done
+  sub-17 REM: 156 epochs -> spec_entropy_osc_s17_REM.npz
+sub-17: extraction done
+  sub-19 S4: 200 epochs -> spec_entropy_osc_s19_S4.npz
+  sub-18 REM: 181 epochs -> spec_entropy_osc_s18_REM.npz
+sub-18: extraction done
+  sub-19 REM: 176 epochs -> spec_entropy_osc_s19_REM.npz
+sub-19: extraction done
+  sub-22: sfreq=1000Hz window=1000
+  sub-22 S1: 62 epochs -> spec_entropy_osc_s22_S1.npz
+  sub-20: sfreq=1000Hz window=1000
+  sub-23: sfreq=1000Hz window=1000
+  sub-23 S1: 16 epochs -> spec_entropy_osc_s23_S1.npz
+  sub-20 S1: 47 epochs -> spec_entropy_osc_s20_S1.npz
+  sub-21: sfreq=1000Hz window=1000
+  sub-21 S1: 35 epochs -> spec_entropy_osc_s21_S1.npz
+  sub-22 S2: 180 epochs -> spec_entropy_osc_s22_S2.npz
+  sub-23 S2: 201 epochs -> spec_entropy_osc_s23_S2.npz
+  sub-23 S3: 88 epochs -> spec_entropy_osc_s23_S3.npz
+  sub-22 S3: 149 epochs -> spec_entropy_osc_s22_S3.npz
+  sub-20 S2: 299 epochs -> spec_entropy_osc_s20_S2.npz
+  sub-22 S4: 94 epochs -> spec_entropy_osc_s22_S4.npz
+  sub-20 S3: 54 epochs -> spec_entropy_osc_s20_S3.npz
+  sub-21 S2: 335 epochs -> spec_entropy_osc_s21_S2.npz
+  sub-23 S4: 327 epochs -> spec_entropy_osc_s23_S4.npz
+  sub-21 S3: 68 epochs -> spec_entropy_osc_s21_S3.npz
+  sub-22 REM: 222 epochs -> spec_entropy_osc_s22_REM.npz
+sub-22: extraction done
+  sub-20 S4: 213 epochs -> spec_entropy_osc_s20_S4.npz
+  sub-23 REM: 214 epochs -> spec_entropy_osc_s23_REM.npz
+sub-23: extraction done
+  sub-21 S4: 150 epochs -> spec_entropy_osc_s21_S4.npz
+  sub-20 REM: 189 epochs -> spec_entropy_osc_s20_REM.npz
+sub-20: extraction done
+  sub-21 REM: 250 epochs -> spec_entropy_osc_s21_REM.npz
+sub-21: extraction done
+  sub-25: sfreq=1000Hz window=1000
+  sub-25 S1: 52 epochs -> spec_entropy_osc_s25_S1.npz
+  sub-24: sfreq=1000Hz window=1000
+  sub-25 S2: 372 epochs -> spec_entropy_osc_s25_S2.npz
+  sub-26: sfreq=1000Hz window=1000
+  sub-27: sfreq=1000Hz window=1000
+  sub-25 S3: 84 epochs -> spec_entropy_osc_s25_S3.npz
+  sub-26 S1: 60 epochs -> spec_entropy_osc_s26_S1.npz
+  sub-27 S1: 84 epochs -> spec_entropy_osc_s27_S1.npz
+  sub-24 S1: 384 epochs -> spec_entropy_osc_s24_S1.npz
+  sub-25 S4: 159 epochs -> spec_entropy_osc_s25_S4.npz
+  sub-27 S2: 112 epochs -> spec_entropy_osc_s27_S2.npz
+  sub-27 S3: 70 epochs -> spec_entropy_osc_s27_S3.npz
+  sub-25 REM: 238 epochs -> spec_entropy_osc_s25_REM.npz
+sub-25: extraction done
+  sub-24 S2: 277 epochs -> spec_entropy_osc_s24_S2.npz
+  sub-26 S2: 404 epochs -> spec_entropy_osc_s26_S2.npz
+  sub-24 S3: 43 epochs -> spec_entropy_osc_s24_S3.npz
+  sub-26 S3: 78 epochs -> spec_entropy_osc_s26_S3.npz
+  sub-27 S4: 226 epochs -> spec_entropy_osc_s27_S4.npz
+  sub-24 S4: 151 epochs -> spec_entropy_osc_s24_S4.npz
+  sub-27 REM: 61 epochs -> spec_entropy_osc_s27_REM.npz
+sub-27: extraction done
+  sub-26 S4: 152 epochs -> spec_entropy_osc_s26_S4.npz
+  sub-24 REM: 150 epochs -> spec_entropy_osc_s24_REM.npz
+sub-24: extraction done
+  sub-26 REM: 170 epochs -> spec_entropy_osc_s26_REM.npz
+sub-26: extraction done
+  sub-28: sfreq=1000Hz window=1000
+  sub-28 S1: 11 epochs -> spec_entropy_osc_s28_S1.npz
+  sub-30: sfreq=1000Hz window=1000
+  sub-31: sfreq=1000Hz window=1000
+  sub-30 S1: 39 epochs -> spec_entropy_osc_s30_S1.npz
+  sub-28 S2: 316 epochs -> spec_entropy_osc_s28_S2.npz
+  sub-31 S1: 61 epochs -> spec_entropy_osc_s31_S1.npz
+  sub-29: sfreq=1000Hz window=1000
+  sub-29 S1: 13 epochs -> spec_entropy_osc_s29_S1.npz
+  sub-28 S3: 118 epochs -> spec_entropy_osc_s28_S3.npz
+  sub-30 S2: 285 epochs -> spec_entropy_osc_s30_S2.npz
+  sub-28 S4: 209 epochs -> spec_entropy_osc_s28_S4.npz
+  sub-30 S3: 92 epochs -> spec_entropy_osc_s30_S3.npz
+  sub-31 S2: 373 epochs -> spec_entropy_osc_s31_S2.npz
+  sub-29 S2: 327 epochs -> spec_entropy_osc_s29_S2.npz
+  sub-28 REM: 156 epochs -> spec_entropy_osc_s28_REM.npz
+sub-28: extraction done
+  sub-31 S3: 67 epochs -> spec_entropy_osc_s31_S3.npz
+  sub-29 S3: 79 epochs -> spec_entropy_osc_s29_S3.npz
+  sub-30 S4: 251 epochs -> spec_entropy_osc_s30_S4.npz
+  sub-31 S4: 248 epochs -> spec_entropy_osc_s31_S4.npz
+  sub-30 REM: 210 epochs -> spec_entropy_osc_s30_REM.npz
+sub-30: extraction done
+  sub-29 S4: 256 epochs -> spec_entropy_osc_s29_S4.npz
+  sub-31 REM: 152 epochs -> spec_entropy_osc_s31_REM.npz
+sub-31: extraction done
+  sub-32: sfreq=1000Hz window=1000
+  sub-29 REM: 243 epochs -> spec_entropy_osc_s29_REM.npz
+sub-29: extraction done
+  sub-33: sfreq=1000Hz window=1000
+  sub-32 S1: 91 epochs -> spec_entropy_osc_s32_S1.npz
+  sub-34: sfreq=1000Hz window=1000
+  sub-33 S1: 21 epochs -> spec_entropy_osc_s33_S1.npz
+  sub-34 S1: 54 epochs -> spec_entropy_osc_s34_S1.npz
+  sub-33 S2: 330 epochs -> spec_entropy_osc_s33_S2.npz
+  sub-33 S3: 31 epochs -> spec_entropy_osc_s33_S3.npz
+  sub-34 S2: 414 epochs -> spec_entropy_osc_s34_S2.npz
+  sub-34 S3: 45 epochs -> spec_entropy_osc_s34_S3.npz
+  sub-32 S2: 413 epochs -> spec_entropy_osc_s32_S2.npz
+  sub-35: sfreq=1000Hz window=1000
+  sub-33 S4: 171 epochs -> spec_entropy_osc_s33_S4.npz
+  sub-34 S4: 211 epochs -> spec_entropy_osc_s34_S4.npz
+  sub-32 S3: 99 epochs -> spec_entropy_osc_s32_S3.npz
+  sub-35 S1: 108 epochs -> spec_entropy_osc_s35_S1.npz
+  sub-32 S4: 99 epochs -> spec_entropy_osc_s32_S4.npz
+  sub-34 REM: 187 epochs -> spec_entropy_osc_s34_REM.npz
+sub-34: extraction done
+  sub-33 REM: 206 epochs -> spec_entropy_osc_s33_REM.npz
+sub-33: extraction done
+  sub-32 REM: 159 epochs -> spec_entropy_osc_s32_REM.npz
+sub-32: extraction done
+  sub-37: sfreq=1000Hz window=1000
+  sub-35 S2: 398 epochs -> spec_entropy_osc_s35_S2.npz
+  sub-37 S1: 57 epochs -> spec_entropy_osc_s37_S1.npz
+  sub-36: sfreq=1000Hz window=1000
+  sub-36 S1: 2 epochs -> spec_entropy_osc_s36_S1.npz
+  sub-35 S3: 64 epochs -> spec_entropy_osc_s35_S3.npz
+  sub-38: sfreq=1000Hz window=1000
+  sub-35 S4: 100 epochs -> spec_entropy_osc_s35_S4.npz
+  sub-38 S1: 27 epochs -> spec_entropy_osc_s38_S1.npz
+  sub-37 S2: 302 epochs -> spec_entropy_osc_s37_S2.npz
+  sub-36 S2: 252 epochs -> spec_entropy_osc_s36_S2.npz
+  sub-37 S3: 49 epochs -> spec_entropy_osc_s37_S3.npz
+  sub-35 REM: 159 epochs -> spec_entropy_osc_s35_REM.npz
+sub-35: extraction done
+  sub-36 S3: 101 epochs -> spec_entropy_osc_s36_S3.npz
+  sub-37 S4: 153 epochs -> spec_entropy_osc_s37_S4.npz
+  sub-38 S2: 448 epochs -> spec_entropy_osc_s38_S2.npz
+  sub-37 REM: 73 epochs -> spec_entropy_osc_s37_REM.npz
+sub-37: extraction done
+  sub-38 S3: 53 epochs -> spec_entropy_osc_s38_S3.npz
+  sub-38 S4: 178 epochs -> spec_entropy_osc_s38_S4.npz
+  sub-36 S4: 292 epochs -> spec_entropy_osc_s36_S4.npz
+  sub-38 REM: 129 epochs -> spec_entropy_osc_s38_REM.npz
+sub-38: extraction done
+  sub-36 REM: 211 epochs -> spec_entropy_osc_s36_REM.npz
+sub-36: extraction done
+=== extract-only : extraction terminee, arret avant classif (13m01s) ===

@@ -64,7 +64,7 @@ from specparam import SpectralGroupModel
 
 from config_v3 import (
     SFREQ_PREPROC, PER_BLACKLIST_STR, JBE_SUBJECTS_STR,
-    N_SAMPLES, N_EEG, CH_NAMES,
+    N_SAMPLES, N_EEG, CH_NAMES, EPOCH_DURATION,
     WINDOW, OVERLAP, FOOOF_FREQ_RANGE,
     ATOMIC_STAGES, STAGE_LABEL_TO_ATOMIC,
     CLASSIFICATION_GROUPS, STATE_LIST,
@@ -107,11 +107,12 @@ def load_epochs_by_atomic_stage(deriv_path: Path, sub_id: str) -> dict[str, np.n
     par stade atomique. Returns dict[atomic] -> (n_epochs, 19, N_SAMPLES)."""
     raw = mne.io.read_raw_brainvision(_vhdr(deriv_path, sub_id), preload=True, verbose=False)
     raw.pick(CH_NAMES[:N_EEG])
-    assert raw.info["sfreq"] == SFREQ_PREPROC, (
-        f"sub-{sub_id}: sfreq fichier ({raw.info['sfreq']}) != SFREQ_PREPROC "
-        f"({SFREQ_PREPROC}) — DECIMATE/SFREQ_PREPROC desynchronises dans config_v3.py."
-    )
-    n_total = raw.n_times
+    # Lit la sfreq reelle du fichier : noica peut etre a 250Hz (DECIMATE=True)
+    # meme si config_v3.py local dit 1000Hz. Welch/FOOOF recalcules correctement.
+    sf        = int(raw.info["sfreq"])
+    n_samples = int(sf * EPOCH_DURATION)  # 7500 a 250Hz, 30000 a 1000Hz
+    window    = min(WINDOW, n_samples)    # fenetre Welch <= epoch entiere
+    n_total   = raw.n_times
 
     scorer = _choose_scorer(sub_id)
     prefix = f"{scorer}/"
@@ -128,24 +129,27 @@ def load_epochs_by_atomic_stage(deriv_path: Path, sub_id: str) -> dict[str, np.n
         block   = df.iloc[i:i + 30]
         samples = block["sample"].values
         stages  = block["stage"].values
-        if not (np.all(samples == samples[0] + np.arange(30) * SF) and
+        if not (np.all(samples == samples[0] + np.arange(30) * sf) and
                 np.all(stages == stages[0])):
             i += 1
             continue
-        end = int(samples[0]) + N_SAMPLES
+        end = int(samples[0]) + n_samples
         if end > n_total:
             raise ValueError(f"sub-{sub_id}: epoch depasse fin fichier (end={end}, n_total={n_total})")
         epoch = raw.get_data(start=int(samples[0]), stop=end)
         epochs[STAGE_LABEL_TO_ATOMIC[stages[0]]].append(epoch)
         i += 30
-    return {s: np.stack(e) for s, e in epochs.items() if e}
+    out = {s: np.stack(e) for s, e in epochs.items() if e}
+    del raw, epochs   # libere le raw full-night preload + les listes: pic memoire
+    return out, sf, window
 
 
-def compute_psd_spectrum(data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """(n_ep, 19, N_SAMPLES) -> psds (n_ep, 19, n_freqs), freqs. Identique feat_extract."""
+def compute_psd_spectrum(data: np.ndarray, sf: int, window: int) -> tuple[np.ndarray, np.ndarray]:
+    """(n_ep, 19, n_samples) -> psds (n_ep, 19, n_freqs), freqs."""
+    overlap = window // 2  # 50% comme OVERLAP dans config_v3.py
     return mne.time_frequency.psd_array_welch(
-        data, sfreq=SF, fmin=FOOOF_FREQ_RANGE[0], fmax=FOOOF_FREQ_RANGE[1],
-        n_fft=WINDOW, n_overlap=OVERLAP, n_per_seg=WINDOW, window="hann", verbose=False,
+        data, sfreq=sf, fmin=FOOOF_FREQ_RANGE[0], fmax=FOOOF_FREQ_RANGE[1],
+        n_fft=window, n_overlap=overlap, n_per_seg=window, window="hann", verbose=False,
     )
 
 
@@ -209,22 +213,29 @@ def extract_subject(deriv_path: Path, save_path: Path, sub_id: str,
             return
 
     try:
-        atomic = load_epochs_by_atomic_stage(deriv_path, sub_id)
+        atomic, sf, window = load_epochs_by_atomic_stage(deriv_path, sub_id)
     except Exception:
         print(f"sub-{sub_id}: ERROR loading\n{traceback.format_exc()}")
         return
 
-    for stage, data in atomic.items():
+    print(f"  sub-{sub_id}: sfreq={sf}Hz window={window}")
+    stage_names = list(atomic.keys())
+    for stage in stage_names:
+        data = atomic.pop(stage)   # retire du dict : liberable apres ce tour
         out = out_dir / f"{FEAT_KEY}_s{sub_id}_{stage}.npz"
         if out.exists() and not overwrite_feat:
+            del data
             continue
         try:
-            psds, freqs = compute_psd_spectrum(data)
+            psds, freqs = compute_psd_spectrum(data, sf, window)
             flat_ratio  = fit_fooof_flat_ratio(psds, freqs)
             se_osc      = spectral_entropy_normalized(flat_ratio)   # (n_ep, 19)
+            del psds, flat_ratio, freqs   # gros objets spectraux : liberer tout de suite
         except Exception:
             print(f"sub-{sub_id} {stage}: ERROR extract\n{traceback.format_exc()}")
+            del data
             continue
+        del data
         out.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(out, data=se_osc)
         print(f"  sub-{sub_id} {stage}: {se_osc.shape[0]} epochs -> {out.name}")
@@ -394,7 +405,12 @@ def parse_args() -> argparse.Namespace:
                    help="Racine derivative preprocessed (ex: .../derivatives/preprocessed-noica)")
     p.add_argument("--save-path",  type=Path, required=True,
                    help="Dossier features (les .npz spec_entropy_osc y seront caches)")
-    p.add_argument("--n-jobs",     type=int, default=1)
+    p.add_argument("--n-jobs",     type=int, default=1,
+                   help="Jobs joblib pour la CLASSIFICATION (donnees deja reduites, leger).")
+    p.add_argument("--n-jobs-extract", type=int, default=4,
+                   help="Jobs joblib pour l'EXTRACTION. BAS volontairement : chaque worker "
+                        "charge un raw full-night 1000Hz (~2-4GB preload), 32 en parallele = OOM. "
+                        "4 workers = ~16GB pic, sur.")
     p.add_argument("--n-perm",     type=int, default=1000)
     p.add_argument("--n-bootstraps", type=int, default=1000)
     p.add_argument("--state",      type=str, default=None,
@@ -406,6 +422,9 @@ def parse_args() -> argparse.Namespace:
                    help="Force la re-extraction des .npz spec_entropy_osc.")
     p.add_argument("--skip-extract", action="store_true", default=False,
                    help="Saute l'extraction (suppose les .npz deja presents).")
+    p.add_argument("--extract-only", action="store_true", default=False,
+                   help="Fait UNIQUEMENT l'extraction puis s'arrete (pas de classif). "
+                        "Permet de separer extraction et classification en deux jobs SLURM.")
     return p.parse_args()
 
 
@@ -417,65 +436,15 @@ if __name__ == "__main__":
     # ── PARTIE 1 : extraction ────────────────────────────────────────────────
     if not args.skip_extract:
         print(f"=== extraction {FEAT_KEY} (par sujet, stades atomiques) ===")
-        Parallel(n_jobs=args.n_jobs)(
+        print(f"    n_jobs_extract={args.n_jobs_extract} (bas : chaque worker charge un raw 1000Hz)")
+        Parallel(n_jobs=args.n_jobs_extract)(
             delayed(extract_subject)(args.deriv_path, args.save_path, sub_id, args.overwrite_feat)
             for sub_id in SUBJECT_IDS
         )
     else:
         print("=== extraction sautee (--skip-extract) ===")
 
-    # ── PARTIE 2 : classification ────────────────────────────────────────────
-    if args.force_n_trials is not None:
-        n_trials = args.force_n_trials
-        print(f"n_trials = {n_trials} (FORCE)")
-    else:
-        n_trials = compute_n_trials(args.save_path, FEAT_KEY, states)
-        print(f"n_trials = {n_trials} (min sur {FEAT_KEY}, etats {states})")
-
-    results_dir = args.save_path / "results_spec_entropy_osc"
-    results_dir.mkdir(parents=True, exist_ok=True)
-
-    rows = []
-    for state in states:
-        print(f"\n=== classification {FEAT_KEY} x {state} ===")
-        try:
-            res = classify_vector(
-                args.save_path, FEAT_KEY, state, n_trials,
-                args.n_bootstraps, args.n_perm, args.normalize, args.n_jobs,
-            )
-        except Exception:
-            print(f"ERROR {FEAT_KEY} {state}\n{traceback.format_exc()}")
-            continue
-        if res is None:
-            continue
-
-        out = results_dir / f"{FEAT_KEY}_{state}.npz"
-        np.savez_compressed(out, **res)
-        print(f"  -> {out}")
-
-        ch_names = res["ch_names"].tolist()
-        for e, ch in enumerate(ch_names):
-            rows.append(dict(
-                key=FEAT_KEY, state=state, electrode=ch,
-                acc_mean=float(res["acc_mean"][e]),
-                acc_std=float(res["acc_std"][e]),
-                pval=float(res["pvals"][e]) if "pvals" in res else np.nan,
-                pval_maxstat=float(res["pvals_maxstat"][e]) if "pvals_maxstat" in res else np.nan,
-                n_trials=int(res["n_trials"]),
-                n_subjects=int(res["n_subjects"]),
-            ))
-        # apercu console : meilleure electrode
-        am = res["acc_mean"]
-        best = int(np.argmax(am))
-        pv_ms = res["pvals_maxstat"][best] if "pvals_maxstat" in res else np.nan
-        print(f"  best: {ch_names[best]} acc={am[best]*100:.2f}% "
-              f"p_maxstat={pv_ms:.4f}  (n_sig maxstat<0.05: "
-              f"{int(np.sum(res['pvals_maxstat'] < 0.05)) if 'pvals_maxstat' in res else 0}/19)")
-
-    if rows:
-        csv = results_dir / f"{FEAT_KEY}_summary.csv"
-        pd.DataFrame(rows).to_csv(csv, index=False)
-        print(f"\nCSV : {csv}")
-
-    m, s = divmod(int(time() - t0), 60)
-    print(f"\ntotal : {m}m{s:02d}s")
+    if args.extract_only:
+        m, s = divmod(int(time() - t0), 60)
+        print(f"=== extract-only : extraction terminee, arret avant classif ({m}m{s:02d}s) ===")
+   
