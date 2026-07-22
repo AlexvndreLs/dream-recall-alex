@@ -1,0 +1,22 @@
+=== extraction sautee (--skip-extract) ===
+n_trials = 61 (min sur spec_entropy_osc, etats ['S2', 'SWS', 'REM', 'NREM'])
+
+=== classification spec_entropy_osc x S2 ===
+  -> /scratch/alouis/dream_features_noica_1000hz_overlap/results_spec_entropy_osc/spec_entropy_osc_S2.npz
+  best: Fp1 acc=58.77% p_maxstat=0.2278  (n_sig maxstat<0.05: 0/19)
+
+=== classification spec_entropy_osc x SWS ===
+  -> /scratch/alouis/dream_features_noica_1000hz_overlap/results_spec_entropy_osc/spec_entropy_osc_SWS.npz
+  best: O2 acc=55.98% p_maxstat=0.6424  (n_sig maxstat<0.05: 0/19)
+
+=== classification spec_entropy_osc x REM ===
+  -> /scratch/alouis/dream_features_noica_1000hz_overlap/results_spec_entropy_osc/spec_entropy_osc_REM.npz
+  best: O1 acc=56.04% p_maxstat=0.4795  (n_sig maxstat<0.05: 0/19)
+
+=== classification spec_entropy_osc x NREM ===
+  -> /scratch/alouis/dream_features_noica_1000hz_overlap/results_spec_entropy_osc/spec_entropy_osc_NREM.npz
+  best: O2 acc=55.60% p_maxstat=0.4565  (n_sig maxstat<0.05: 0/19)
+
+CSV : /scratch/alouis/dream_features_noica_1000hz_overlap/results_spec_entropy_osc/spec_entropy_osc_summary.csv
+
+total : 29m31s

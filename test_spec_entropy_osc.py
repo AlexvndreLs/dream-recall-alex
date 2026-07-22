@@ -447,4 +447,60 @@ if __name__ == "__main__":
     if args.extract_only:
         m, s = divmod(int(time() - t0), 60)
         print(f"=== extract-only : extraction terminee, arret avant classif ({m}m{s:02d}s) ===")
-   
+        raise SystemExit(0)
+
+    # ── PARTIE 2 : classification ────────────────────────────────────────────
+    if args.force_n_trials is not None:
+        n_trials = args.force_n_trials
+        print(f"n_trials = {n_trials} (FORCE)")
+    else:
+        n_trials = compute_n_trials(args.save_path, FEAT_KEY, states)
+        print(f"n_trials = {n_trials} (min sur {FEAT_KEY}, etats {states})")
+
+    results_dir = args.save_path / "results_spec_entropy_osc"
+    results_dir.mkdir(parents=True, exist_ok=True)
+
+    rows = []
+    for state in states:
+        print(f"\n=== classification {FEAT_KEY} x {state} ===")
+        try:
+            res = classify_vector(
+                args.save_path, FEAT_KEY, state, n_trials,
+                args.n_bootstraps, args.n_perm, args.normalize, args.n_jobs,
+            )
+        except Exception:
+            print(f"ERROR {FEAT_KEY} {state}\n{traceback.format_exc()}")
+            continue
+        if res is None:
+            continue
+
+        out = results_dir / f"{FEAT_KEY}_{state}.npz"
+        np.savez_compressed(out, **res)
+        print(f"  -> {out}")
+
+        ch_names = res["ch_names"].tolist()
+        for e, ch in enumerate(ch_names):
+            rows.append(dict(
+                key=FEAT_KEY, state=state, electrode=ch,
+                acc_mean=float(res["acc_mean"][e]),
+                acc_std=float(res["acc_std"][e]),
+                pval=float(res["pvals"][e]) if "pvals" in res else np.nan,
+                pval_maxstat=float(res["pvals_maxstat"][e]) if "pvals_maxstat" in res else np.nan,
+                n_trials=int(res["n_trials"]),
+                n_subjects=int(res["n_subjects"]),
+            ))
+        # apercu console : meilleure electrode
+        am = res["acc_mean"]
+        best = int(np.argmax(am))
+        pv_ms = res["pvals_maxstat"][best] if "pvals_maxstat" in res else np.nan
+        print(f"  best: {ch_names[best]} acc={am[best]*100:.2f}% "
+              f"p_maxstat={pv_ms:.4f}  (n_sig maxstat<0.05: "
+              f"{int(np.sum(res['pvals_maxstat'] < 0.05)) if 'pvals_maxstat' in res else 0}/19)")
+
+    if rows:
+        csv = results_dir / f"{FEAT_KEY}_summary.csv"
+        pd.DataFrame(rows).to_csv(csv, index=False)
+        print(f"\nCSV : {csv}")
+
+    m, s = divmod(int(time() - t0), 60)
+    print(f"\ntotal : {m}m{s:02d}s")
