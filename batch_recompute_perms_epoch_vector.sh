@@ -21,7 +21,7 @@ set -euo pipefail
 # Array 1-56 : 14 features vectorielles x 4 stades (cf batch_classify_vector.sh)
 # ==========================================================================
 
-SAVE_PATH=/scratch/alouis/dream_features_noica_1000hz   # <-- VERIFIER ce nom avant de lancer
+SAVE_PATH=/scratch/alouis/dream_features_noica_1000hz_overlap   # <-- VERIFIER ce nom avant de lancer
 
 KEYS=(psd_delta psd_theta psd_alpha psd_sigma psd_beta \
       psd_osc_delta psd_osc_theta psd_osc_alpha psd_osc_sigma psd_osc_beta \

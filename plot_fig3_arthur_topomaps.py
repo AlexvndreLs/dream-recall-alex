@@ -176,9 +176,9 @@ def main():
                                       vlim=(tvals_z.min(), tvals_z.max()),
                                       extrapolate="head", sphere=0.11, contours=0,
                                       mask=mask_t,
-                                      mask_params=dict(marker="*", markerfacecolor="k",
-                                                       markeredgecolor="k", markersize=7,
-                                                       linewidth=0))
+                                      mask_params=dict(marker="*", markerfacecolor="w",
+                                                       markeredgecolor="k", markersize=9,
+                                                       markeredgewidth=0.3, linewidth=0))
         ims[2] = im2
         # col 3 : LDA
         if b in lda:
@@ -201,7 +201,7 @@ def main():
                                           mask_params=dict(marker="*",
                                                            markerfacecolor="w",
                                                            markeredgecolor="k",
-                                                           markersize=7, linewidth=0))
+                                                           markersize=9, markeredgewidth=0.3, linewidth=0))
             ims[3] = im3
         else:
             axes[r, 3].axis("off")
@@ -217,7 +217,7 @@ def main():
             cax = fig.add_axes([0.13 + c * 0.205, 0.06, 0.13, 0.012])
             fig.colorbar(ims[c], cax=cax, orientation="horizontal", label=label)
 
-    fig.suptitle(f"Fig. 3 (Arthur chap.1) — HR vs LR, {args.state}  "
+    fig.suptitle(f"Fig. 3 (Arthur chap.1), HR vs LR, {args.state}  "
                  f"(stars: p<{args.alpha}, maxstat)", fontsize=12, y=0.99)
     fig.subplots_adjust(bottom=0.11, hspace=0.15, wspace=0.05)
     args.out.parent.mkdir(parents=True, exist_ok=True)

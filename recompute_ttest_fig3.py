@@ -102,6 +102,22 @@ E5. BANDES : alpha (8-13) et sigma (11-16) SE CHEVAUCHENT (11-13 Hz communs). C'
     decoupage d'Arthur (identique dans le PDF), donc fidele, mais a garder en tete :
     les t-values alpha et sigma ne sont pas independantes sur 11-13 Hz. Non corrige
     (fidelite a Arthur).
+
+E6. BIAIS DE SIGNE DU TWO-TAILED D'ARTHUR (ecart reel, NON reproduit par defaut).
+    Dans compute_pvalues (ttest_perm_indep.py), Arthur applique abs() a la
+    distribution nulle (perm_t = abs(perm_t)) mais compare la statistique OBSERVEE
+    SIGNEE (boucle : if tstat <= t_perm). Comme la nulle est en valeur absolue
+    (toujours >= 0), une electrode a effet negatif (t_obs < 0, i.e. HR < LR) verifie
+    t_obs <= |t_perm| pour PRESQUE TOUTES les permutations -> p ~ 1. Son "two-tailed"
+    ne detecte donc en pratique QUE les effets HR > LR ; tout effet HR < LR est
+    invisible. C'est une erreur de signe (le abs() manque sur l'observe), pas une
+    convention. NOTRE DEFAUT compare |t_obs| a |t_perm| (two-tailed symetrique,
+    correct). Le flag --arthur-pval-bug reproduit son comportement a l'identique,
+    UNIQUEMENT pour la section "reproduction" (comparaison figure a figure), jamais
+    comme resultat. C'est la cause principale des differences visuelles sur la colonne
+    t-values entre sa Fig.3 et la notre (sur ses vraies donnees le z-score par sujet
+    met les t a ~0 et masque le bug ; il ne devient visible que sur PSD brute, donc
+    dans notre replique).
 ================================================================================
 
 Entrees : {save_path}/psd_{band}/psd_{band}_s{XX}_S2.npz (cle "data", (n_epochs, 19)).
@@ -169,6 +185,11 @@ def parse_args():
                    help="IDs sujets a exclure, separes par virgule (ex '10' pour "
                         "coller a Arthur qui retire le sujet 10 / artefact FC2).")
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--arthur-pval-bug", action="store_true", default=False,
+                   help="Reproduit le biais de signe two-tailed d'Arthur (cf E6) : "
+                        "abs() sur la nulle seulement, observe signe. Les effets "
+                        "HR<LR deviennent invisibles. UNIQUEMENT pour repliquer sa "
+                        "Fig.3 a l'identique, jamais comme resultat.")
     p.add_argument("--overwrite", action="store_true", default=False)
     return p.parse_args()
 
@@ -284,12 +305,36 @@ def _perm_indices(n_samples, n_cond1, n_perm, seed):
     return [rng.choice(n_samples, size=n_cond1, replace=False) for _ in range(n_perm)]
 
 
-def ttest_maxstat(cond1, cond2, n_perm, two_tailed, seed, n_jobs):
+def ttest_maxstat(cond1, cond2, n_perm, two_tailed, seed, n_jobs,
+                  arthur_pval_bug=False):
+    """t-test maxstat par permutation, deux modes de p-value two-tailed.
+
+    arthur_pval_bug=False (DEFAUT, correct) : two-tailed symetrique. On compare
+        |t_obs| au max sur electrodes de |t_perm|. Un effet fort dans un sens ou
+        dans l'autre (HR>LR ou HR<LR) est detecte de facon identique.
+
+    arthur_pval_bug=True (REPLIQUE EXACTE Arthur, cf E6) : reproduit le biais de
+        signe de compute_pvalues (ttest_perm_indep.py). Arthur applique abs() a la
+        distribution nulle mais PAS a la statistique observee, et compte
+        tstat <= t_perm. Consequence : pour une electrode a effet negatif
+        (t_obs<0), la condition t_obs <= |t_perm| est vraie pour presque toutes
+        les permutations -> p ~ 1, l'effet HR<LR devient invisible. Son two-tailed
+        se comporte donc comme un one-tailed HR>LR. A n'utiliser QUE pour
+        reproduire sa Fig.3 a l'identique, jamais comme resultat.
+    """
     tval = ttest_ind(cond1, cond2, equal_var=False)[0]
     full = np.vstack((cond1, cond2))
     idxs = _perm_indices(len(full), len(cond1), n_perm, seed)
     perm_t = Parallel(n_jobs=n_jobs)(delayed(_ttest_perm)(full, ix) for ix in idxs)
     perm_t = np.asarray(perm_t)
+
+    if arthur_pval_bug and two_tailed:
+        # Reproduction fidele du bug : abs() sur la nulle SEULEMENT, observe signe,
+        # inegalite tstat <= t_perm (comme la boucle de compute_pvalues d'Arthur).
+        perm_max = np.abs(perm_t).max(axis=1)                 # max_elec |t_perm|
+        num = (perm_max[:, None] >= tval[None, :]).sum(axis=0).astype(float)
+        return tval, num / n_perm
+
     stat = np.abs(tval) if two_tailed else tval
     perm_stat = np.abs(perm_t) if two_tailed else perm_t
     perm_max = perm_stat.max(axis=1)
@@ -322,16 +367,22 @@ def main():
         n2 = conds[BANDS[0]][1].shape[0]
         print(f"  niveau epoch : {n1} epochs HR vs {n2} epochs LR (n total={n1+n2})")
 
+    if args.arthur_pval_bug:
+        print("  [MODE ARTHUR] biais de signe two-tailed active (E6) : "
+              "effets HR<LR invisibles. Replique exacte, PAS un resultat.")
+
     tvals, pvals = {}, {}
     if args.maxstat_scope == "electrodes":
         for b in BANDS:
             c1, c2 = conds[b]
-            tv, pv = ttest_maxstat(c1, c2, args.n_perm, True, args.seed, args.n_jobs)
+            tv, pv = ttest_maxstat(c1, c2, args.n_perm, True, args.seed, args.n_jobs,
+                                   arthur_pval_bug=args.arthur_pval_bug)
             tvals[b], pvals[b] = tv, pv
     else:
         c1 = np.concatenate([conds[b][0] for b in BANDS], axis=1)
         c2 = np.concatenate([conds[b][1] for b in BANDS], axis=1)
-        tv, pv = ttest_maxstat(c1, c2, args.n_perm, True, args.seed, args.n_jobs)
+        tv, pv = ttest_maxstat(c1, c2, args.n_perm, True, args.seed, args.n_jobs,
+                               arthur_pval_bug=args.arthur_pval_bug)
         for i, b in enumerate(BANDS):
             tvals[b] = tv[i * N_EEG:(i + 1) * N_EEG]
             pvals[b] = pv[i * N_EEG:(i + 1) * N_EEG]
@@ -357,6 +408,7 @@ def main():
         maxstat_scope=args.maxstat_scope,
         drop_subjects=sorted(drop_ids),
         two_tailed=True,
+        arthur_pval_bug=args.arthur_pval_bug,
     )
     print(f"\nSauvegarde : {out}")
     m, s = divmod(int(time() - t0), 60)

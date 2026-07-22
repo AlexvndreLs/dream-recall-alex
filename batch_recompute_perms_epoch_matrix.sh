@@ -25,7 +25,7 @@ set -euo pipefail
 # Array 1-24 : 6 features matricielles x 4 stades (cf batch_classify_matrix.sh)
 # ==========================================================================
 
-SAVE_PATH=/scratch/alouis/dream_features_noica_1000hz   # <-- VERIFIER ce nom avant de lancer
+SAVE_PATH=/scratch/alouis/dream_features_noica_1000hz_overlap   # <-- VERIFIER ce nom avant de lancer
 
 KEYS=(cov cosp_delta cosp_theta cosp_alpha cosp_sigma cosp_beta)
 STATES=(S2 SWS NREM REM)
