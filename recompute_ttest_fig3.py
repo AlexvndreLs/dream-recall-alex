@@ -7,45 +7,59 @@ Les deux autres panneaux sont produits ailleurs :
   - PSD moyen HR vs LR (gauche)         : recompute_psd_spectrum_fig3.py
   - LDA accuracy par electrode (droite) : classif single-feature + plot_topomap_psd_arthur.py
 
-======================= NIVEAU EPOCH (FFX), PAS NIVEAU SUJET ====================
-Le ttest d'Arthur (ttest.py) empile TOUTES les epochs de tous les sujets d'un
-groupe en un seul vecteur, puis teste HR-epochs vs LR-epochs. Le bloc qui
-moyennerait par sujet est COMMENTE dans son code :
-    HR = np.concatenate([psd.flatten() for psd in HR])   # <- toutes epochs
-    # for i in range(len(HR)): HR[i] = HR[i].mean()       # <- COMMENTE
+==================== CE QUE FAIT REELLEMENT ARTHUR (TEXTE DE LA THESE) ==========
+!!! CORRECTION IMPORTANTE (07/2026) : une version anterieure de cet en-tete affirmait
+qu'Arthur faisait un t-test NIVEAU EPOCH (FFX) avec un z-score PAR SUJET. C'ETAIT
+FAUX. C'etait une deduction a partir de son CODE PUBLIC (ttest.py), qui est une
+version de travail non finale ("no longer updated, there might be bugs" en tete de
+ses fichiers). Le TEXTE DE LA THESE (correctedthesis, chap.1, section stats) decrit
+la vraie methode, et elle est differente :
 
-Consequence : n = milliers d'epochs (pas 18 sujets), les t explosent, presque
-tout devient significatif. C'est le biais FFX (fixed-effects) que le reste du
-projet DREAM corrige. La version RFX (1 valeur/sujet, permutation niveau sujet)
-donne ~0 electrode sig en S2 : c'est le resultat statistiquement correct, mais ce
-script vise la REPLIQUE d'Arthur -> FFX par defaut. Utiliser --level subject pour
-la version RFX correcte (comparaison).
+  Thèse, methode du t-test (Fig.3) :
+    "subject-wise PSD values were averaged across epochs. The t-test was then
+     performed [...] To account for multiple comparisons across electrodes,
+     maximum statistics and exhaustive permutations (1000 permutations) were
+     employed at a significance level of p < 0.001."
+    + correction "across electrodes AND frequency bands".
+
+  Donc le t-test d'Arthur est :
+    - NIVEAU SUJET (RFX) : on moyenne les epochs par sujet AVANT le test (18 HR
+      vs 18 LR), PAS un empilement de milliers d'epochs. -> --level subject.
+    - SANS z-score : le chapitre ne decrit AUCUN z-score des PSD sommeil (les
+      seules mentions de normalisation du chapitre concernent ImageNet, hors sujet).
+      -> --zscore none.
+    - pseudo-t permutationnel two-sided unpaired, 1000 perms. -> --n-perm 1000.
+    - maxstat sur electrodes ET bandes. -> --maxstat-scope both.
+
+  Resultat annonce PAR ARTHUR lui-meme (these) :
+    "the T-test did not reveal any statistically significant differences in
+     spectral power between HR and LR (p > 0.05)".
+  Autrement dit : AUCUNE etoile dans la colonne t-values, non pas a cause d'un
+  z-score qui ecrase l'effet, mais simplement parce qu'au niveau sujet (n=18 vs 18)
+  avec correction maxstat, l'effet PSD univarie n'atteint pas la significativite.
+  C'est un resultat correct, pas un artefact. Verifie empiriquement : notre repro
+  --level subject donne 0/19 partout avec des t modeles (sigma max ~+2.5), i.e. une
+  carte structuree SANS etoile, exactement comme sa Fig.3.
+
+  CONSEQUENCE sur l'argumentaire du projet : le contraste FFX vs RFX est valable
+  pour la CLASSIFICATION riemannienne (ou Arthur fait bien du FFX/epoch discutable),
+  mais PAS pour ce t-test : pour le t-test, Arthur est DEJA en RFX. Ne pas melanger
+  les deux en presentation.
+
+COMMANDE POUR REPRODUIRE FIDELEMENT ARTHUR (Fig.3, colonne t-values) :
+    --level subject --zscore none --maxstat-scope both --n-perm 1000 --drop-subjects 10
 ================================================================================
 
-Fidelite au code d'Arthur
--------------------------
-- z-score : ttest.py d'Arthur charge des fichiers "zscore_psd", MAIS aucun script du
-  repo public ne genere ce z-score (compute_psd.py et compute_psd_bins.py sauvent la
-  PSD BRUTE, sans z-score ni log ; le generateur zscore_psd n'a jamais ete commite).
-  La seule reference z-score de son code (prepare_data dans utils.py) z-score PAR
-  SUJET (zscore(prep_submat) sur les epochs de chaque sujet).
-
-  *** RESULTAT MAJEUR (teste empiriquement, test_zscore_subject_ttest.py) ***
-  Le z-score PAR SUJET fait tomber la significativite a 0/19 sur TOUTES les bandes (y
-  compris sigma qui passe de 18/19 a 0/19). Raison : recentrer chaque sujet sur
-  moyenne 0 par electrode EFFACE la difference de moyenne inter-groupes, qui est
-  precisement ce que le t-test HR vs LR mesure. C'est ce qui explique qu'Arthur n'ait
-  AUCUNE etoile dans la colonne t-values de sa Fig.3 (verifie sur sa figure : etoiles
-  uniquement en decoding, jamais en t-values). Autrement dit, son z-score par sujet
-  MASQUE l'effet sigma reel. Notre DEFAUT (PSD brute, --zscore none) revele cet effet
-  (sigma 18/19). C'est un argument methodologique en faveur de la version corrigee, au
-  meme titre que FFX vs RFX. NB : on ne peut pas prouver a 100% que son zscore_psd ==
-  prepare_data (generateur non public), mais la concordance (0 etoile chez lui, 0 avec
-  z-score par sujet chez nous) rend l'explication tres solide.
-
-  Ce n'est pas bloquant pour le calcul : le t de Welch est INVARIANT au rescaling par
-  electrode, donc PSD brute et z-score GLOBAL par electrode donnent des t IDENTIQUES.
-  DEFAUT = PSD brute (--zscore none). Le z-score PAR SUJET est ECARTE (il masque l'effet).
+Options z-score du script (tracabilite, PAS ce que fait Arthur)
+---------------------------------------------------------------
+- --zscore none (DEFAUT) : PSD brute. C'est la methode de la these (aucun z-score).
+- --zscore global : z-score par electrode sur le pool. NUMERIQUEMENT EQUIVALENT a
+  'none' pour le t de Welch (invariant au rescaling par colonne). Tracabilite.
+- --zscore subject : z-score PAR SUJET. Annule les differences de moyenne inter-
+  groupes (t=0 exact). Ce mode a ete ajoute quand on croyait (a tort) qu'Arthur
+  z-scorait par sujet ; la these ne le confirme PAS. A n'utiliser que pour explorer
+  l'effet d'un tel z-score, jamais comme "reproduction d'Arthur".
+- t-statistique : scipy.stats.ttest_ind(cond1, cond2, equal_var=False), Welch.
 - t-statistique : scipy.stats.ttest_ind(HR_epochs, LR_epochs, equal_var=False), Welch.
 - permutation : NIVEAU EPOCH. On concatene toutes les epochs HR + LR, on re-split
   selon des sous-ensembles d'indices d'epochs (perm_test + _combinations d'Arthur).
@@ -127,13 +141,16 @@ Ne fait AUCUN plot (separation calcul/visu). Le plot consommera le .npz.
 
 Usage
 -----
+    # Reproduction FIDELE d'Arthur (Fig.3, d'apres la these) : RFX niveau sujet.
     python recompute_ttest_fig3.py \
         --save-path /scratch/alouis/dream_features_noica_1000hz \
         --out-dir   /scratch/alouis/dream_features_noica_1000hz_corrected/fig3_recompute \
-        --state     S2 --n-perm 9999 --level epoch --zscore none \
+        --state     S2 --n-perm 1000 --level subject --zscore none \
+        --maxstat-scope both --drop-subjects 10 \
         --n-jobs    $SLURM_CPUS_PER_TASK
 
-Author: recompute pour Alex (replique Arthur chap.1, FFX)
+Author: recompute pour Alex (replique Arthur chap.1 ; t-test RFX niveau sujet
+        conforme au texte de la these, cf en-tete)
 """
 
 import argparse
@@ -162,25 +179,29 @@ def parse_args():
     p.add_argument("--out-dir",   type=Path, required=True)
     p.add_argument("--state",     type=str, default="S2")
     p.add_argument("--n-perm",    type=int, default=9999,
-                   help="9999 = valeur d'Arthur (ttest.py).")
+                   help="DEFAUT 9999. Pour repliquer la these : 1000 (valeur du "
+                        "texte pour le t-test).")
     p.add_argument("--n-jobs",    type=int, default=1)
     p.add_argument("--level", choices=["epoch", "subject"], default="epoch",
-                   help="'epoch' (DEFAUT) = FFX, replique Arthur (toutes epochs "
-                        "empilees, permutation niveau epoch). 'subject' = RFX correct "
-                        "(1 valeur/sujet, permutation niveau sujet).")
+                   help="ATTENTION : pour REPLIQUER ARTHUR (Fig.3), utiliser "
+                        "'subject'. La these decrit un t-test niveau sujet "
+                        "('subject-wise PSD averaged across epochs'), PAS niveau "
+                        "epoch. 'epoch' (defaut historique) = FFX, n=milliers "
+                        "d'epochs, t gonfles : ce N'EST PAS ce que fait Arthur pour "
+                        "ce t-test, c'est un mode d'exploration. 'subject' = RFX, "
+                        "conforme a la these.")
     p.add_argument("--zscore", choices=["none", "global", "subject"], default="none",
-                   help="'none' (DEFAUT) = PSD brute, telle qu'extraite. Aucun z-score "
-                        "n'existe dans le code PSD public d'Arthur (le fichier "
-                        "'zscore_psd' de ttest.py est genere par un script non commite). "
-                        "'global' = z-score par electrode sur le pool complet : "
-                        "NUMERIQUEMENT EQUIVALENT a 'none' pour le t (Welch invariant au "
-                        "rescaling par colonne), fourni pour tracabilite. Le z-score PAR "
-                        "SUJET a ete ecarte : il annule les differences de moyenne entre "
-                        "groupes (t=0), verifie empiriquement.")
+                   help="'none' (DEFAUT, = these : aucun z-score des PSD sommeil). "
+                        "'global' = z-score par electrode sur le pool : equivalent "
+                        "numerique de 'none' pour le t de Welch, tracabilite. "
+                        "'subject' = z-score par sujet : ANNULE l'effet de groupe "
+                        "(t=0). Ajoute quand on croyait a tort qu'Arthur z-scorait "
+                        "par sujet ; la these ne le confirme PAS. Exploration only.")
     p.add_argument("--maxstat-scope", choices=["electrodes", "both"],
                    default="electrodes",
-                   help="'electrodes' (DEFAUT) = max sur 19 elec par bande (code "
-                        "Arthur). 'both' = pool elec x bandes (texte these p52).")
+                   help="Pour repliquer Arthur (Fig.3), utiliser 'both' : la these "
+                        "corrige 'across electrodes AND frequency bands'. "
+                        "'electrodes' (defaut historique) = max sur 19 elec par bande.")
     p.add_argument("--drop-subjects", type=str, default="",
                    help="IDs sujets a exclure, separes par virgule (ex '10' pour "
                         "coller a Arthur qui retire le sujet 10 / artefact FC2).")

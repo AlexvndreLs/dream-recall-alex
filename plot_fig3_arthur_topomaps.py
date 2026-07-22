@@ -170,7 +170,9 @@ def main():
         #  - cmap viridis ligne 166 (pas RdBu),
         #  - mask = p-values < alpha ligne 128 (etoiles depuis les p, pas les t affiches).
         mask_t = pvals[r] < args.alpha
-        tvals_z = (tvals[r] - tvals[r].mean()) / tvals[r].std()
+        _sd = tvals[r].std()
+        tvals_z = ((tvals[r] - tvals[r].mean()) / _sd
+                   if _sd > 0 else np.zeros_like(tvals[r]))
         im2, _ = mne.viz.plot_topomap(tvals_z, info, axes=axes[r, 2], show=False,
                                       cmap="viridis",
                                       vlim=(tvals_z.min(), tvals_z.max()),
