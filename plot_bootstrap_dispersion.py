@@ -1,22 +1,21 @@
-"""Dispersion des accuracies sur les 1000 bootstraps : violons par feature x stade.
+"""Accuracy dispersion across the 1,000 bootstraps: violin plots by feature x stage.
 
-Le barplot résume chaque feature à une moyenne et un écart-type, ce qui suppose
-une distribution symétrique. Ces violons montrent la forme réelle : asymétrie,
-bimodalité, queues. Une feature dont la distribution bootstrap est bimodale n'a
-pas la même fiabilité qu'une feature bien concentrée, à moyenne égale.
+The barplot reduces each feature to a mean and a standard deviation, which assumes
+a symmetrical distribution. These violin plots show the actual shape: asymmetry,
+bimodality, tails. A feature whose bootstrap distribution is bimodal does not offer
+the same reliability as a tightly clustered feature with an equal mean.
 
-Violons plutôt qu'histogrammes empilés : à 24 combos, des histogrammes seraient
-illisibles, et la comparaison entre features est l'objet même de la figure. Pour
-un diagnostic sur UNE feature, l'histogramme reste plus lisible, c'est ce que
-fait plot_perm_null.py, qui superpose la nulle.
+Violin plots rather than stacked histograms: with 24 combinations, histograms would
+be unreadable, and comparing features is the core purpose of this figure. For a
+diagnostic on a SINGLE feature, a histogram remains clearer, which is handled by
+plot_perm_null.py, which overlays the null distribution.
 
-Attention à ne pas confondre avec plot_perm_null.py : ici la distribution est
-celle des accuracies RÉELLES (variabilité due au sous-échantillonnage des
-epochs), là-bas celle des accuracies sous labels PERMUTÉS (loi nulle). La
-première dit "à quel point mon estimation est stable", la seconde "à quel point
-elle dépasse le hasard".
+Be careful not to confuse this with plot_perm_null.py: here, the distribution is that of
+the ACTUAL accuracies (variability due to epoch sub-sampling), whereas there, it is
+that of accuracies under PERMUTED labels (null distribution). The former indicates
+"how stable my estimation is", while the latter indicates "how much it exceeds chance".
 
-Usage :
+Usage:
     python plot_bootstrap_dispersion.py \
         --save-path /scratch/alouis/dream_features_noica_1000hz_overlap \
         --out-dir   /scratch/alouis/dream-recall-alex/plot_overlap \
@@ -53,7 +52,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     keys = FAMILY_KEYS[args.family]
-    print(f"=== dispersion bootstrap, famille {args.family} ===")
+    print(f"=== bootstrap dispersion, family {args.family} ===")
 
     fig, axes = plt.subplots(1, len(STATES_ORDERED),
                              figsize=(3.4 * len(STATES_ORDERED), 4.5),
@@ -65,12 +64,12 @@ def main() -> None:
         for key in keys:
             d = load_result(args.save_path, key, state)
             if d is None:
-                print(f"  absent : {key}_{state}.npz")
+                print(f"  missing: {key}_{state}.npz")
                 continue
             scores = np.asarray(d["acc_scores"])
             if not is_matrix_key(key):
-                # feature vectorielle : on suit la meilleure électrode, comme
-                # partout ailleurs, sinon on mélangerait 19 distributions.
+                # Vector feature: we track the best electrode, as done everywhere
+                # else, otherwise we would mix 19 distributions.
                 best = int(np.asarray(d["acc_mean"]).argmax())
                 scores = scores[:, best]
             dists.append(scores * 100)
@@ -88,7 +87,7 @@ def main() -> None:
             body.set_edgecolor("0.3")
             body.set_linewidth(0.5)
 
-        # Médiane + IQR par-dessus : le violon seul ne donne pas de repère chiffré.
+        # Median + IQR overlay: the violin alone does not provide a numeric reference.
         for i, dist in enumerate(dists, start=1):
             q1, med, q3 = np.percentile(dist, [25, 50, 75])
             ax.plot([i, i], [q1, q3], color="k", lw=3, solid_capstyle="butt")
@@ -100,21 +99,19 @@ def main() -> None:
         ax.set_title(state, fontsize=12)
         ax.spines[["top", "right"]].set_visible(False)
 
-    axes[0].set_ylabel("Accuracy sur chaque bootstrap (%)")
+    axes[0].set_ylabel("Accuracy per bootstrap (%)")
 
     fig.suptitle(
-        f"Dispersion des 1000 bootstraps, famille {args.family}\n"
-        f"distribution des accuracies RÉELLES (variabilité du sous-échantillonnage), "
-        f"à ne pas confondre avec la loi nulle par permutation",
+        f"Dispersion across the 1000 bootstraps, family {args.family}",
         fontsize=11,
     )
-    fig.tight_layout(rect=[0, 0, 1, 0.90])
+    fig.tight_layout(rect=[0, 0, 1, 0.92])
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     out = args.out_dir / f"bootstrap_dispersion_{args.family}.png"
     fig.savefig(out, dpi=RESOLUTION)
     plt.close(fig)
-    print(f"Écrit : {out}")
+    print(f"Written: {out}")
 
 
 if __name__ == "__main__":

@@ -52,18 +52,6 @@ COMBO_COLORS = {
     ("beta", "sigma", "theta"): "#d55e00",
     ("alpha", "delta", "theta"): "#cc78bc",
 }
-
-# Combinaisons ABSENTES de la legende d'Arthur mais qui depassent le seuil SR dans NOS
-# donnees. Sa palette ne couvre que les 10 combos qui ressortaient chez LUI ; notre EFS
-# en selectionne d'autres. Sans ces entrees, ces combos tombaient silencieusement en
-# gris et n'etaient PAS traces dans le barplot, ce qui masquait notamment notre
-# meilleure accuracy (beta+delta+sigma, S2 prefrontal, 66.78%).
-# Teintes choisies hors de la gamme d'Arthur pour rester distinguables.
-EXTRA_COLORS = {
-    ("beta", "delta", "sigma"): "#7f4f24",   # brun
-    ("alpha", "sigma"): "#4d4d9e",           # indigo
-}
-COMBO_COLORS.update(EXTRA_COLORS)
 GREY = "#c2c2c2"
 
 
@@ -106,8 +94,6 @@ def main():
     axes = np.atleast_2d(axes)
 
     used_combos = set()
-    extra_used = []      # combos hors legende Arthur effectivement traces
-    unknown_above = []   # combos > seuil SR mais sans couleur (jamais traces)
 
     for r, stage in enumerate(STAGES):
         roi_data = load_stage(args.in_dir, stage)
@@ -168,14 +154,8 @@ def main():
                         # repli : ancien comportement (moyenne globale du ROI) si le
                         # npz date d'avant l'ajout de combo_acc dans l'agregation.
                         acc_c = float(stats["holdout_acc"]) * 100
-                    bars_here.append((acc_c, COMBO_COLORS[ck], ck in EXTRA_COLORS))
+                    bars_here.append((acc_c, COMBO_COLORS[ck]))
                     used_combos.add(ck)
-                    if ck in EXTRA_COLORS:
-                        extra_used.append((stage, roi, ck, rate, acc_c))
-                elif rate >= args.sr_threshold:
-                    # depasse le seuil mais AUCUNE couleur connue : on le signale au
-                    # lieu de le laisser disparaitre silencieusement.
-                    unknown_above.append((stage, roi, ck, rate))
             roi_bars.append(bars_here)
             if r == len(STAGES) - 1:
                 ax.set_xlabel(roi.replace("-", "-\n").title(), fontsize=10)
@@ -194,7 +174,7 @@ def main():
             w = SLOT / n
             # centre le groupe sur x
             offsets = (np.arange(n) - (n - 1) / 2) * w
-            for off, (val, col, is_extra) in zip(offsets, bars):
+            for off, (val, col) in zip(offsets, bars):
                 ax_bar.bar(x + off, val, color=col, width=w * 0.95)
         ax_bar.axhline(args.sig_line, ls="--", color="k", lw=0.8)
         ax_bar.set_xticks(xs)
@@ -210,18 +190,8 @@ def main():
                     ("beta", "sigma", "theta"), ("alpha", "delta", "theta")]
     handles = [Patch(facecolor=COMBO_COLORS[ck], label=combo_label(ck))
                for ck in legend_order]
-    # combos hors legende d'Arthur : contour noir + asterisque pour les distinguer
-    has_extra = any(ck in used_combos for ck in EXTRA_COLORS)
-    for ck in EXTRA_COLORS:
-        if ck in used_combos:
-            handles.append(Patch(facecolor=EXTRA_COLORS[ck],
-                                 label=combo_label(ck) + " *"))
     handles.append(Patch(facecolor=GREY, label="others"))
-    ncol = len(handles) if len(handles) <= 12 else (len(handles) + 1) // 2
-    fig.legend(handles=handles, loc="lower center", ncol=ncol,
-               title=("* combinaison absente de la legende d'Arthur"
-                      if has_extra else None),
-               title_fontsize=8,
+    fig.legend(handles=handles, loc="lower center", ncol=len(handles),
                fontsize=9, frameon=True, fancybox=False, edgecolor="#999999",
                bbox_to_anchor=(0.5, 0.005))
 
@@ -242,22 +212,7 @@ def main():
                  ha="center", va="center", rotation=90)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(args.out, dpi=150, bbox_inches="tight")
-
-    # Tracabilite : ce qui diverge de la legende d'Arthur, et ce qui n'a PAS pu etre
-    # trace faute de couleur (sinon ces combos disparaissent silencieusement).
-    if extra_used:
-        print("\nCombos AU-DESSUS du seuil mais ABSENTS de la legende d'Arthur "
-              "(marques d'un * en legende) :")
-        for stage, roi, ck, rate, acc in extra_used:
-            print(f"  {stage:5s} {roi:16s} {'+'.join(ck):20s} "
-                  f"SR={rate:.1%}  acc={acc:.2f}%")
-    if unknown_above:
-        print("\nATTENTION combos au-dessus du seuil SANS couleur definie "
-              "(NON traces, ajoute-les a EXTRA_COLORS) :")
-        for stage, roi, ck, rate in unknown_above:
-            print(f"  {stage:5s} {roi:16s} {'+'.join(ck):20s} SR={rate:.1%}")
-
-    print(f"\nFigure sauvegardee : {args.out}")
+    print(f"Figure sauvegardee : {args.out}")
 
 
 if __name__ == "__main__":
