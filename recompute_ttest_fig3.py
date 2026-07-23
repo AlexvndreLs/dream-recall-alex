@@ -132,6 +132,45 @@ E6. BIAIS DE SIGNE DU TWO-TAILED D'ARTHUR (ecart reel, NON reproduit par defaut)
     t-values entre sa Fig.3 et la notre (sur ses vraies donnees le z-score par sujet
     met les t a ~0 et masque le bug ; il ne devient visible que sur PSD brute, donc
     dans notre replique).
+
+E6-bis. IMPACT EMPIRIQUE MESURE DU BUG E6 (verifie 07/2026, S2, branche noica
+    1000hz, script check_sign_bug_impact.py). Le bug ne peut affecter QUE les
+    electrodes a t_obs < 0 ; sur les t positifs les deux methodes sont identiques
+    par construction. Resultat : SON IMPACT DEPEND ENTIEREMENT DU NIVEAU DE
+    PERMUTATION.
+
+      RFX (--level subject, conforme a la these, 17 HR vs 18 LR, scope both,
+      1000 perms) : 38/95 couples (bande, electrode) ont t_obs < 0, mais le t le
+      plus negatif est a peine -1.40 (delta, e12). AUCUN effet negatif ne franchit
+      p<0.05 ni p<0.001, ni en version correcte ni en version Arthur. Le bug ne
+      masque RIEN d'observable. Les deux topomaps sont visuellement identiques.
+      -> Sur la Fig.3 telle qu'Arthur la produit, ce bug est SANS CONSEQUENCE.
+
+      FFX (--level epoch, 9999 perms, scope electrodes, mode d'exploration) :
+      31/95 couples ont t_obs < 0, avec des magnitudes enormes (jusqu'a -11.2 en
+      alpha). Le bug MASQUE alors 12 electrodes a p<0.05 et 10 a p<0.001, toutes
+      poussees a p = 1.0000 exactement.
+
+    LECTURE : le bug est une erreur reelle, mais il ne devient destructeur que
+    combine a une distribution nulle artificiellement etroite (permutation epoch).
+    Au niveau d'inference correct il est inoffensif sur ces donnees. NE PAS
+    presenter ce bug comme expliquant les resultats de la Fig.3 d'Arthur : il ne
+    les explique pas. Le vrai ecart methodologique porte sur le panneau accuracies
+    (FFX chez Arthur, RFX chez nous), pas sur le t-test.
+
+    ATTENTION a ne pas confondre avec l'exclusion du sujet 10 (E3) : celle-ci est
+    motivee par un artefact FC2 delta reel (23.7x la mediane), decidee sur la
+    qualite des donnees, SANS rapport avec ce bug. Le sujet 10 tirait la carte
+    delta vers le negatif (t e12 : -1.54 avec lui, -1.40 sans), ce qui affaiblit
+    encore les effets negatifs apres exclusion, mais ne change aucune conclusion.
+
+E6-ter. BUG DE TYPE SUR --drop-subjects (corrige 07/2026). SUBJECT_LIST_ORDERED
+    contient des int, alors que drop_ids etait construit comme un set de str :
+    `10 in {"10"}` vaut False, donc l'exclusion n'avait JAMAIS lieu, en silence,
+    pendant que le log affichait `drop=['10']` comme si elle avait fonctionne.
+    Corrige par un cast int() explicite (leve une exception si non castable,
+    plutot qu'une exclusion fantome). Symptome de detection : le log annonce 36
+    sujets (18 HR / 18 LR) au lieu de 35 (17 HR / 18 LR).
 ================================================================================
 
 Entrees : {save_path}/psd_{band}/psd_{band}_s{XX}_S2.npz (cle "data", (n_epochs, 19)).
@@ -372,7 +411,10 @@ def main():
         print(f"{out} existe deja (--overwrite pour recalculer).")
         return
 
-    drop_ids = {s.strip() for s in args.drop_subjects.split(",") if s.strip()}
+    # SUBJECT_LIST_ORDERED contient des int : comparer a des str echoue
+    # silencieusement (10 in {"10"} -> False). Cast explicite, erreur si
+    # non castable plutot que exclusion fantome.
+    drop_ids = {int(s.strip()) for s in args.drop_subjects.split(",") if s.strip()}
     per_band_epochs, labels = load_subject_epochs(args.save_path, args.state, drop_ids)
     n_hr = int((labels == 1).sum())
     n_lr = int((labels == 0).sum())
