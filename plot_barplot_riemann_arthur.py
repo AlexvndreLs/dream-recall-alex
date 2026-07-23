@@ -38,7 +38,7 @@ STATE_LIST = ["S2", "SWS", "NREM", "REM"]  # ordre figure : NREM avant REM
 
 # ─── paramètres figure (repris de visu_barplot_cosp.py d'Arthur) ─────────────
 
-MINMAX = [40, 80]
+MINMAX = [48, 75]
 Y_LABEL = "Decoding accuracies (%)"
 GRAPH_TITLE = "Riemannian classifications"
 WIDTH = 0.90
