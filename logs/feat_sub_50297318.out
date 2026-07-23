@@ -1,0 +1,241 @@
+=== symlink cov (n_trials_min de reference) ===
+cov : symlink /home/alouis/scratch/dream_features_noica_1000hz_sub/cov -> /scratch/alouis/dream_features_noica_1000hz_overlap/cov  (190 fichiers)
+
+=== extraction psd_sub_* (soustraction lineaire) ===
+  sub-04 S1: 37 epochs
+  sub-06 S1: 49 epochs
+  sub-13 S1: 93 epochs
+  sub-04 S2: 232 epochs
+  sub-06 S2: 293 epochs
+  sub-13 S2: 140 epochs
+  sub-01 S1: 167 epochs
+  sub-08 S1: 44 epochs
+  sub-02 S1: 84 epochs
+  sub-07 S1: 64 epochs
+  sub-13 S3: 36 epochs
+  sub-04 S3: 28 epochs
+  sub-08 S2: 168 epochs
+  sub-13 S4: 298 epochs
+  sub-04 S4: 179 epochs
+  sub-03 S1: 63 epochs
+  sub-07 S2: 230 epochs
+  sub-01 S2: 260 epochs
+  sub-16 S1: 56 epochs
+  sub-02 S2: 218 epochs
+  sub-14 S1: 46 epochs
+  sub-10 S1: 60 epochs
+  sub-05 S1: 60 epochs
+  sub-03 S2: 326 epochs
+  sub-15 S1: 54 epochs
+  sub-14 S2: 270 epochs
+  sub-16 S2: 365 epochs
+  sub-06 S3: 59 epochs
+  sub-05 S2: 426 epochs
+  sub-12 S1: 166 epochs
+  sub-15 S2: 210 epochs
+  sub-08 S3: 34 epochs
+  sub-10 S2: 320 epochs
+  sub-09 S1: 119 epochs
+  sub-06 S4: 188 epochs
+  sub-04 REM: 144 epochs
+  sub-08 S4: 271 epochs
+  sub-11 S1: 114 epochs
+  sub-02 S3: 34 epochs
+  sub-01 S3: 35 epochs
+  sub-13 REM: 177 epochs
+  sub-07 S3: 35 epochs
+  sub-02 S4: 105 epochs
+  sub-01 S4: 118 epochs
+  sub-07 S4: 186 epochs
+  sub-09 S2: 396 epochs
+  sub-12 S2: 340 epochs
+  sub-11 S2: 392 epochs
+sub-04: done
+  sub-06 REM: 124 epochs
+  sub-14 S3: 24 epochs
+  sub-02 REM: 134 epochs
+  sub-01 REM: 70 epochs
+  sub-14 S4: 185 epochs
+  sub-15 S3: 54 epochs
+  sub-16 S3: 38 epochs
+  sub-03 S3: 39 epochs
+  sub-10 S3: 37 epochs
+  sub-15 S4: 239 epochs
+  sub-08 REM: 129 epochs
+sub-13: done
+sub-01: done
+  sub-10 S4: 153 epochs
+  sub-16 S4: 146 epochs
+  sub-03 S4: 171 epochs
+  sub-07 REM: 147 epochs
+sub-06: done
+sub-02: done
+  sub-05 S3: 36 epochs
+  sub-05 S4: 183 epochs
+  sub-14 REM: 182 epochs
+sub-08: done
+  sub-16 REM: 154 epochs
+  sub-10 REM: 177 epochs
+  sub-12 S3: 42 epochs
+  sub-03 REM: 200 epochs
+sub-07: done
+  sub-12 S4: 143 epochs
+  sub-05 REM: 197 epochs
+  sub-11 S3: 80 epochs
+  sub-15 REM: 197 epochs
+  sub-17 S1: 102 epochs
+sub-16: done
+  sub-19 S1: 19 epochs
+sub-14: done
+  sub-19 S2: 191 epochs
+  sub-11 S4: 226 epochs
+  sub-09 S3: 43 epochs
+  sub-12 REM: 96 epochs
+sub-10: done
+  sub-17 S2: 308 epochs
+  sub-09 S4: 85 epochs
+sub-03: done
+  sub-18 S1: 31 epochs
+  sub-18 S2: 262 epochs
+  sub-21 S1: 35 epochs
+sub-12: done
+  sub-20 S1: 47 epochs
+sub-05: done
+  sub-09 REM: 214 epochs
+sub-15: done
+  sub-21 S2: 335 epochs
+  sub-19 S3: 77 epochs
+  sub-20 S2: 299 epochs
+  sub-22 S1: 62 epochs
+  sub-11 REM: 125 epochs
+  sub-19 S4: 200 epochs
+  sub-22 S2: 180 epochs
+  sub-17 S3: 18 epochs
+  sub-18 S3: 102 epochs
+sub-11: done
+  sub-17 S4: 161 epochs
+  sub-18 S4: 189 epochs
+  sub-19 REM: 176 epochs
+sub-09: done
+  sub-20 S3: 54 epochs
+  sub-23 S1: 16 epochs
+  sub-22 S3: 149 epochs
+  sub-23 S2: 201 epochs
+  sub-17 REM: 156 epochs
+  sub-20 S4: 213 epochs
+  sub-21 S3: 68 epochs
+  sub-18 REM: 181 epochs
+  sub-27 S1: 84 epochs
+  sub-21 S4: 150 epochs
+sub-17: done
+sub-19: done
+  sub-22 S4: 94 epochs
+  sub-23 S3: 88 epochs
+  sub-20 REM: 189 epochs
+  sub-27 S2: 112 epochs
+  sub-23 S4: 327 epochs
+  sub-22 REM: 222 epochs
+sub-18: done
+  sub-21 REM: 250 epochs
+  sub-26 S1: 60 epochs
+  sub-27 S3: 70 epochs
+  sub-29 S1: 13 epochs
+  sub-29 S2: 327 epochs
+  sub-24 S1: 384 epochs
+  sub-25 S1: 52 epochs
+  sub-27 S4: 226 epochs
+  sub-26 S2: 404 epochs
+  sub-28 S1: 11 epochs
+sub-20: done
+  sub-28 S2: 316 epochs
+  sub-25 S2: 372 epochs
+  sub-33 S1: 21 epochs
+sub-22: done
+  sub-33 S2: 330 epochs
+  sub-23 REM: 214 epochs
+  sub-30 S1: 39 epochs
+  sub-30 S2: 285 epochs
+  sub-27 REM: 61 epochs
+sub-21: done
+  sub-29 S3: 79 epochs
+sub-27: done
+  sub-35 S1: 108 epochs
+  sub-37 S1: 57 epochs
+  sub-29 S4: 256 epochs
+  sub-28 S3: 118 epochs
+  sub-24 S2: 277 epochs
+sub-23: done
+  sub-37 S2: 302 epochs
+  sub-32 S1: 91 epochs
+  sub-31 S1: 61 epochs
+  sub-36 S1: 2 epochs
+  sub-36 S2: 252 epochs
+  sub-33 S3: 31 epochs
+  sub-35 S2: 398 epochs
+  sub-33 S4: 171 epochs
+  sub-32 S2: 413 epochs
+  sub-28 S4: 209 epochs
+  sub-26 S3: 78 epochs
+  sub-34 S1: 54 epochs
+  sub-31 S2: 373 epochs
+  sub-30 S3: 92 epochs
+  sub-25 S3: 84 epochs
+  sub-34 S2: 414 epochs
+  sub-26 S4: 152 epochs
+  sub-30 S4: 251 epochs
+  sub-25 S4: 159 epochs
+  sub-33 REM: 206 epochs
+  sub-29 REM: 243 epochs
+  sub-24 S3: 43 epochs
+  sub-37 S3: 49 epochs
+  sub-24 S4: 151 epochs
+  sub-36 S3: 101 epochs
+  sub-37 S4: 153 epochs
+  sub-28 REM: 156 epochs
+  sub-26 REM: 170 epochs
+  sub-38 S1: 27 epochs
+  sub-25 REM: 238 epochs
+  sub-38 S2: 448 epochs
+  sub-36 S4: 292 epochs
+  sub-35 S3: 64 epochs
+  sub-24 REM: 150 epochs
+  sub-30 REM: 210 epochs
+  sub-37 REM: 73 epochs
+sub-28: done
+sub-33: done
+  sub-35 S4: 100 epochs
+sub-29: done
+sub-26: done
+sub-37: done
+  sub-32 S3: 99 epochs
+  sub-31 S3: 67 epochs
+  sub-35 REM: 159 epochs
+  sub-34 S3: 45 epochs
+sub-24: done
+sub-25: done
+  sub-34 S4: 211 epochs
+  sub-32 S4: 99 epochs
+  sub-31 S4: 248 epochs
+sub-30: done
+  sub-36 REM: 211 epochs
+  sub-32 REM: 159 epochs
+sub-35: done
+  sub-38 S3: 53 epochs
+  sub-34 REM: 187 epochs
+  sub-38 S4: 178 epochs
+  sub-31 REM: 152 epochs
+sub-32: done
+sub-36: done
+sub-34: done
+  sub-38 REM: 129 epochs
+sub-31: done
+sub-38: done
+
+=== recap ===
+  psd_sub_delta    : 190 fichiers
+  psd_sub_theta    : 190 fichiers
+  psd_sub_alpha    : 190 fichiers
+  psd_sub_sigma    : 190 fichiers
+  psd_sub_beta     : 190 fichiers
+
+total: 3m38s

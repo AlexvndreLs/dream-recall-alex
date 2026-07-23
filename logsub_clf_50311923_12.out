@@ -1,0 +1,14 @@
+combo 12 : psd_logsub_sigma x S2
+=== vérification intégrité + n_trials_min global ===
+n_trials_min = 61  |  normalize = False
+=== classification : 1 combinaisons ===
+  psd_logsub_sigma × S2
+    bootstrap: 50/1000
+    bootstrap: 100/1000
+    bootstrap: 150/1000
+    bootstrap: 200/1000
+    bootstrap: 250/1000
+    bootstrap: 300/1000
+    bootstrap: 350/1000
+    bootstrap: 400/1000
+    bootstrap: 450/1000

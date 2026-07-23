@@ -1,0 +1,15 @@
+combo 0 : psd_sub_delta x S2
+=== vérification intégrité + n_trials_min global ===
+n_trials_min = 61  |  normalize = False
+=== classification : 1 combinaisons ===
+  psd_sub_delta × S2
+    bootstrap: 50/1000
+    bootstrap: 100/1000
+    bootstrap: 150/1000
+    bootstrap: 200/1000
+    bootstrap: 250/1000
+    bootstrap: 300/1000
+    bootstrap: 350/1000
+    bootstrap: 400/1000
+    bootstrap: 450/1000
+slurmstepd: error: *** JOB 50298727 ON fc30539 CANCELLED AT 2026-07-23T13:12:36 ***

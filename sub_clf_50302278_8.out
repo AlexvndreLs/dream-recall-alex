@@ -1,0 +1,50 @@
+combo 8 : psd_sub_alpha x S2
+=== vérification intégrité + n_trials_min global ===
+n_trials_min = 61  |  normalize = False
+=== classification : 1 combinaisons ===
+  psd_sub_alpha × S2
+    bootstrap: 50/1000
+    bootstrap: 100/1000
+    bootstrap: 150/1000
+    bootstrap: 200/1000
+    bootstrap: 250/1000
+    bootstrap: 300/1000
+    bootstrap: 350/1000
+    bootstrap: 400/1000
+    bootstrap: 450/1000
+    bootstrap: 500/1000
+    bootstrap: 550/1000
+    bootstrap: 600/1000
+    bootstrap: 650/1000
+    bootstrap: 700/1000
+    bootstrap: 750/1000
+    bootstrap: 800/1000
+    bootstrap: 850/1000
+    bootstrap: 900/1000
+    bootstrap: 950/1000
+    bootstrap: 1000/1000
+    perm: 50/1000
+    perm: 100/1000
+    perm: 150/1000
+    perm: 200/1000
+    perm: 250/1000
+    perm: 300/1000
+    perm: 350/1000
+    perm: 400/1000
+    perm: 450/1000
+    perm: 500/1000
+    perm: 550/1000
+    perm: 600/1000
+    perm: 650/1000
+    perm: 700/1000
+    perm: 750/1000
+    perm: 800/1000
+    perm: 850/1000
+    perm: 900/1000
+    perm: 950/1000
+    perm: 1000/1000
+
+=== résumé (features matricielles) ===
+CSV : /scratch/alouis/dream_features_noica_1000hz_sub/results/classification_summary.csv
+
+total : 9m27s

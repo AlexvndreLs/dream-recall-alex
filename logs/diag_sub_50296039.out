@@ -1,0 +1,29 @@
+sub-01 S2   ne= 15 relerr=0.000e+00 relerr_scaled=1.941e-16 cancel=4.512e+00
+sub-01 S3   ne= 15 relerr=0.000e+00 relerr_scaled=1.838e-16 cancel=3.958e+00
+sub-01 REM  ne= 15 relerr=0.000e+00 relerr_scaled=1.915e-16 cancel=4.288e+00
+sub-02 S2   ne= 15 relerr=0.000e+00 relerr_scaled=1.964e-16 cancel=4.498e+00
+sub-02 S3   ne= 15 relerr=0.000e+00 relerr_scaled=2.031e-16 cancel=5.125e+00
+sub-02 REM  ne= 15 relerr=0.000e+00 relerr_scaled=1.702e-16 cancel=3.457e+00
+sub-23 S2   ne= 15 relerr=0.000e+00 relerr_scaled=1.873e-16 cancel=4.118e+00
+sub-23 S3   ne= 15 relerr=0.000e+00 relerr_scaled=1.818e-16 cancel=3.979e+00
+sub-23 REM  ne= 15 relerr=0.000e+00 relerr_scaled=1.823e-16 cancel=3.862e+00
+sub-24 S2   ne= 15 relerr=0.000e+00 relerr_scaled=1.870e-16 cancel=4.327e+00
+sub-24 S3   ne= 15 relerr=0.000e+00 relerr_scaled=1.833e-16 cancel=4.043e+00
+sub-24 REM  ne= 15 relerr=0.000e+00 relerr_scaled=1.817e-16 cancel=3.848e+00
+
+stage band        r   |sub|_med  frac_neg
+REM   alpha   0.8752 8.307e-13   0.094
+REM   beta    0.7610 5.695e-14   0.012
+REM   delta   0.4455 4.961e-12   0.492
+REM   sigma   0.9007 1.824e-13   0.270
+REM   theta   0.8361 3.146e-12   0.066
+S2    alpha   0.8879 2.500e-12   0.015
+S2    beta    0.8362 2.658e-14   0.139
+S2    delta   0.4126 8.042e-12   0.742
+S2    sigma   0.9316 2.319e-12   0.010
+S2    theta   0.9001 4.597e-12   0.039
+S3    alpha   0.7525 3.194e-12   0.004
+S3    beta    0.7216 1.769e-14   0.467
+S3    delta   0.3938 1.459e-11   0.731
+S3    sigma   0.8663 2.286e-12   0.007
+S3    theta   0.7156 6.171e-12   0.018
