@@ -41,8 +41,6 @@ LABELS = {
 }
 COLORS = {COL_RAW: "#b0b0b0", COL_ARTHUR: "#4878a8", COL_POOLED: "#c04040"}
 
-STATES = ["S2", "SWS", "NREM", "REM"]
-
 FAMILIES = {
     "matrix": ["cov", "cosp_delta", "cosp_theta", "cosp_alpha", "cosp_sigma",
                "cosp_beta"],
@@ -116,64 +114,6 @@ def fig_n_significatifs(df: pd.DataFrame, out_dir: Path, alpha: float):
     fig.savefig(out, dpi=200, bbox_inches="tight")
     plt.close(fig)
     print(f"Written: {out}")
-
-
-def fig_heatmap_accuracy(df: pd.DataFrame, out_dir: Path, alpha: float):
-    """Figure 3: accuracy heatmap, feature x stage, significance after pooled maxstat.
-
-    Colour carries the accuracy (interpretable quantity), the black frame carries
-    significance after pooled maxstat correction, subject scheme (RFX).
-    Features are ordered by family so that the three correction regimes stay
-    visually grouped.
-    """
-    df = df.copy()
-    df["famille"] = df["feature"].map(assign_family)
-
-    order = (["cov", "cosp_delta", "cosp_theta", "cosp_alpha", "cosp_sigma",
-              "cosp_beta"]
-             + ["psd_delta", "psd_theta", "psd_alpha", "psd_sigma", "psd_beta"])
-    order += sorted(set(df["feature"]) - set(order))
-
-    acc = df.pivot(index="feature", columns="state",
-                   values="accuracy_pct").reindex(order)[STATES]
-    sig = (df.pivot(index="feature", columns="state",
-                    values=COL_POOLED).reindex(order)[STATES] < alpha)
-
-    fig, ax = plt.subplots(figsize=(6.4, 9.5))
-    im = ax.imshow(acc.values, cmap="RdBu_r", aspect="auto",
-                   vmin=50, vmax=float(np.nanmax(acc.values)))
-
-    for i in range(acc.shape[0]):
-        for j in range(acc.shape[1]):
-            v = acc.values[i, j]
-            if np.isnan(v):
-                continue
-            ax.text(j, i, f"{v:.1f}", ha="center", va="center", fontsize=8,
-                    color="white" if v > 63 else "black")
-            if bool(sig.values[i, j]):
-                ax.add_patch(mpatches.Rectangle(
-                    (j - 0.5, i - 0.5), 1, 1, fill=False,
-                    edgecolor="black", linewidth=2.4))
-
-    # Family separators
-    for boundary in (5.5, 10.5):
-        ax.axhline(boundary, color="black", linewidth=1.6)
-
-    ax.set_xticks(range(len(STATES)))
-    ax.set_xticklabels(STATES)
-    ax.set_yticks(range(len(order)))
-    ax.set_yticklabels(order, fontsize=8.5)
-    ax.set_xlabel("sleep stage")
-    ax.set_title("Accuracy (%) and significance after pooled maxstat\n"
-                 f"subject scheme (RFX), framed cells: p < {alpha}",
-                 fontsize=11)
-    fig.colorbar(im, ax=ax, label="accuracy (%)", fraction=0.046, pad=0.04)
-    fig.tight_layout()
-    out = out_dir / "fig3_heatmap_accuracy.png"
-    fig.savefig(out, dpi=200, bbox_inches="tight")
-    plt.close(fig)
-    n_sig = int(sig.values.sum())
-    print(f"Written: {out}  ({n_sig} significant cells)")
 
 
 def fig_courbe_survie(df: pd.DataFrame, out_dir: Path, alpha: float):
@@ -300,7 +240,6 @@ def main():
     n_vec, n_mat = int((~df["is_matrix"]).sum()), int(df["is_matrix"].sum())
     print(f"Table: {len(df)} rows ({n_vec} vector, {n_mat} matrix)")
 
-    fig_heatmap_accuracy(df, args.out_dir, args.alpha)
     fig_n_significatifs(df, args.out_dir, args.alpha)
     fig_courbe_survie(df, args.out_dir, args.alpha)
     fig_espace_de_test(df, args.out_dir)
