@@ -210,8 +210,8 @@ def main() -> None:
         if gthr is not None:
             ax.axhline(gthr, color="k", ls="--", lw=1)
 
-    CORR_TITLE = {"none": "", "state": ", max-stat par stade",
-                  "global": ", max-stat global (24 combos)"}
+    CORR_TITLE = {"none": "", "state": ", per-stage max-stat",
+                  "global": ", global max-stat (24 combos)"}
     ax.set_ylabel(Y_LABEL)
     ax.set_ylim(MINMAX)
     ax.set_title(f"{GRAPH_TITLE}{CORR_TITLE[args.correction]}, p < {args.alpha}")

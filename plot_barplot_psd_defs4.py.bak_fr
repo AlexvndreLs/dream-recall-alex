@@ -77,10 +77,10 @@ from plot_common import (
 # Ordre d'affichage a l'interieur d'un combo. src designe le dossier de
 # provenance, resolu par paths_for().
 DEFS = [
-    dict(prefix="psd_",        src="overlap", label="raw (P)",                hatch=""),
+    dict(prefix="psd_",        src="overlap", label="brute (P)",              hatch=""),
     dict(prefix="psd_osc_",    src="overlap", label="ratio (P/A)",            hatch="//"),
     dict(prefix="psd_logsub_", src="logsub",  label="log (logP - logA)",      hatch=".."),
-    dict(prefix="psd_sub_",    src="sub",     label="subtraction (P - A)",    hatch="xx"),
+    dict(prefix="psd_sub_",    src="sub",     label="soustraction (P - A)",   hatch="xx"),
 ]
 
 # Combos retenus en mode --focus : les seuls ou au moins une definition ressort
@@ -241,9 +241,9 @@ def make_figure(args):
                     st, ha="center", va="top", fontsize=11, fontweight="bold")
 
     ax.set_ylabel("Decoding accuracy (%)")
-    mode = "20 combos" if args.full else "significant combos"
-    ax.set_title(f"Four definitions of spectral power ({mode}), "
-                 f"max-stat over 19 electrodes, p < {args.alpha}")
+    mode = "20 combos" if args.full else "combos significatifs"
+    ax.set_title(f"Quatre definitions de la puissance spectrale ({mode}), "
+                 f"max-stat 19 electrodes, p < {args.alpha}")
     ax.axhline(50, color="gray", lw=0.8, alpha=0.5)
     ax.spines[["top", "right"]].set_visible(False)
 
@@ -252,7 +252,7 @@ def make_figure(args):
               frameon=False, fontsize=9, ncol=2, loc="upper right")
 
     ax.text(0.995, 0.02,
-            "- - -  per-feature max-stat threshold   |   *  p < %.2g" % args.alpha,
+            "- - -  seuil max-stat par feature   |   *  p < %.2g" % args.alpha,
             transform=ax.transAxes, ha="right", va="bottom",
             fontsize=8, color="0.3")
 

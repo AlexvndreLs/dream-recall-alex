@@ -227,7 +227,7 @@ def main() -> None:
         cbar.set_label("Decoding accuracy (%)")
 
     fig.suptitle(
-        f"{args.feature_family}, accuracy per electrode "
+        f"{args.feature_family}, accuracy par électrode "
         f"(perm. {args.perm_scheme}, p < {args.alpha}, corr. {args.correction})",
         fontsize=12,
     )

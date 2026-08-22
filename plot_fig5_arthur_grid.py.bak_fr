@@ -116,7 +116,7 @@ def main():
         if roi_data is None:
             for c in range(len(ROIS_ORDER) + 1):
                 axes[r, c].axis("off")
-            axes[r, 0].annotate(f"{stage}\n(not computed)", xy=(0.5, 0.5),
+            axes[r, 0].annotate(f"{stage}\n(non calcule)", xy=(0.5, 0.5),
                                 xycoords="axes fraction", ha="center", fontsize=9)
             continue
 
@@ -228,8 +228,8 @@ def main():
     # Arthur n'a PAS de titre sur sa figure (la legende est sous la figure dans le
     # texte de la these). Titre desactive par defaut, --title pour le remettre.
     if args.title:
-        fig.suptitle("Fig. 5 (Arthur chap.1) - EFS holdout by ROI and stage  "
-                     f"(pie: combination selection rate, threshold {int(args.sr_threshold*100)}%)",
+        fig.suptitle("Fig. 5 (Arthur chap.1) - EFS holdout par ROI et stade  "
+                     f"(pie: selection rate combinaisons, seuil {int(args.sr_threshold*100)}%)",
                      fontsize=12, y=1.0)
     fig.subplots_adjust(hspace=0.25, wspace=0.15, bottom=0.10, left=0.05)
 

@@ -52,7 +52,7 @@ STATE_LIST = ["S2", "SWS", "NREM", "REM"]  # ordre figure : NREM avant REM
 
 MINMAX = [40, 80]
 Y_LABEL = "Decoding accuracies (%)"
-GRAPH_TITLE = "Riemannian classification, FFX (fixed X, Arthur replication)"
+GRAPH_TITLE = "Riemannian classifications, FFX (X figé, réplication Arthur)"
 WIDTH = 0.90
 RESOLUTION = 300
 
@@ -235,8 +235,8 @@ def main() -> None:
 
     ax.set_ylabel(Y_LABEL)
     ax.set_ylim(MINMAX)
-    CORR_TITLE = {"none": "", "state": ", per-stage max-stat",
-                  "global": ", global max-stat (24 combos)"}
+    CORR_TITLE = {"none": "", "state": ", max-stat par stade",
+                  "global": ", max-stat global (24 combos)"}
     ax.set_title(f"{GRAPH_TITLE}{CORR_TITLE[args.correction]}, p < {args.alpha}")
     ax.set_xticks([g * group_width + (n_keys - 1) / 2 for g in range(len(STATE_LIST))])
     ax.set_xticklabels(STATE_LIST)

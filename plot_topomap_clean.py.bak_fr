@@ -183,8 +183,8 @@ def main() -> None:
         cbar.set_label("Decoding accuracy (%)")
 
     fig.suptitle(
-        f"{args.family}, accuracy per electrode, subject-level permutation (RFX)\n"
-        f"* : p < {args.alpha} after pooled max-stat over {len(BANDS) * N_EEG} tests",
+        f"{args.family}, accuracy par électrode, permutation sujet (RFX)\n"
+        f"* : p < {args.alpha} après max-stat pooled sur {len(BANDS) * N_EEG} tests",
         fontsize=12,
     )
 
