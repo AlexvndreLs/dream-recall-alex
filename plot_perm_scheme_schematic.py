@@ -14,7 +14,7 @@ toy dataset containing 4 subjects with 3 epochs each.
                                  label is reassigned.
 
 Usage:
-    python3 plot_perm_scheme_schematic.py --out plot_perm_explanation/perm_scheme_schematic.png
+    python3 plot_perm_scheme_schematic.py
 
 Requires no external data dependencies and runs in any Python environment.
 """
@@ -141,11 +141,56 @@ def draw_column(
     )
 
 
-def generate_schematic_figure(output_path: str) -> None:
+def measure_content_extent(fig, ax) -> tuple:
+    """Measures the bounding box of every drawn element, in data coordinates.
+
+    Text extents are only known once the figure has been rendered, and they are
+    expressed in pixels; they are converted back to data units here. The legend
+    is deliberately ignored: it is anchored in axes coordinates and must not
+    influence the framing of the content.
+
+    Args:
+        fig: The Matplotlib Figure being rendered.
+        ax (plt.Axes): The Axes holding the schematic.
+
+    Returns:
+        tuple: (x_min, x_max, y_min, y_max) in data coordinates.
+    """
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    to_data = ax.transData.inverted()
+
+    xs: List[float] = []
+    ys: List[float] = []
+
+    for artist in list(ax.patches) + list(ax.texts):
+        box = artist.get_window_extent(renderer)
+        corners = to_data.transform(
+            [[box.x0, box.y0], [box.x1, box.y1]]
+        )
+        xs.extend([corners[0][0], corners[1][0]])
+        ys.extend([corners[0][1], corners[1][1]])
+
+    if not xs:
+        raise RuntimeError("Nothing was drawn, cannot compute the framing.")
+
+    return min(xs), max(xs), min(ys), max(ys)
+
+
+def generate_schematic_figure(
+    output_path: str, size: float = 10.0, dpi: int = 200
+) -> None:
     """Constructs and saves the permutation schemes schematic figure.
+
+    The output canvas is strictly square (1:1). The three columns are centred
+    inside that square, the drawing keeps an equal aspect ratio so the cells
+    stay square, and the legend sits at the bottom, horizontally centred on the
+    canvas rather than on the drawn content.
 
     Args:
         output_path (str): File path where the output image will be saved.
+        size (float): Side of the square canvas, in inches.
+        dpi (int): Output resolution. Final image is size * dpi pixels a side.
 
     Raises:
         IOError: If directory creation or image saving fails due to I/O issues.
@@ -159,7 +204,10 @@ def generate_schematic_figure(output_path: str) -> None:
                 f"Failed to create target directory '{output_directory}': {error}"
             ) from error
 
-    fig, ax = plt.subplots(figsize=(17, 5.5))
+    fig, ax = plt.subplots(figsize=(size, size))
+    # The axes fills the whole canvas: combined with equal data spans below,
+    # this guarantees an exact 1:1 output without relying on tight_layout.
+    fig.subplots_adjust(left=0.0, right=1.0, bottom=0.0, top=1.0)
 
     # Construct complete grids for original and RFX states
     original_grid: List[List[str]] = [
@@ -182,11 +230,13 @@ def generate_schematic_figure(output_path: str) -> None:
         Rectangle((0, 0), 1, 1, facecolor=COLOR_HR, edgecolor="white"),
         Rectangle((0, 0), 1, 1, facecolor=COLOR_LR, edgecolor="white"),
     ]
+    # Anchored in axes coordinates, so it is centred on the square canvas and
+    # not on the bounding box of the three columns.
     ax.legend(
         legend_handles,
         ["High Recaller", "Low Recaller"],
         loc="lower center",
-        bbox_to_anchor=(0.5, -0.14),
+        bbox_to_anchor=(0.5, 0.025),
         ncol=2,
         frameon=False,
         fontsize=11,
@@ -214,15 +264,38 @@ def generate_schematic_figure(output_path: str) -> None:
         style="italic",
     )
 
-    ax.set_xlim(-0.8, 19.0)
-    ax.set_ylim(-2.2, NUMBER_OF_SUBJECTS * (NUMBER_OF_EPOCHS * 0.7 + 0.35) + 1.4)
     ax.set_aspect("equal")
     ax.axis("off")
 
-    fig.tight_layout()
+    # The column titles and the italic annotations are much wider than the
+    # coloured cells themselves, and their width in data units depends on the
+    # limits we are trying to compute. Rather than guessing, the extents are
+    # measured on a real render and the limits refined; two passes are enough
+    # to converge, a third is kept as a safety margin.
+    for _ in range(3):
+        x_min, x_max, y_min, y_max = measure_content_extent(fig, ax)
+
+        content_width: float = x_max - x_min
+        content_height: float = y_max - y_min
+        largest: float = max(content_width, content_height)
+
+        side_margin: float = 0.04 * largest
+        legend_band: float = 0.13 * largest  # empty strip kept for the legend
+
+        # Square span: whichever constraint binds, the other axis is padded.
+        span: float = max(content_width + 2 * side_margin,
+                          content_height + legend_band + side_margin)
+
+        x_centre: float = (x_min + x_max) / 2
+        y_low: float = y_min - legend_band
+
+        ax.set_xlim(x_centre - span / 2, x_centre + span / 2)
+        ax.set_ylim(y_low, y_low + span)
 
     try:
-        fig.savefig(output_path, dpi=200, bbox_inches="tight", facecolor="white")
+        # No bbox_inches="tight": cropping to the ink would destroy the 1:1
+        # ratio we just set up.
+        fig.savefig(output_path, dpi=dpi, facecolor="white")
         print(f"[OK] Figure successfully written to: {output_path}")
     except OSError as save_error:
         raise IOError(f"Could not write figure to '{output_path}': {save_error}") from save_error
@@ -237,13 +310,28 @@ def main() -> None:
     )
     parser.add_argument(
         "--out",
-        default="plot_perm_explanation/perm_scheme_schematic.png",
+        default=("/home/alouis/dream-recall-alex/final_plotted_figures/"
+                 "fig02_perm_scheme.png"),
         help="Path where the output PNG file will be saved.",
+    )
+    parser.add_argument(
+        "--size",
+        type=float,
+        default=10.0,
+        help="Side of the square canvas, in inches (default: 10).",
+    )
+    parser.add_argument(
+        "--dpi",
+        type=int,
+        default=200,
+        help="Output resolution (default: 200, i.e. 2000x2000 px at size 10).",
     )
     args = parser.parse_args()
 
     try:
-        generate_schematic_figure(output_path=args.out)
+        generate_schematic_figure(
+            output_path=args.out, size=args.size, dpi=args.dpi
+        )
     except Exception as err:
         print(f"[ERROR] Execution failed: {err}", file=sys.stderr)
         sys.exit(1)

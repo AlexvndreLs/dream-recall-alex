@@ -61,6 +61,12 @@ from plot_common import (
 WIDTH = 0.90
 Y_LABEL = "Decoding accuracy (%)"
 
+LEVELS = {
+    "raw":    "non corrige (p brute, feature seule)",
+    "pooled": "max-stat pooled sur la famille matricielle",
+}
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
     p.add_argument("--save-path", type=Path, required=True,
@@ -173,8 +179,8 @@ def make_figure(save_path, corrected_path, out_dir, level, alpha, ymin, ymax):
 
     ax.set_ylabel(Y_LABEL)
     ax.set_title(
-        f"Riemannian classifications, subject-level permutation "
-        f"(RFX), p < {alpha}"
+        f"Riemannian classifications, permutation sujet (RFX), "
+        f"{LEVELS[level]}, p < {alpha}"
     )
     ax.set_xticks([g * group_width + (n_keys - 1) / 2 for g in range(len(STATES_ORDERED))])
     ax.set_xticklabels(STATES_ORDERED)
@@ -187,9 +193,9 @@ def make_figure(save_path, corrected_path, out_dir, level, alpha, ymin, ymax):
                   loc="upper right", bbox_to_anchor=(1.0, 1.0))
 
     if level == "pooled":
-        note = "- - -  pooled max-stat threshold   |   *  p < %.2g corrected" % alpha
+        note = "- - -  seuil max-stat pooled   |   *  p < %.2g corrige" % alpha
     else:
-        note = "- - -  per-feature threshold   |   *  p < %.2g uncorrected" % alpha
+        note = "- - -  seuil par feature   |   *  p < %.2g non corrige" % alpha
     ax.text(0.995, 0.02, note, transform=ax.transAxes, ha="right", va="bottom",
             fontsize=8, color="0.3")
 

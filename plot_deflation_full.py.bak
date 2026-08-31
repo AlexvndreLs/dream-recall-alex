@@ -92,11 +92,6 @@ def main():
     p.add_argument("--out", default="plot_perm_explication/deflation_hist_full.png")
     p.add_argument("--floor", type=float, default=None,
                    help="Floor for zero p-values (default: smallest non-zero p-value observed).")
-    p.add_argument("--keys", nargs="*", default=None,
-                   help="Restreint aux descripteurs listes. Par defaut, tous. "
-                        "Exemple : --keys cov cosp_delta cosp_theta cosp_alpha "
-                        "cosp_sigma cosp_beta psd_delta psd_theta psd_alpha "
-                        "psd_sigma psd_beta")
     args = p.parse_args()
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
@@ -104,14 +99,6 @@ def main():
     rows = collect(args.results)
     if not rows:
         raise SystemExit(f"No usable pairs in {args.results}.")
-
-
-    if args.keys:
-        garde = set(args.keys)
-        avant = len(rows)
-        rows = [r for r in rows
-                if r[0].rsplit("_", 1)[0] in garde or r[0].split("_")[0] in garde]
-        print(f"  filtre --keys : {avant} -> {len(rows)} combinaisons")
 
     combos = [r[0] for r in rows]
     fams = np.array([r[1] for r in rows])
