@@ -57,15 +57,15 @@ from plot_common import (
 )
 
 PSD_KEYS = [f"psd_{b}" for b in ("delta", "theta", "alpha", "sigma", "beta")]
-POOL_FAMILY = "psd"  # -> psd_{state}_maxstat.npz
+POOL_FAMILY = "psd"  # -> psd_{state}_maxstat.npz ; surchargeable par --pool-family
 
 WIDTH = 0.90
 Y_LABEL = "Decoding accuracy (%)"
 
 LEVELS = {
-    "raw":    "non corrige (p brute, meilleure electrode)",
-    "arthur": "max-stat electrodes (Arthur, feature seule)",
-    "pooled": "max-stat pooled, psd sur 5 bandes",
+    "raw":    "uncorrected p, best electrode",
+    "arthur": "max-stat across the 19 electrodes of one band",
+    "pooled": "max-stat pooled over the 5 psd bands",
 }
 
 
@@ -77,6 +77,11 @@ def parse_args() -> argparse.Namespace:
                    help="Dossier des .npz maxstat (compute_maxstat_correction.py).")
     p.add_argument("--out-dir", type=Path, required=True,
                    help="Dossier de sortie des figures.")
+    p.add_argument("--pool-family", type=str, default=POOL_FAMILY,
+                   help="Prefixe des .npz pooled : "
+                        "{pool_family}_{state}_maxstat.npz. La branche avec "
+                        "recouvrement nomme cette famille psd, la branche sans "
+                        "recouvrement la nomme psd_classic.")
     p.add_argument("--alpha", type=float, default=0.05)
     p.add_argument("--ymin", type=float, default=None)
     p.add_argument("--ymax", type=float, default=None)
@@ -92,14 +97,15 @@ def load_arthur_pval(corrected_path: Path, key: str, state: str, best_idx: int):
     return float(d["pvals_corrected"][best_idx])
 
 
-def load_pooled_pval(corrected_path: Path, key: str, state: str):
+def load_pooled_pval(corrected_path: Path, key: str, state: str,
+                     pool_family: str = POOL_FAMILY):
     """p corrigee pooled de la meilleure electrode d'une bande psd.
 
     Lit psd_{state}_maxstat.npz (pool des 5 bandes). test_labels de la forme
     'psd_sigma/Fp2' ; on prend la p minimale parmi les labels de cette key
     (= meilleure electrode retenue dans le pool). None si absent.
     """
-    f = corrected_path / f"{POOL_FAMILY}_{state}_maxstat.npz"
+    f = corrected_path / f"{pool_family}_{state}_maxstat.npz"
     if not f.exists():
         return None
     d = np.load(f, allow_pickle=True)
@@ -111,9 +117,10 @@ def load_pooled_pval(corrected_path: Path, key: str, state: str):
     return float(pvals[np.array(mask)].min())
 
 
-def pooled_threshold(corrected_path: Path, state: str, alpha: float):
+def pooled_threshold(corrected_path: Path, state: str, alpha: float,
+                     pool_family: str = POOL_FAMILY):
     """Seuil d'accuracy (%) au quantile (1-alpha) de la nulle pooled psd."""
-    f = corrected_path / f"{POOL_FAMILY}_{state}_maxstat.npz"
+    f = corrected_path / f"{pool_family}_{state}_maxstat.npz"
     if not f.exists():
         return np.nan
     null_max = np.load(f, allow_pickle=True)["null_max"]
@@ -137,7 +144,8 @@ def bar_threshold(save_path, corrected_path, key, state, best, level, alpha):
     return np.nan
 
 
-def collect(save_path: Path, corrected_path: Path, level: str, alpha: float):
+def collect(save_path: Path, corrected_path: Path, level: str, alpha: float,
+            pool_family: str = POOL_FAMILY):
     accs, stds, sigs, bar_thr, thr_pool = [], [], [], [], []
     for state in STATES_ORDERED:
         a_row, s_row, sig_row, t_row = [], [], [], []
@@ -160,7 +168,7 @@ def collect(save_path: Path, corrected_path: Path, level: str, alpha: float):
             elif level == "arthur":
                 p = load_arthur_pval(corrected_path, key, state, best)
             else:  # pooled
-                p = load_pooled_pval(corrected_path, key, state)
+                p = load_pooled_pval(corrected_path, key, state, pool_family)
 
             sig_row.append(p is not None and p < alpha)
             t_row.append(bar_threshold(save_path, corrected_path, key, state,
@@ -169,13 +177,16 @@ def collect(save_path: Path, corrected_path: Path, level: str, alpha: float):
         accs.append(a_row); stds.append(s_row); sigs.append(sig_row)
         bar_thr.append(t_row)
         thr_pool.append(
-            pooled_threshold(corrected_path, state, alpha) if level == "pooled" else np.nan
+            pooled_threshold(corrected_path, state, alpha, pool_family)
+            if level == "pooled" else np.nan
         )
     return accs, stds, sigs, bar_thr, thr_pool
 
 
-def make_figure(save_path, corrected_path, out_dir, level, alpha, ymin, ymax):
-    accs, stds, sigs, bar_thr, thr_pool = collect(save_path, corrected_path, level, alpha)
+def make_figure(save_path, corrected_path, out_dir, level, alpha, ymin, ymax,
+                pool_family=POOL_FAMILY):
+    accs, stds, sigs, bar_thr, thr_pool = collect(save_path, corrected_path,
+                                                  level, alpha, pool_family)
 
     fig, ax = plt.subplots(figsize=(11, 5))
     n_keys = len(PSD_KEYS)
@@ -214,7 +225,7 @@ def make_figure(save_path, corrected_path, out_dir, level, alpha, ymin, ymax):
 
     ax.set_ylabel(Y_LABEL)
     ax.set_title(
-        f"PSD bruts facon Arthur (subject/RFX), {LEVELS[level]}, p < {alpha}"
+        f"Spectral power, RFX permutation, {LEVELS[level]}, p < {alpha}"
     )
     ax.set_xticks([g * group_width + (n_keys - 1) / 2 for g in range(len(STATES_ORDERED))])
     ax.set_xticklabels(STATES_ORDERED)
@@ -227,9 +238,9 @@ def make_figure(save_path, corrected_path, out_dir, level, alpha, ymin, ymax):
                   loc="upper right", bbox_to_anchor=(1.0, 1.0))
 
     if level == "pooled":
-        note = "- - -  seuil pooled psd   |   *  p < %.2g corrige" % alpha
+        note = "- - -  pooled psd threshold   |   *  corrected p < %.2g" % alpha
     else:
-        note = "- - -  seuil par feature   |   *  p < %.2g" % alpha
+        note = "- - -  per-feature threshold   |   *  uncorrected p < %.2g" % alpha
     ax.text(0.995, 0.02, note, transform=ax.transAxes, ha="right", va="bottom",
             fontsize=8, color="0.3")
 
@@ -248,7 +259,7 @@ def main() -> None:
     print(f"=== barplots psd bruts (subject/RFX, p < {args.alpha}) ===")
     for level in ("raw", "arthur", "pooled"):
         make_figure(args.save_path, args.corrected_path, args.out_dir,
-                    level, args.alpha, args.ymin, args.ymax)
+                    level, args.alpha, args.ymin, args.ymax, args.pool_family)
 
 
 if __name__ == "__main__":
