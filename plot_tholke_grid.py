@@ -69,10 +69,21 @@ import mne
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 from mne.channels.layout import _find_topomap_coords
 
-# Repris de config_v3 pour rendre le script utilisable hors du repo.
-CH_NAMES = ["Fp1", "Fp2", "F7", "F3", "Fz", "F4", "F8", "T3", "C3", "Cz",
-            "C4", "T4", "T5", "P3", "Pz", "P4", "T6", "O1", "O2"]
-N_EEG = 19
+# CH_NAMES vient de config_v3, jamais recopie ici. Les 19 canaux EEG ne sont pas
+# le 10-20 classique : il y a FC1/FC2/CP1/CP2 et pas de F7/F8/T5/T6, et l'ordre
+# n'est pas alphabetique ni topographique. Recopier cette liste a la main revient
+# a placer chaque valeur sur la mauvaise electrode, sans que la figure ait l'air
+# fausse pour autant.
+try:
+    from config_v3 import CH_NAMES as _CH_ALL, N_EEG
+    CH_NAMES = list(_CH_ALL[:N_EEG])
+except ImportError as exc:  # execution hors du repo
+    raise SystemExit(
+        "config_v3.py introuvable. Lancer ce script depuis le repo "
+        "dream-recall-alex, la liste des electrodes et leur ordre en "
+        "dependent."
+    ) from exc
+
 OLD_TO_NEW = {"T3": "T7", "T4": "T8", "T5": "P7", "T6": "P8"}
 
 STATES = ["S2", "SWS", "NREM", "REM"]

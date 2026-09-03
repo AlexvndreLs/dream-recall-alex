@@ -65,7 +65,7 @@ from plot_common import (
 
 # Features vectorielles modernisees, dans l'ordre d'affichage.
 PSD_OSC_KEYS = [f"psd_osc_{b}" for b in ("delta", "theta", "alpha", "sigma", "beta")]
-COMPLEXITY_KEYS = ["aperiodic", "higuchi_fd", "perm_entropy", "spec_entropy"]
+COMPLEXITY_KEYS = ["aperiodic", "higuchi_fd", "perm_entropy", "spec_entropy", "lzc"]
 VECTOR_KEYS = PSD_OSC_KEYS + COMPLEXITY_KEYS
 
 
@@ -89,6 +89,7 @@ COMPLEXITY_COLORS = {
     "higuchi_fd": "#bcbd22",
     "perm_entropy": "#e377c2",
     "spec_entropy": "#7f7f7f",
+    "lzc": "#8c564b",
 }
 
 WIDTH = 0.90
