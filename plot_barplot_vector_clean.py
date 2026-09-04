@@ -69,7 +69,7 @@ COMPLEXITY_KEYS = ["aperiodic", "higuchi_fd", "perm_entropy", "spec_entropy", "l
 VECTOR_KEYS = PSD_OSC_KEYS + COMPLEXITY_KEYS
 
 
-def keys_for_level(level: str):
+def keys_for_level(level: str, override=None):
     """Features tracees selon le niveau.
 
     raw / arthur : les 9 features (psd_osc x5 + 4 complexites).
@@ -78,6 +78,8 @@ def keys_for_level(level: str):
                    la figure pooled ne montre que les features reellement corrigees
                    sur une famille.
     """
+    if override:
+        return list(override)
     return list(PSD_OSC_KEYS) if level == "pooled" else list(VECTOR_KEYS)
 
 
@@ -114,6 +116,18 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--alpha", type=float, default=0.05)
     p.add_argument("--ymin", type=float, default=None)
     p.add_argument("--ymax", type=float, default=None)
+    p.add_argument("--keys", nargs="+", default=None,
+                   help="Restreint les features tracees. Defaut : les 9 "
+                        "features vectorielles (5 psd_osc + complexites).")
+    p.add_argument("--levels", nargs="+", default=["raw", "arthur", "pooled"],
+                   choices=["raw", "arthur", "pooled"],
+                   help="Niveaux de correction a produire.")
+    p.add_argument("--out-name", default=None,
+                   help="Nom de fichier exact. Defaut : "
+                        "barplot_vector_{level}_p{alpha}.png")
+    p.add_argument("--title", default=None,
+                   help="Titre de la figure. Defaut : titre generique sur les "
+                        "features vectorielles modernisees.")
     return p.parse_args()
 
 
@@ -186,7 +200,8 @@ def bar_threshold(save_path, corrected_path, key, state, best, level, alpha):
     return np.nan
 
 
-def collect(save_path: Path, corrected_path: Path, level: str, alpha: float):
+def collect(save_path: Path, corrected_path: Path, level: str, alpha: float,
+            keys_override=None):
     """Pour chaque (stade, feature) : accuracy best-elec, std, significativite,
     et seuil par barre (raw/arthur).
 
@@ -196,7 +211,7 @@ def collect(save_path: Path, corrected_path: Path, level: str, alpha: float):
     accs, stds, sigs, bar_thr, thr_psdosc = [], [], [], [], []
     for state in STATES_ORDERED:
         a_row, s_row, sig_row, t_row = [], [], [], []
-        for key in keys_for_level(level):
+        for key in keys_for_level(level, keys_override):
             d = load_result(save_path, key, state)
             if d is None:
                 print(f"  absent : {key}_{state}.npz")
@@ -234,11 +249,16 @@ def collect(save_path: Path, corrected_path: Path, level: str, alpha: float):
     return accs, stds, sigs, bar_thr, thr_psdosc
 
 
-def make_figure(save_path, corrected_path, out_dir, level, alpha, ymin, ymax):
-    accs, stds, sigs, bar_thr, thr_psdosc = collect(save_path, corrected_path, level, alpha)
+def make_figure(save_path, corrected_path, out_dir, level, alpha, ymin, ymax,
+                keys_override=None, title=None, out_name=None):
+    accs, stds, sigs, bar_thr, thr_psdosc = collect(
+        save_path, corrected_path, level, alpha, keys_override
+    )
 
-    fig, ax = plt.subplots(figsize=(14, 5.5))
-    keys = keys_for_level(level)
+    keys = keys_for_level(level, keys_override)
+    # Largeur proportionnelle au nombre de barres : 14 pouces pour 9 features
+    # ecrasait une figure restreinte a 4.
+    fig, ax = plt.subplots(figsize=(max(6.0, 1.4 * len(keys) + 2.0), 5.5))
     n_keys = len(keys)
     group_width = n_keys + 1  # une barre vide entre stades
 
@@ -279,9 +299,9 @@ def make_figure(save_path, corrected_path, out_dir, level, alpha, ymin, ymax):
     ax.set_ylim(lo, hi)
 
     ax.set_ylabel(Y_LABEL)
-    ax.set_title(
-        f"Features vectorielles modernisees (subject/RFX), {LEVELS[level]}, p < {alpha}"
-    )
+    ax.set_title(title if title else
+                 f"Features vectorielles modernisees (subject/RFX), "
+                 f"{LEVELS[level]}, p < {alpha}")
     ax.set_xticks([g * group_width + (n_keys - 1) / 2 for g in range(len(STATES_ORDERED))])
     ax.set_xticklabels(STATES_ORDERED)
     ax.axhline(50, color="gray", lw=0.8, alpha=0.5)
@@ -301,7 +321,8 @@ def make_figure(save_path, corrected_path, out_dir, level, alpha, ymin, ymax):
             fontsize=8, color="0.3")
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    out = out_dir / f"barplot_vector_{level}_p{alpha}.png"
+    out = out_dir / (out_name if out_name
+                     else f"barplot_vector_{level}_p{alpha}.png")
     fig.tight_layout()
     fig.savefig(out, dpi=RESOLUTION)
     plt.close(fig)
@@ -312,9 +333,13 @@ def make_figure(save_path, corrected_path, out_dir, level, alpha, ymin, ymax):
 def main() -> None:
     args = parse_args()
     print(f"=== barplots vectoriels (subject/RFX, p < {args.alpha}) ===")
-    for level in ("raw", "arthur", "pooled"):
+    if args.out_name and len(args.levels) > 1:
+        raise SystemExit("--out-name impose un seul --levels, sinon les figures "
+                         "s'ecraseraient entre elles.")
+    for level in args.levels:
         make_figure(args.save_path, args.corrected_path, args.out_dir,
-                    level, args.alpha, args.ymin, args.ymax)
+                    level, args.alpha, args.ymin, args.ymax,
+                    args.keys, args.title, args.out_name)
 
 
 if __name__ == "__main__":
